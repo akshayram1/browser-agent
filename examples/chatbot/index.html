@@ -689,48 +689,61 @@
         const { goal, history } = input;
 
         const demoContext = buildDemoContext();
-        const recentHistory = history.slice(-4).join(" → ") || "none";
+        const recentHistory = history.slice(-3).join(" → ") || "none";
 
-        const prompt = `You are a browser automation agent. Your job is to take ONE action to progress toward the goal.
+        const systemMsg = `You are a browser automation agent. Output ONLY a single valid JSON object. No text, no markdown, no explanation.`;
 
-Goal: ${goal}
-Recent actions: ${recentHistory}
+        const userMsg = `Goal: "${goal}"
+Recent: ${recentHistory}
 
-Available elements grouped by section:
+Page elements:
 ${demoContext}
 
-Return ONLY a single JSON action object. No explanation. No markdown. Just JSON.
+ACTION RULES — read carefully:
+1. To put text into any input or textarea → use type action
+2. To press a button → use click action
+3. If goal is already done → use done action
 
-Action formats:
-{"type":"type","selector":"#id","text":"value to type","clearFirst":true}
-{"type":"click","selector":"#id","label":"button label"}
-{"type":"done","reason":"task is complete"}
+EXAMPLES:
+goal "fill the name field with Jane Doe"  → {"type":"type","selector":"#name","text":"Jane Doe","clearFirst":true}
+goal "fill email with bob@test.com"        → {"type":"type","selector":"#email","text":"bob@test.com","clearFirst":true}
+goal "type hello into the search box"      → {"type":"type","selector":"#search-input","text":"hello","clearFirst":true}
+goal "click submit"                        → {"type":"click","selector":"#submit-contact","label":"Submit Contact"}
 
-Important rules:
-- Match the field by its desc, not just its position
-- "name field" → use the selector whose desc contains "name" or "Full name"
-- "email field" → use the selector whose desc contains "email"
-- "search box" → use the selector in the Search section
-- If the goal action was already done in recent actions, return done
-- Return ONLY the JSON`;
+Now output the JSON for goal: "${goal}"`;
 
         const resp = await llmEngine.chat.completions.create({
-          messages: [{ role: "user", content: prompt }],
-          temperature: 0.1,
-          max_tokens: 120
+          messages: [
+            { role: "system", content: systemMsg },
+            { role: "user",   content: userMsg }
+          ],
+          temperature: 0,
+          max_tokens: 80
         });
 
         const raw = resp.choices[0].message.content.trim();
-
-        // Extract JSON even if the model wraps it in backticks or adds text
         const match = raw.match(/\{[\s\S]*?\}/);
+
         if (match) {
           try {
-            return JSON.parse(match[0]);
+            const action = JSON.parse(match[0]);
+
+            // Guard: if model clicked an input/textarea, convert to type
+            if (action.type === "click" && action.selector) {
+              const el = document.querySelector(action.selector);
+              if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA")) {
+                const textMatch = goal.match(/(?:with|to|:)\s+"?([^"]+)"?\s*$/i);
+                if (textMatch) {
+                  return { type: "type", selector: action.selector, text: textMatch[1].trim(), clearFirst: true };
+                }
+              }
+            }
+
+            return action;
           } catch (_) {}
         }
 
-        return { type: "done", reason: `Could not parse response: ${raw}` };
+        return { type: "done", reason: `Could not parse model response: ${raw}` };
       }
 
       // ── Chat helpers ──
