@@ -1,8 +1,8 @@
 import type { AgentSession, ContentCommand, ContentResult } from "../shared/contracts";
 import { assessRisk } from "../shared/safety";
-import { executeAction } from "./executor";
-import { collectSnapshot } from "./pageObserver";
-import { planNextAction } from "./planner";
+import { executeAction } from "../core/executor";
+import { collectSnapshot } from "../core/observer";
+import { planNextAction } from "../core/planner";
 
 let stopped = false;
 

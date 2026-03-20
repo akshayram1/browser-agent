@@ -8,9 +8,9 @@
   },
   "include": [
     "src/lib/**/*.ts",
-    "src/content/executor.ts",
-    "src/content/pageObserver.ts",
-    "src/content/planner.ts",
+    "src/core/executor.ts",
+    "src/core/observer.ts",
+    "src/core/planner.ts",
     "src/shared/**/*.ts"
   ]
 }

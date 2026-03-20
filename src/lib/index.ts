@@ -1,6 +1,6 @@
-import { executeAction } from "../content/executor";
-import { collectSnapshot } from "../content/pageObserver";
-import { planNextAction } from "../content/planner";
+import { executeAction } from "../core/executor";
+import { collectSnapshot } from "../core/observer";
+import { planNextAction } from "../core/planner";
 import type {
   AgentAction,
   AgentSession,
