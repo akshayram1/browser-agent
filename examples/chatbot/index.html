@@ -726,7 +726,7 @@ Now output the JSON for goal: "${goal}"`;
 
         if (match) {
           try {
-            const action = JSON.parse(match[0]);
+            let action = JSON.parse(match[0]);
 
             // Guard: if model clicked an input/textarea, convert to type
             if (action.type === "click" && action.selector) {
@@ -744,6 +744,14 @@ Now output the JSON for goal: "${goal}"`;
               const el = document.querySelector(action.selector);
               if (el && el.value.trim() === action.text.trim()) {
                 return { type: "done", reason: `Goal complete — "${action.selector}" already contains "${action.text}"` };
+              }
+            }
+
+            // Guard: if this click was already done in the last step, we're done
+            if (action.type === "click" && action.selector) {
+              const lastEntry = history[history.length - 1] ?? "";
+              if (lastEntry.includes(action.selector)) {
+                return { type: "done", reason: `Already clicked ${action.selector}` };
               }
             }
 
