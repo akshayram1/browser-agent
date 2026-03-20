@@ -661,57 +661,58 @@
 
       loadBtn.addEventListener("click", loadModel);
 
-      // ── Collect only demo-panel elements (avoids picking up chat UI) ──
-      function getDemoCandidates() {
-        const panel = document.querySelector(".demo-panel");
-        if (!panel) return [];
-        const SELECTOR = "a,button,input,textarea,select,[role='button']";
-        return Array.from(panel.querySelectorAll(SELECTOR))
-          .filter(el => {
-            const s = window.getComputedStyle(el);
-            return s.display !== "none" && s.visibility !== "hidden" && s.opacity !== "0";
-          })
-          .map(el => ({
-            selector: el.id ? `#${el.id}` : el.tagName.toLowerCase(),
-            role: el.getAttribute("role") || el.tagName.toLowerCase(),
-            text: (el.innerText || el.getAttribute("aria-label") || "").trim().slice(0, 80),
-            placeholder: el.placeholder || undefined
-          }));
+      // ── Collect demo-panel elements grouped by section card ──
+      function buildDemoContext() {
+        const sections = [];
+        document.querySelectorAll(".demo-panel .demo-card").forEach(card => {
+          const title = card.querySelector("h3")?.textContent?.trim() ?? "Section";
+          const SELECTOR = "input,textarea,select,button,a,[role='button']";
+          const items = Array.from(card.querySelectorAll(SELECTOR))
+            .filter(el => {
+              const s = window.getComputedStyle(el);
+              return s.display !== "none" && s.visibility !== "hidden";
+            })
+            .map(el => {
+              const selector = el.id ? `#${el.id}` : el.tagName.toLowerCase();
+              const label = (el.innerText || el.getAttribute("aria-label") || "").trim();
+              const placeholder = el.placeholder || "";
+              const desc = [label, placeholder].filter(Boolean).join(" / ") || selector;
+              return `  - selector="${selector}" desc="${desc}" type=${el.type || el.tagName.toLowerCase()}`;
+            });
+          if (items.length) sections.push(`${title}:\n${items.join("\n")}`);
+        });
+        return sections.join("\n\n");
       }
 
-      // ── WebLLM bridge: builds prompt and parses AgentAction ──
+      // ── WebLLM bridge ──
       async function planWithWebLLM(input) {
         const { goal, history } = input;
 
-        // Use scoped candidates so the model only sees the demo form
-        const demoCandidates = getDemoCandidates();
-        const candidates = demoCandidates
-          .map((c, i) => {
-            const label = c.text || c.placeholder || "";
-            return `${i}. role=${c.role} label="${label}" selector="${c.selector}"`;
-          })
-          .join("\n");
-
+        const demoContext = buildDemoContext();
         const recentHistory = history.slice(-4).join(" → ") || "none";
 
-        const prompt = `You are a browser automation agent controlling a contact form demo page. Return ONLY a single valid JSON action — no explanation, no markdown.
+        const prompt = `You are a browser automation agent. Your job is to take ONE action to progress toward the goal.
 
 Goal: ${goal}
 Recent actions: ${recentHistory}
 
-Elements available (these are the ONLY elements you may interact with):
-${candidates}
+Available elements grouped by section:
+${demoContext}
 
-Action types (pick exactly one):
-{"type":"type","selector":"<selector>","text":"<value>","clearFirst":true}
-{"type":"click","selector":"<selector>","label":"<label>"}
-{"type":"done","reason":"<why finished>"}
+Return ONLY a single JSON action object. No explanation. No markdown. Just JSON.
 
-Rules:
-- Use selectors EXACTLY as listed above
-- For "type hello world into the search box" → use the search input selector and type the text
-- If the exact action was just completed, return done
-- Return ONLY the JSON object, nothing else`;
+Action formats:
+{"type":"type","selector":"#id","text":"value to type","clearFirst":true}
+{"type":"click","selector":"#id","label":"button label"}
+{"type":"done","reason":"task is complete"}
+
+Important rules:
+- Match the field by its desc, not just its position
+- "name field" → use the selector whose desc contains "name" or "Full name"
+- "email field" → use the selector whose desc contains "email"
+- "search box" → use the selector in the Search section
+- If the goal action was already done in recent actions, return done
+- Return ONLY the JSON`;
 
         const resp = await llmEngine.chat.completions.create({
           messages: [{ role: "user", content: prompt }],
