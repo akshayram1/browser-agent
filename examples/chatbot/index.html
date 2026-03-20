@@ -125,6 +125,7 @@
 
       .messages {
         flex: 1;
+        min-height: 0;
         overflow-y: auto;
         padding: 16px 20px;
         display: flex;
@@ -634,7 +635,7 @@
     </div>
 
     <script type="module">
-      import { createBrowserAgent } from "https://unpkg.com/@akshayram1/omnibrowser-agent@0.2.2/dist/lib.js";
+      import { createBrowserAgent } from "https://unpkg.com/@akshayram1/omnibrowser-agent/dist/lib.js";
 
       // ── Demo page interactions ──
       document.getElementById("search-btn").addEventListener("click", () => {
