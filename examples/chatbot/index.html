@@ -734,8 +734,16 @@ Now output the JSON for goal: "${goal}"`;
               if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA")) {
                 const textMatch = goal.match(/(?:with|to|:)\s+"?([^"]+)"?\s*$/i);
                 if (textMatch) {
-                  return { type: "type", selector: action.selector, text: textMatch[1].trim(), clearFirst: true };
+                  action = { type: "type", selector: action.selector, text: textMatch[1].trim(), clearFirst: true };
                 }
+              }
+            }
+
+            // Guard: if field already has the correct value, we're done
+            if (action.type === "type" && action.selector) {
+              const el = document.querySelector(action.selector);
+              if (el && el.value.trim() === action.text.trim()) {
+                return { type: "done", reason: `Goal complete — "${action.selector}" already contains "${action.text}"` };
               }
             }
 
