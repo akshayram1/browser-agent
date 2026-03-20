@@ -1,4 +1,4 @@
-# OmniBrowser Agent Architecture (v0.1)
+# OmniBrowser Agent Architecture (v0.2)
 
 ## Goals
 
@@ -12,7 +12,7 @@
 1. Popup UI (`src/popup`)
    - Starts/stops sessions
    - Picks mode (`autonomous`, `human-approved`)
-   - Picks planner (`heuristic`, `webllm`)
+   - Picks planner (`heuristic`, `webllm`, `page-agent`)
 
 2. Background Service Worker (`src/background`)
    - Session state machine per tab
@@ -21,7 +21,7 @@
 
 3. Content Agent (`src/content`)
    - `pageObserver`: page snapshot extraction
-   - `planner`: next-action decision (heuristic/WebLLM)
+   - `planner`: next-action decision (heuristic / WebLLM / page-agent)
    - `safety`: risk gating (`safe`, `review`, `blocked`)
    - `executor`: DOM action execution
 
@@ -42,13 +42,29 @@
 - Review risky actions (submit/delete/pay-like selectors)
 - In `human-approved` mode, review-level actions require manual approval
 
-## WebLLM Usage
+## Planner Bridges
 
-- Planner includes a `webllm` mode contract with a local bridge hook
-- v0.1 bridge entrypoint: `window.__browserAgentWebLLM.plan(input, modelId)`
-- Full in-extension worker integration is planned for v0.2
+All planner bridges follow the same pattern: an object attached to `window` that implements a `plan()` method returning an `AgentAction`. The core library has zero runtime dependencies — bridge implementations are provided by the consumer.
 
-## Limitations (v0.1)
+### WebLLM bridge
+
+```ts
+window.__browserAgentWebLLM = {
+  async plan(input, modelId) { /* ... */ }
+};
+```
+
+### page-agent bridge
+
+Uses [alibaba/page-agent](https://github.com/alibaba/page-agent) (MIT) as the planning backend. The library calls `window.__browserAgentPageAgent.plan(input)`.
+
+```ts
+window.__browserAgentPageAgent = {
+  async plan(input) { /* ... */ }
+};
+```
+
+## Limitations (v0.2)
 
 - No persistent long-term memory yet
 - No task DSL/skills registry yet

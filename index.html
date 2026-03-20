@@ -54,7 +54,7 @@
           </div>
           <div class="stats" aria-label="project stats">
             <div class="stat"><strong>2</strong><span>Execution Modes</span></div>
-            <div class="stat"><strong>3</strong><span>Core Modules</span></div>
+            <div class="stat"><strong>3</strong><span>Planner Options</span></div>
             <div class="stat"><strong>MIT</strong><span>License</span></div>
           </div>
           <div class="home-grid">
@@ -121,6 +121,22 @@ await agent.start();</code></pre>
             <article class="doc-card">
               <h4>autonomous</h4>
               <p>Runs actions continuously with fewer pauses. Best for rapid iteration and demos.</p>
+            </article>
+          </div>
+
+          <h3>Planner Options</h3>
+          <div class="docs-grid">
+            <article class="doc-card">
+              <h4>heuristic</h4>
+              <p>Zero-dependency regex-based planner. Works offline. Best for simple, predictable goals.</p>
+            </article>
+            <article class="doc-card">
+              <h4>webllm</h4>
+              <p>Delegates to a local WebLLM bridge (<code>window.__browserAgentWebLLM</code>). Fully private, no API calls.</p>
+            </article>
+            <article class="doc-card">
+              <h4>page-agent</h4>
+              <p>Delegates to an <a href="https://github.com/alibaba/page-agent" target="_blank" rel="noreferrer">alibaba/page-agent</a> bridge (<code>window.__browserAgentPageAgent</code>). Best for complex multi-step goals.</p>
             </article>
           </div>
 

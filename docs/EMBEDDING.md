@@ -66,7 +66,41 @@ Then configure:
 planner: { kind: "webllm", modelId: "Llama-3.2-1B-Instruct-q4f16_1-MLC" }
 ```
 
+## page-agent mode in embedded app
+
+To use planner mode `page-agent`, install [page-agent](https://github.com/alibaba/page-agent) in your project and wire the bridge:
+
+```bash
+npm install page-agent
+```
+
+```ts
+import { PageAgent } from "page-agent";
+
+const pa = new PageAgent({
+  baseURL: "https://api.openai.com/v1",
+  model: "gpt-4o",
+  apiKey: "sk-..."
+});
+
+window.__browserAgentPageAgent = {
+  async plan(input) {
+    const result = await pa.execute(input.goal);
+    return { type: "done", reason: result.data };
+  }
+};
+```
+
+Then configure:
+
+```ts
+planner: { kind: "page-agent" }
+```
+
+Use page-agent mode when your goals are complex, multi-step, or ambiguous — it uses LLM reasoning to determine the next action rather than regex heuristics.
+
 ## Notes
 
 - For production, mount this inside an authenticated app shell and add your own permission checks.
 - `human-approved` mode is recommended for CRM/finance/admin actions.
+- `page-agent` is not bundled with this library — it must be installed separately by the consumer.

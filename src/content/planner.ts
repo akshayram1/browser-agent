@@ -4,6 +4,10 @@ type WebLLMBridge = {
   plan(input: PlannerInput, modelId?: string): Promise<AgentAction>;
 };
 
+type PageAgentBridge = {
+  plan(input: PlannerInput): Promise<AgentAction>;
+};
+
 const URL_PATTERN = /(?:go to|navigate to|open)\s+(https?:\/\/\S+)/i;
 const SEARCH_PATTERN = /search(?:\s+for)?\s+(.+)/i;
 const FILL_PATTERN = /(?:fill|type|enter)\s+"?([^"]+)"?\s+(?:in(?:to)?|for|on)\s+(.+)/i;
@@ -81,6 +85,17 @@ function heuristicPlan(input: PlannerInput): AgentAction {
 export async function planNextAction(config: PlannerConfig, input: PlannerInput): Promise<AgentAction> {
   if (config.kind === "heuristic") {
     return heuristicPlan(input);
+  }
+
+  if (config.kind === "page-agent") {
+    const pageAgentBridge = (window as Window & { __browserAgentPageAgent?: PageAgentBridge }).__browserAgentPageAgent;
+    if (!pageAgentBridge) {
+      return {
+        type: "done",
+        reason: "page-agent bridge is not configured. Assign a PageAgentBridge to window.__browserAgentPageAgent."
+      };
+    }
+    return pageAgentBridge.plan(input);
   }
 
   const bridge = (window as Window & { __browserAgentWebLLM?: WebLLMBridge }).__browserAgentWebLLM;

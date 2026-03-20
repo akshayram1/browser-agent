@@ -1,7 +1,7 @@
 # omnibrowser-agent
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.2.1-green.svg)](package.json)
+[![Version](https://img.shields.io/badge/version-0.2.2-green.svg)](package.json)
 
 Local-first open-source browser AI operator using in-browser planning and page actions.
 
@@ -20,7 +20,7 @@ Local-first open-source browser AI operator using in-browser planning and page a
 
 - MV3 browser extension runtime
 - TypeScript + esbuild
-- Pluggable local WebLLM bridge
+- Pluggable planner bridges: WebLLM and page-agent
 
 ## Project structure
 
@@ -137,6 +137,11 @@ It is preconfigured to use `webllm` planner mode and loads `@mlc-ai/web-llm` fro
 
 ## Changelog
 
+### v0.2.2
+
+- **page-agent planner**: added `"page-agent"` as a third `PlannerKind`, backed by a `window.__browserAgentPageAgent` bridge (same zero-deps pattern as WebLLM)
+- **Popup**: added page-agent option to the planner dropdown
+
 ### v0.2.0
 
 - **New actions**: `scroll` and `focus`
@@ -154,10 +159,44 @@ It is preconfigured to use `webllm` planner mode and loads `@mlc-ai/web-llm` fro
 - Heuristic + WebLLM planner switch
 - Human-approved mode
 
+## Planner modes
+
+| Mode | Description |
+|---|---|
+| `heuristic` | Zero-dependency regex-based planner. Works offline. Good for simple, predictable goals. |
+| `webllm` | Delegates to a local WebLLM bridge on `window.__browserAgentWebLLM`. Fully private, no API calls. |
+| `page-agent` | Delegates to an [alibaba/page-agent](https://github.com/alibaba/page-agent) bridge on `window.__browserAgentPageAgent`. Use for complex multi-step tasks with LLM planning. |
+
+### page-agent bridge example
+
+```ts
+import { PageAgent } from "page-agent";
+
+const pa = new PageAgent({
+  baseURL: "https://api.openai.com/v1",
+  model: "gpt-4o",
+  apiKey: "sk-..."
+});
+
+window.__browserAgentPageAgent = {
+  async plan(input) {
+    const result = await pa.execute(input.goal);
+    return { type: "done", reason: result.data };
+  }
+};
+```
+
+Then configure:
+
+```ts
+planner: { kind: "page-agent" }
+```
+
 ## Notes
 
 - Local inference has no API usage charges, but uses device CPU/GPU/memory.
 - `webllm` mode expects a local bridge implementation attached to `window.__browserAgentWebLLM`.
+- `page-agent` mode expects a bridge on `window.__browserAgentPageAgent`. The `page-agent` package is not bundled — bring your own instance.
 
 ## Roadmap
 
