@@ -674,9 +674,11 @@
             })
             .map(el => {
               const selector = el.id ? `#${el.id}` : el.tagName.toLowerCase();
-              const label = (el.innerText || el.getAttribute("aria-label") || "").trim();
+              // Prefer associated <label> text, then innerText, then aria-label
+              const labelEl = el.id ? document.querySelector(`label[for="${el.id}"]`) : null;
+              const labelText = (labelEl?.innerText || el.getAttribute("aria-label") || el.innerText || "").trim();
               const placeholder = el.placeholder || "";
-              const desc = [label, placeholder].filter(Boolean).join(" / ") || selector;
+              const desc = [labelText, placeholder].filter(Boolean).join(" / ") || selector;
               return `  - selector="${selector}" desc="${desc}" type=${el.type || el.tagName.toLowerCase()}`;
             });
           if (items.length) sections.push(`${title}:\n${items.join("\n")}`);
@@ -684,17 +686,34 @@
         return sections.join("\n\n");
       }
 
+      // ── Robust JSON action parser (handles prose, fences, bare objects) ──
+      function parseActionFromRaw(raw) {
+        const VALID = new Set(["click","type","navigate","extract","scroll","focus","wait","done"]);
+        const fenceMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+        const candidate = fenceMatch ? fenceMatch[1].trim() : raw.trim();
+        const objectMatch = candidate.match(/\{[\s\S]*\}/);
+        if (!objectMatch) return { type: "done", reason: `No JSON found: ${raw.slice(0, 80)}` };
+        try {
+          const obj = JSON.parse(objectMatch[0]);
+          if (typeof obj?.type === "string" && VALID.has(obj.type)) return obj;
+          return { type: "done", reason: `Unknown action type: ${obj?.type}` };
+        } catch {
+          return { type: "done", reason: `JSON parse error: ${objectMatch[0].slice(0, 80)}` };
+        }
+      }
+
       // ── WebLLM bridge ──
       async function planWithWebLLM(input) {
-        const { goal, history } = input;
+        const { goal, history, lastError } = input;
 
         const demoContext = buildDemoContext();
-        const recentHistory = history.slice(-3).join(" → ") || "none";
+        const recentHistory = history.slice(-4).join(" → ") || "none";
+        const errorHint = lastError ? `\nLast action failed: "${lastError}". Try a different approach.` : "";
 
         const systemMsg = `You are a browser automation agent. Output ONLY a single valid JSON object. No text, no markdown, no explanation.`;
 
         const userMsg = `Goal: "${goal}"
-Recent: ${recentHistory}
+Recent: ${recentHistory}${errorHint}
 
 Page elements:
 ${demoContext}
@@ -718,48 +737,40 @@ Now output the JSON for goal: "${goal}"`;
             { role: "user",   content: userMsg }
           ],
           temperature: 0,
-          max_tokens: 80
+          max_tokens: 100
         });
 
         const raw = resp.choices[0].message.content.trim();
-        const match = raw.match(/\{[\s\S]*?\}/);
+        let action = parseActionFromRaw(raw);
 
-        if (match) {
-          try {
-            let action = JSON.parse(match[0]);
-
-            // Guard: if model clicked an input/textarea, convert to type
-            if (action.type === "click" && action.selector) {
-              const el = document.querySelector(action.selector);
-              if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA")) {
-                const textMatch = goal.match(/(?:with|to|:)\s+"?([^"]+)"?\s*$/i);
-                if (textMatch) {
-                  action = { type: "type", selector: action.selector, text: textMatch[1].trim(), clearFirst: true };
-                }
-              }
+        // Guard: if model clicked an input/textarea, convert to type
+        if (action.type === "click" && action.selector) {
+          const el = document.querySelector(action.selector);
+          if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA")) {
+            const textMatch = goal.match(/(?:with|to|:)\s+"?([^"]+)"?\s*$/i);
+            if (textMatch) {
+              action = { type: "type", selector: action.selector, text: textMatch[1].trim(), clearFirst: true };
             }
-
-            // Guard: if field already has the correct value, we're done
-            if (action.type === "type" && action.selector) {
-              const el = document.querySelector(action.selector);
-              if (el && el.value.trim() === action.text.trim()) {
-                return { type: "done", reason: `Goal complete — "${action.selector}" already contains "${action.text}"` };
-              }
-            }
-
-            // Guard: if this click was already done in the last step, we're done
-            if (action.type === "click" && action.selector) {
-              const lastEntry = history[history.length - 1] ?? "";
-              if (lastEntry.includes(action.selector)) {
-                return { type: "done", reason: `Already clicked ${action.selector}` };
-              }
-            }
-
-            return action;
-          } catch (_) {}
+          }
         }
 
-        return { type: "done", reason: `Could not parse model response: ${raw}` };
+        // Guard: if field already has the correct value, we're done
+        if (action.type === "type" && action.selector) {
+          const el = document.querySelector(action.selector);
+          if (el && el.value.trim() === action.text?.trim()) {
+            return { type: "done", reason: `Goal complete — "${action.selector}" already contains "${action.text}"` };
+          }
+        }
+
+        // Guard: if this click was already done in the last step, we're done
+        if (action.type === "click" && action.selector) {
+          const lastEntry = history[history.length - 1] ?? "";
+          if (lastEntry.includes(action.selector)) {
+            return { type: "done", reason: `Already clicked ${action.selector}` };
+          }
+        }
+
+        return action;
       }
 
       // ── Chat helpers ──

@@ -13,6 +13,9 @@ import { assessRisk } from "../shared/safety";
 
 const DEFAULT_PLANNER: PlannerConfig = { kind: "heuristic" };
 
+/** Max consecutive errors before the agent gives up instead of retrying */
+const MAX_CONSECUTIVE_ERRORS = 2;
+
 export class BrowserAgent {
   private session: AgentSession;
   private maxSteps: number;
@@ -70,6 +73,9 @@ export class BrowserAgent {
   }
 
   private async runLoop(): Promise<ContentResult> {
+    let consecutiveErrors = 0;
+    let lastError: string | undefined;
+
     for (let step = 0; step < this.maxSteps; step += 1) {
       if (this.isStopped || !this.session.isRunning) {
         return { status: "done", message: "Stopped" };
@@ -80,9 +86,29 @@ export class BrowserAgent {
         return { status: "done", message: "Aborted" };
       }
 
-      const result = await this.tick();
-      this.session.history.push(result.message);
+      const result = await this.tick(lastError);
       this.events.onStep?.(result, this.getSession());
+
+      if (result.status === "error") {
+        consecutiveErrors += 1;
+        lastError = result.message;
+        this.session.history.push(`Error: ${result.message}`);
+
+        if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+          this.session.isRunning = false;
+          this.events.onError?.(new Error(result.message), this.getSession());
+          this.events.onDone?.(result, this.getSession());
+          return result;
+        }
+
+        // Retry with error context on the next iteration
+        await this.delay(this.stepDelayMs);
+        continue;
+      }
+
+      consecutiveErrors = 0;
+      lastError = undefined;
+      this.session.history.push(result.message);
 
       if (result.status === "needs_approval") {
         this.session.pendingAction = result.action;
@@ -93,7 +119,7 @@ export class BrowserAgent {
         return result;
       }
 
-      if (["done", "blocked", "error"].includes(result.status)) {
+      if (["done", "blocked"].includes(result.status)) {
         this.session.isRunning = false;
         this.events.onDone?.(result, this.getSession());
         return result;
@@ -139,19 +165,18 @@ export class BrowserAgent {
     this.session.isRunning = false;
   }
 
-  private async tick(): Promise<ContentResult> {
+  private async tick(lastError?: string): Promise<ContentResult> {
     try {
       const snapshot = collectSnapshot();
       const action = await planNextAction(this.session.planner, {
         goal: this.session.goal,
         snapshot,
-        history: this.session.history
+        history: this.session.history,
+        lastError
       });
 
       return this.processAction(action);
     } catch (error) {
-      this.session.isRunning = false;
-      this.events.onError?.(error, this.getSession());
       return { status: "error", message: String(error) };
     }
   }
@@ -194,6 +219,8 @@ export class BrowserAgent {
 export function createBrowserAgent(config: LibraryAgentConfig, events?: LibraryAgentEvents): BrowserAgent {
   return new BrowserAgent(config, events);
 }
+
+export { parseAction } from "../shared/parse-action";
 
 export type {
   AgentAction,

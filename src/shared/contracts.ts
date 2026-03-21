@@ -17,6 +17,8 @@ export interface CandidateElement {
   role: string;
   text: string;
   placeholder?: string;
+  /** Associated <label> text resolved via for/id, wrapping label, or aria-labelledby */
+  label?: string;
 }
 
 export interface PageSnapshot {
@@ -30,6 +32,8 @@ export interface PlannerInput {
   goal: string;
   snapshot: PageSnapshot;
   history: string[];
+  /** Error message from the previous step, fed back so the planner can recover */
+  lastError?: string;
 }
 
 export interface PlannerConfig {
@@ -46,6 +50,8 @@ export interface AgentSession {
   history: string[];
   isRunning: boolean;
   pendingAction?: AgentAction;
+  /** Carried between ticks by the background/runner so the planner can see the last error */
+  lastError?: string;
 }
 
 export interface LibraryAgentConfig {

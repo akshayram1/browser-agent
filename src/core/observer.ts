@@ -36,28 +36,72 @@ function cssPath(element: Element): string {
 }
 
 function isVisible(el: HTMLElement): boolean {
-  if (el.offsetParent === null && el.tagName !== "BODY") {
-    return false;
-  }
+  if (el.offsetParent === null && el.tagName !== "BODY") return false;
   const style = window.getComputedStyle(el);
-  return style.display !== "none" && style.visibility !== "hidden" && style.opacity !== "0";
+  if (style.display === "none" || style.visibility === "hidden" || style.opacity === "0") return false;
+  // Zero-dimension elements are functionally hidden
+  const rect = el.getBoundingClientRect();
+  return rect.width > 0 || rect.height > 0;
+}
+
+function isInViewport(el: HTMLElement): boolean {
+  const rect = el.getBoundingClientRect();
+  return (
+    rect.bottom > 0 &&
+    rect.top < window.innerHeight &&
+    rect.right > 0 &&
+    rect.left < window.innerWidth
+  );
+}
+
+/** Resolve the visible label text via for/id, aria-labelledby, aria-label, or wrapping <label>. */
+function getAssociatedLabel(el: HTMLElement): string {
+  if (el.id) {
+    const label = document.querySelector<HTMLLabelElement>(`label[for="${CSS.escape(el.id)}"]`);
+    if (label) return label.innerText.trim();
+  }
+
+  const labelledBy = el.getAttribute("aria-labelledby");
+  if (labelledBy) {
+    const labelEl = document.getElementById(labelledBy);
+    if (labelEl) return labelEl.innerText.trim();
+  }
+
+  const ariaLabel = el.getAttribute("aria-label");
+  if (ariaLabel) return ariaLabel.trim();
+
+  const parentLabel = el.closest("label");
+  if (parentLabel) {
+    return Array.from(parentLabel.childNodes)
+      .filter((n) => n.nodeType === Node.TEXT_NODE)
+      .map((n) => n.textContent?.trim() ?? "")
+      .filter(Boolean)
+      .join(" ");
+  }
+
+  return "";
 }
 
 export function collectSnapshot(): PageSnapshot {
-  const nodes = Array.from(
+  const allNodes = Array.from(
     document.querySelectorAll<HTMLElement>(CANDIDATE_SELECTOR)
-  )
-    .filter(isVisible)
-    .slice(0, MAX_CANDIDATES);
+  ).filter(isVisible);
+
+  // In-viewport elements first so the model sees the most relevant candidates first
+  const inView = allNodes.filter(isInViewport);
+  const offScreen = allNodes.filter((el) => !isInViewport(el));
+  const nodes = [...inView, ...offScreen].slice(0, MAX_CANDIDATES);
 
   const candidates: CandidateElement[] = nodes.map((node) => {
     const placeholder =
       (node as HTMLInputElement).placeholder?.trim() || node.getAttribute("placeholder")?.trim();
+    const associatedLabel = getAssociatedLabel(node);
     return {
       selector: cssPath(node),
       role: node.getAttribute("role") ?? node.tagName.toLowerCase(),
-      text: (node.innerText || node.getAttribute("aria-label") || node.getAttribute("name") || "").trim().slice(0, 120),
-      placeholder: placeholder || undefined
+      text: (node.innerText || node.getAttribute("name") || "").trim().slice(0, 120),
+      placeholder: placeholder || undefined,
+      label: associatedLabel || undefined,
     };
   });
 
@@ -67,6 +111,6 @@ export function collectSnapshot(): PageSnapshot {
     url: window.location.href,
     title: document.title,
     textPreview,
-    candidates
+    candidates,
   };
 }

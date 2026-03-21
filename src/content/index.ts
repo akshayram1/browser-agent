@@ -11,7 +11,8 @@ async function runTick(session: AgentSession): Promise<ContentResult> {
   const action = await planNextAction(session.planner, {
     goal: session.goal,
     snapshot,
-    history: session.history
+    history: session.history,
+    lastError: session.lastError
   });
 
   const risk = assessRisk(action);
