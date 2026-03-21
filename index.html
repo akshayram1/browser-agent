@@ -159,10 +159,7 @@ controller.abort();</code></pre>
                 <h4>webllm</h4>
                 <p>Delegates to a local WebLLM bridge (<code>window.__browserAgentWebLLM</code>). Fully private, no API calls.</p>
               </article>
-              <article class="doc-card">
-                <h4>page-agent</h4>
-                <p>Delegates to an <a href="https://github.com/alibaba/page-agent" target="_blank" rel="noreferrer">alibaba/page-agent</a> bridge (<code>window.__browserAgentPageAgent</code>). Best for complex multi-step goals.</p>
-              </article>
+
             </div>
 
             <h3>Supported Actions</h3>
@@ -211,7 +208,7 @@ controller.abort();</code></pre>
             <div class="docs-grid">
               <article class="doc-card">
                 <h4>Popup UI</h4>
-                <p>Starts/stops sessions. Picks execution mode (<code>autonomous</code>, <code>human-approved</code>) and planner (<code>heuristic</code>, <code>webllm</code>, <code>page-agent</code>).</p>
+                <p>Starts/stops sessions. Picks execution mode (<code>autonomous</code>, <code>human-approved</code>) and planner (<code>heuristic</code>, <code>webllm</code>).</p>
               </article>
               <article class="doc-card">
                 <h4>Background Service Worker</h4>
@@ -261,21 +258,6 @@ controller.abort();</code></pre>
   }
 };</code></pre>
 
-            <h4>page-agent bridge</h4>
-            <pre><code>import { PageAgent } from "page-agent";
-
-const pa = new PageAgent({
-  baseURL: "https://api.openai.com/v1",
-  model: "gpt-4o",
-  apiKey: "sk-..."
-});
-
-window.__browserAgentPageAgent = {
-  async plan(input) {
-    const result = await pa.execute(input.goal);
-    return { type: "done", reason: result.data };
-  }
-};</code></pre>
 
             <h3>Current Limitations</h3>
             <ul>
@@ -340,35 +322,11 @@ await agent.start();</code></pre>
 // Then configure:
 planner: { kind: "webllm", modelId: "Llama-3.2-1B-Instruct-q4f16_1-MLC" }</code></pre>
 
-            <h3>page-agent Mode</h3>
-            <p>
-              Install <a href="https://github.com/alibaba/page-agent" target="_blank" rel="noreferrer">page-agent</a>
-              and wire the bridge for complex multi-step goals:
-            </p>
-            <pre><code>npm install page-agent</code></pre>
-            <pre><code>import { PageAgent } from "page-agent";
-
-const pa = new PageAgent({
-  baseURL: "https://api.openai.com/v1",
-  model: "gpt-4o",
-  apiKey: "sk-..."
-});
-
-window.__browserAgentPageAgent = {
-  async plan(input) {
-    const result = await pa.execute(input.goal);
-    return { type: "done", reason: result.data };
-  }
-};
-
-// Then configure:
-planner: { kind: "page-agent" }</code></pre>
-
             <h3>Notes</h3>
             <ul>
               <li>For production, mount this inside an authenticated app shell and add your own permission checks.</li>
               <li><code>human-approved</code> mode is recommended for CRM, finance, and admin actions.</li>
-              <li><code>page-agent</code> is not bundled — it must be installed separately by the consumer.</li>
+              <li>The WebLLM bridge is not bundled — bring your own engine and attach it to <code>window.__browserAgentWebLLM</code>.</li>
             </ul>
           </div>
         </div>
@@ -394,7 +352,6 @@ planner: { kind: "page-agent" }</code></pre>
               <li>Improved heuristic planner with regex goal patterns</li>
               <li>Better page observation (visibility filtering, placeholder capture, up to 60 candidates)</li>
               <li>Library API: <code>resume()</code>, <code>isRunning</code>, <code>hasPendingAction</code>, <code>AbortSignal</code>, <code>onMaxStepsReached</code></li>
-              <li><strong>page-agent planner bridge</strong> (<code>window.__browserAgentPageAgent</code>)</li>
             </ul>
 
             <h3>v0.3</h3>

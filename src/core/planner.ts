@@ -4,10 +4,6 @@ type WebLLMBridge = {
   plan(input: PlannerInput, modelId?: string): Promise<AgentAction>;
 };
 
-type PageAgentBridge = {
-  plan(input: PlannerInput): Promise<AgentAction>;
-};
-
 const URL_PATTERN = /(?:go to|navigate to|open)\s+(https?:\/\/\S+)/i;
 const SEARCH_PATTERN = /search(?:\s+for)?\s+(.+)/i;
 const FILL_PATTERN = /(?:fill|type|enter)\s+"?([^"]+)"?\s+(?:in(?:to)?|for|on)\s+(.+)/i;
@@ -18,7 +14,8 @@ function findByText(candidates: CandidateElement[], text: string): CandidateElem
   return candidates.find(
     (c) =>
       c.text.toLowerCase().includes(lower) ||
-      (c.placeholder?.toLowerCase().includes(lower) ?? false)
+      (c.placeholder?.toLowerCase().includes(lower) ?? false) ||
+      (c.label?.toLowerCase().includes(lower) ?? false)
   );
 }
 
@@ -47,7 +44,7 @@ function heuristicPlan(input: PlannerInput): AgentAction {
     const [, text, fieldHint] = fillMatch;
     const target = findByText(snapshot.candidates, fieldHint) ?? findInput(snapshot.candidates);
     if (target) {
-      return { type: "type", selector: target.selector, text, clearFirst: true, label: target.text || target.placeholder };
+      return { type: "type", selector: target.selector, text, clearFirst: true, label: target.label || target.text || target.placeholder };
     }
   }
 
@@ -55,7 +52,7 @@ function heuristicPlan(input: PlannerInput): AgentAction {
   if (searchMatch) {
     const input = findInput(snapshot.candidates);
     if (input) {
-      return { type: "type", selector: input.selector, text: searchMatch[1].trim(), clearFirst: true, label: input.text || input.placeholder };
+      return { type: "type", selector: input.selector, text: searchMatch[1].trim(), clearFirst: true, label: input.label || input.text || input.placeholder };
     }
   }
 
@@ -72,7 +69,7 @@ function heuristicPlan(input: PlannerInput): AgentAction {
 
   if (firstInput && !history.some((h) => h.startsWith("Typed"))) {
     const searchTerm = goal.replace(/.*(?:search|find|look up)\s+/i, "").trim();
-    return { type: "type", selector: firstInput.selector, text: searchTerm, clearFirst: true, label: firstInput.text || firstInput.placeholder };
+    return { type: "type", selector: firstInput.selector, text: searchTerm, clearFirst: true, label: firstInput.label || firstInput.text || firstInput.placeholder };
   }
 
   if (firstButton && !history.some((h) => h.startsWith("Clicked"))) {
@@ -87,22 +84,11 @@ export async function planNextAction(config: PlannerConfig, input: PlannerInput)
     return heuristicPlan(input);
   }
 
-  if (config.kind === "page-agent") {
-    const pageAgentBridge = (window as Window & { __browserAgentPageAgent?: PageAgentBridge }).__browserAgentPageAgent;
-    if (!pageAgentBridge) {
-      return {
-        type: "done",
-        reason: "page-agent bridge is not configured. Assign a PageAgentBridge to window.__browserAgentPageAgent."
-      };
-    }
-    return pageAgentBridge.plan(input);
-  }
-
   const bridge = (window as Window & { __browserAgentWebLLM?: WebLLMBridge }).__browserAgentWebLLM;
   if (!bridge) {
     return {
       type: "done",
-      reason: "WebLLM bridge is not configured. Use heuristic mode or wire a local bridge implementation."
+      reason: "WebLLM bridge is not configured. Use heuristic mode or wire a WebLLM bridge implementation."
     };
   }
 

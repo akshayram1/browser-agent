@@ -13,7 +13,6 @@
 - Improved heuristic planner with regex goal patterns
 - Better page observation (visibility filtering, placeholder capture)
 - Library API: `resume()`, `isRunning`, `hasPendingAction`, `AbortSignal`, `onMaxStepsReached`
-- **page-agent planner bridge** (`window.__browserAgentPageAgent`)
 
 ## v0.3
 

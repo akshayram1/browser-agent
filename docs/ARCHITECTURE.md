@@ -12,7 +12,7 @@
 1. Popup UI (`src/popup`)
    - Starts/stops sessions
    - Picks mode (`autonomous`, `human-approved`)
-   - Picks planner (`heuristic`, `webllm`, `page-agent`)
+   - Picks planner (`heuristic`, `webllm`)
 
 2. Background Service Worker (`src/background`)
    - Session state machine per tab
@@ -20,8 +20,8 @@
    - Approval handling
 
 3. Content Agent (`src/content`)
-   - `pageObserver`: page snapshot extraction
-   - `planner`: next-action decision (heuristic / WebLLM / page-agent)
+   - `observer`: page snapshot extraction
+   - `planner`: next-action decision (heuristic / WebLLM)
    - `safety`: risk gating (`safe`, `review`, `blocked`)
    - `executor`: DOM action execution
 
@@ -33,6 +33,8 @@
   - type
   - navigate
   - extract
+  - scroll
+  - focus
   - wait
   - done
 
@@ -50,17 +52,7 @@ All planner bridges follow the same pattern: an object attached to `window` that
 
 ```ts
 window.__browserAgentWebLLM = {
-  async plan(input, modelId) { /* ... */ }
-};
-```
-
-### page-agent bridge
-
-Uses [alibaba/page-agent](https://github.com/alibaba/page-agent) (MIT) as the planning backend. The library calls `window.__browserAgentPageAgent.plan(input)`.
-
-```ts
-window.__browserAgentPageAgent = {
-  async plan(input) { /* ... */ }
+  async plan(input, modelId) { /* call local WebLLM engine, return AgentAction */ }
 };
 ```
 

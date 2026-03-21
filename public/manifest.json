@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "OmniBrowser Agent",
   "version": "0.2.2",
-  "description": "Local-first AI browser operator — heuristic, WebLLM, and page-agent planners.",
+  "description": "Local-first AI browser operator — heuristic and WebLLM planners.",
   "permissions": ["activeTab", "tabs", "scripting", "storage"],
   "host_permissions": ["http://*/*", "https://*/*"],
   "background": {

@@ -5,13 +5,13 @@ You can keep the extension flow and also embed OmniBrowser Agent as a library in
 ## Install
 
 ```bash
-npm install @akshaychame/omnibrowser-agent
+npm install @akshayram1/omnibrowser-agent
 ```
 
 ## Basic usage
 
 ```ts
-import { createBrowserAgent } from "@akshaychame/omnibrowser-agent";
+import { createBrowserAgent } from "@akshayram1/omnibrowser-agent";
 
 const agent = createBrowserAgent(
   {
@@ -49,58 +49,37 @@ agent.stop();
 
 ## WebLLM mode in embedded app
 
-To use planner mode `webllm`, provide a local bridge in your app:
+To use planner mode `webllm`, load the WebLLM engine and wire the bridge before starting the agent:
 
 ```ts
+import * as webllm from "@mlc-ai/web-llm";
+
+const engine = await webllm.CreateMLCEngine("Llama-3.2-1B-Instruct-q4f16_1-MLC");
+
 window.__browserAgentWebLLM = {
   async plan(input, modelId) {
-    // call your local WebLLM engine and return one AgentAction JSON
-    return { type: "done", reason: `Implement bridge with model ${modelId ?? "default"}` };
+    const resp = await engine.chat.completions.create({
+      messages: [
+        { role: "system", content: "Output only a JSON AgentAction object." },
+        { role: "user",   content: `Goal: ${input.goal}\nHistory: ${input.history.join(", ")}` }
+      ],
+      temperature: 0,
+      max_tokens: 100
+    });
+    return JSON.parse(resp.choices[0].message.content);
   }
 };
-```
 
-Then configure:
-
-```ts
-planner: { kind: "webllm", modelId: "Llama-3.2-1B-Instruct-q4f16_1-MLC" }
-```
-
-## page-agent mode in embedded app
-
-To use planner mode `page-agent`, install [page-agent](https://github.com/alibaba/page-agent) in your project and wire the bridge:
-
-```bash
-npm install page-agent
-```
-
-```ts
-import { PageAgent } from "page-agent";
-
-const pa = new PageAgent({
-  baseURL: "https://api.openai.com/v1",
-  model: "gpt-4o",
-  apiKey: "sk-..."
+const agent = createBrowserAgent({
+  goal: "Fill the contact form",
+  planner: { kind: "webllm", modelId: "Llama-3.2-1B-Instruct-q4f16_1-MLC" }
 });
 
-window.__browserAgentPageAgent = {
-  async plan(input) {
-    const result = await pa.execute(input.goal);
-    return { type: "done", reason: result.data };
-  }
-};
+await agent.start();
 ```
-
-Then configure:
-
-```ts
-planner: { kind: "page-agent" }
-```
-
-Use page-agent mode when your goals are complex, multi-step, or ambiguous — it uses LLM reasoning to determine the next action rather than regex heuristics.
 
 ## Notes
 
 - For production, mount this inside an authenticated app shell and add your own permission checks.
 - `human-approved` mode is recommended for CRM/finance/admin actions.
-- `page-agent` is not bundled with this library — it must be installed separately by the consumer.
+- The WebLLM bridge is not bundled — bring your own engine instance and wire it to `window.__browserAgentWebLLM`.

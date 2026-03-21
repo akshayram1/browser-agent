@@ -1,5 +1,5 @@
 export type AgentMode = "autonomous" | "human-approved";
-export type PlannerKind = "heuristic" | "webllm" | "page-agent";
+export type PlannerKind = "heuristic" | "webllm";
 export type RiskLevel = "safe" | "review" | "blocked";
 
 export type AgentAction =
