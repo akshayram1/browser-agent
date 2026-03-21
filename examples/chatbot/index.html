@@ -1,880 +1,689 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OmniBrowser Agent — Live Demo</title>
-    <style>
-      :root {
-        font-family: Inter, system-ui, -apple-system, sans-serif;
-        color-scheme: light;
-      }
-
-      * { box-sizing: border-box; margin: 0; padding: 0; }
-
-      body {
-        min-height: 100vh;
-        background:
-          radial-gradient(ellipse 80% 50% at 60% -10%, #c7d9ff 0%, transparent 55%),
-          #f4f7fd;
-        color: #182033;
-      }
-
-      /* ── Header ── */
-      header {
-        background: rgba(255,255,255,0.88);
-        backdrop-filter: blur(12px);
-        border-bottom: 1px solid #dae2f5;
-        padding: 0 24px;
-        height: 60px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        position: sticky;
-        top: 0;
-        z-index: 10;
-      }
-
-      header .brand { font-weight: 800; font-size: 15px; color: #1f3a8a; text-decoration: none; }
-      header a.back { font-size: 13px; color: #4a5d82; text-decoration: none; font-weight: 500; padding: 5px 10px; border-radius: 8px; transition: background 0.15s; }
-      header a.back:hover { background: #edf2ff; }
-
-      /* ── Layout ── */
-      .layout {
-        display: grid;
-        grid-template-columns: 420px 1fr;
-        height: calc(100vh - 60px);
-      }
-
-      /* ── Left: chat panel ── */
-      .chat-panel {
-        display: flex;
-        flex-direction: column;
-        border-right: 1px solid #dae2f5;
-        background: #fff;
-        overflow: hidden;
-      }
-
-      .chat-header {
-        padding: 16px 20px 12px;
-        border-bottom: 1px solid #eef2fb;
-        flex-shrink: 0;
-      }
-
-      .chat-header h1 { font-size: 17px; font-weight: 800; color: #111827; margin-bottom: 3px; }
-      .chat-header p  { font-size: 13px; color: #5a6e96; line-height: 1.45; }
-
-      /* ── Model loader ── */
-      .model-loader {
-        padding: 12px 20px;
-        border-bottom: 1px solid #eef2fb;
-        background: linear-gradient(135deg, #f8faff, #eef3ff);
-        flex-shrink: 0;
-      }
-
-      .model-loader-title {
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: #2647a8;
-        margin-bottom: 8px;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
-
-      .model-loader-title .dot {
-        width: 7px; height: 7px;
-        border-radius: 50%;
-        background: #c4d4f5;
-        flex-shrink: 0;
-      }
-
-      .model-loader-title .dot.ready { background: #22c55e; }
-      .model-loader-title .dot.loading {
-        background: #f59e0b;
-        animation: pulse 1s ease-in-out infinite;
-      }
-
-      @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50%       { opacity: 0.4; }
-      }
-
-      .model-row { display: flex; gap: 8px; align-items: center; }
-
-      .model-select {
-        flex: 1;
-        font-size: 12.5px;
-        border: 1px solid #c8d8f5;
-        border-radius: 8px;
-        padding: 6px 10px;
-        color: #1a2e60;
-        background: #fff;
-        font-family: inherit;
-        cursor: pointer;
-        outline: none;
-      }
-
-      .load-btn {
-        padding: 6px 14px;
-        background: linear-gradient(135deg, #1e3faa, #2952cc);
-        color: #fff;
-        border: none;
-        border-radius: 8px;
-        font-size: 12.5px;
-        font-weight: 700;
-        cursor: pointer;
-        font-family: inherit;
-        white-space: nowrap;
-        transition: opacity 0.15s;
-      }
-
-      .load-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-      .load-btn:not(:disabled):hover { opacity: 0.88; }
-
-      .progress-wrap {
-        margin-top: 8px;
-        display: none;
-      }
-
-      .progress-wrap.visible { display: block; }
-
-      .progress-bar-track {
-        height: 4px;
-        background: #dae2f5;
-        border-radius: 999px;
-        overflow: hidden;
-        margin-bottom: 4px;
-      }
-
-      .progress-bar-fill {
-        height: 100%;
-        background: linear-gradient(90deg, #2952cc, #5b8eff);
-        border-radius: 999px;
-        width: 0%;
-        transition: width 0.3s ease;
-      }
-
-      .progress-text { font-size: 11px; color: #6b82b8; }
-
-      .webgpu-warning {
-        margin-top: 8px;
-        padding: 6px 10px;
-        background: #fff8ec;
-        border: 1px solid #f0c060;
-        border-radius: 8px;
-        font-size: 11.5px;
-        color: #7a5a00;
-        display: none;
-      }
-
-      .webgpu-warning.visible { display: block; }
-
-      /* ── Suggestions ── */
-      .suggestions {
-        padding: 10px 20px;
-        border-bottom: 1px solid #eef2fb;
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-        flex-shrink: 0;
-      }
-
-      .suggestions-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #8a9cc0; margin-bottom: 2px; }
-
-      .suggestion-btn {
-        background: #f4f7fd;
-        border: 1px solid #dae2f5;
-        border-radius: 8px;
-        padding: 6px 11px;
-        font-size: 13px;
-        color: #2647a8;
-        cursor: pointer;
-        text-align: left;
-        transition: background 0.15s, border-color 0.15s;
-        font-family: inherit;
-      }
-
-      .suggestion-btn:hover { background: #edf2ff; border-color: #b8ccf8; }
-
-      /* ── Messages ── */
-      .messages {
-        flex: 1;
-        min-height: 0;
-        overflow-y: auto;
-        padding: 14px 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 9px;
-        scroll-behavior: smooth;
-      }
-
-      .message { display: flex; gap: 9px; align-items: flex-start; animation: fadeIn 0.2s ease; }
-
-      @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(5px); }
-        to   { opacity: 1; transform: translateY(0); }
-      }
-
-      .message .avatar {
-        width: 26px; height: 26px;
-        border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 12px;
-        flex-shrink: 0;
-        margin-top: 1px;
-      }
-
-      .message.user   .avatar { background: linear-gradient(135deg, #1e3faa, #2952cc); color: #fff; }
-      .message.agent  .avatar { background: linear-gradient(135deg, #e6eeff, #dce7ff); color: #1f3a8a; }
-      .message.system .avatar { background: #f0f4ff; color: #6b82b8; }
-
-      .message .bubble {
-        max-width: calc(100% - 38px);
-        padding: 8px 12px;
-        border-radius: 14px;
-        font-size: 13px;
-        line-height: 1.5;
-      }
-
-      .message.user   .bubble { background: linear-gradient(135deg, #1e3faa, #2952cc); color: #fff; border-bottom-left-radius: 4px; }
-      .message.agent  .bubble { background: #f4f7fd; border: 1px solid #dae2f5; color: #2c3e62; border-bottom-left-radius: 4px; }
-      .message.agent.ok      .bubble { border-color: #b8e0c8; background: #f0faf4; }
-      .message.agent.pending .bubble { border-color: #f0c060; background: #fffbec; }
-      .message.agent.error   .bubble { border-color: #f0b0b0; background: #fff4f4; }
-      .message.system .bubble { background: #f8faff; border: 1px solid #e4ecff; color: #6b82b8; font-size: 12px; }
-
-      /* ── Approval ── */
-      .approval-banner {
-        margin: 0 16px 12px;
-        border: 1px solid #f0c060;
-        background: #fffbec;
-        border-radius: 12px;
-        padding: 12px 14px;
-        font-size: 13px;
-        color: #7a5a00;
-        display: none;
-        flex-shrink: 0;
-      }
-
-      .approval-banner.visible { display: block; }
-      .approval-banner strong { display: block; margin-bottom: 6px; font-weight: 700; }
-
-      .action-detail {
-        font-family: ui-monospace, monospace;
-        font-size: 11.5px;
-        background: rgba(0,0,0,0.05);
-        padding: 4px 8px;
-        border-radius: 6px;
-        margin-bottom: 10px;
-        word-break: break-all;
-        white-space: pre-wrap;
-      }
-
-      .approval-actions { display: flex; gap: 8px; }
-
-      .approve-btn, .reject-btn {
-        flex: 1;
-        padding: 7px;
-        border-radius: 8px;
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-        border: none;
-        font-family: inherit;
-        transition: opacity 0.15s;
-      }
-
-      .approve-btn { background: #1f7a45; color: #fff; }
-      .reject-btn  { background: #e8eef8; color: #4a5d82; }
-      .approve-btn:hover, .reject-btn:hover { opacity: 0.88; }
-
-      /* ── Input ── */
-      .input-area {
-        padding: 12px 20px;
-        border-top: 1px solid #eef2fb;
-        background: #fff;
-        flex-shrink: 0;
-      }
-
-      .mode-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-      .mode-label { font-size: 12px; color: #6b82b8; font-weight: 600; }
-
-      .mode-select {
-        font-size: 12px;
-        border: 1px solid #d4ddf5;
-        border-radius: 7px;
-        padding: 4px 8px;
-        color: #1a2e60;
-        background: #f8faff;
-        font-family: inherit;
-        cursor: pointer;
-        outline: none;
-      }
-
-      .planner-badge {
-        font-size: 11px;
-        font-weight: 700;
-        padding: 2px 8px;
-        border-radius: 999px;
-        border: 1px solid;
-        margin-left: auto;
-      }
-
-      .planner-badge.heuristic { background: #f0f4ff; border-color: #c4d4f5; color: #2647a8; }
-      .planner-badge.webllm    { background: #f0faf4; border-color: #b8e0c8; color: #1f7a45; }
-
-      .input-row { display: flex; gap: 8px; }
-
-      .goal-input {
-        flex: 1;
-        padding: 9px 13px;
-        border: 1px solid #d4ddf5;
-        border-radius: 10px;
-        font-size: 13.5px;
-        font-family: inherit;
-        color: #182033;
-        background: #f8faff;
-        outline: none;
-        transition: border-color 0.15s, box-shadow 0.15s;
-      }
-
-      .goal-input:focus { border-color: #2952cc; box-shadow: 0 0 0 3px rgba(41,82,204,0.1); }
-
-      .run-btn {
-        padding: 9px 16px;
-        background: linear-gradient(135deg, #1e3faa, #2952cc);
-        color: #fff;
-        border: none;
-        border-radius: 10px;
-        font-size: 13.5px;
-        font-weight: 700;
-        cursor: pointer;
-        font-family: inherit;
-        transition: opacity 0.15s, transform 0.15s;
-        white-space: nowrap;
-      }
-
-      .run-btn:hover { opacity: 0.9; transform: translateY(-1px); }
-      .run-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-
-      /* ── Right: demo panel ── */
-      .demo-panel {
-        overflow-y: auto;
-        background: #f8faff;
-        padding: 24px 28px;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-      }
-
-      .demo-panel-header { display: flex; align-items: center; gap: 10px; }
-      .demo-panel-header h2 { font-size: 15px; font-weight: 700; color: #374769; margin: 0; }
-
-      .demo-tag {
-        font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
-        background: #e6eeff; color: #2647a8; border: 1px solid #c4d4f5; border-radius: 999px; padding: 3px 9px;
-      }
-
-      .demo-card {
-        background: #fff;
-        border: 1px solid #dae2f5;
-        border-radius: 16px;
-        padding: 20px 22px;
-        box-shadow: 0 2px 10px rgba(18,33,73,0.05);
-      }
-
-      .demo-card h3 { margin: 0 0 14px; font-size: 13px; font-weight: 700; color: #1a2e60; text-transform: uppercase; letter-spacing: 0.05em; }
-
-      .form-group { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
-      .form-group label { font-size: 12px; font-weight: 600; color: #5a6e96; text-transform: uppercase; letter-spacing: 0.05em; }
-
-      .form-group input,
-      .form-group textarea,
-      .form-group select {
-        padding: 9px 12px;
-        border: 1px solid #d4ddf5;
-        border-radius: 8px;
-        font-size: 14px;
-        font-family: inherit;
-        color: #182033;
-        background: #f8faff;
-        outline: none;
-        transition: border-color 0.15s;
-      }
-
-      .form-group input:focus,
-      .form-group textarea:focus { border-color: #2952cc; background: #fff; }
-
-      .form-group textarea { resize: vertical; min-height: 70px; }
-
-      .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
-
-      .demo-btn {
-        padding: 9px 18px;
-        border-radius: 9px;
-        border: none;
-        font-size: 13.5px;
-        font-weight: 700;
-        cursor: pointer;
-        font-family: inherit;
-        transition: opacity 0.15s, transform 0.15s;
-        margin-top: 4px;
-      }
-
-      .demo-btn.primary { background: linear-gradient(135deg, #1e3faa, #2952cc); color: #fff; }
-      .demo-btn.secondary { background: #e8eef8; color: #2c3e62; }
-      .demo-btn:hover { opacity: 0.88; transform: translateY(-1px); }
-
-      .search-box { display: flex; gap: 8px; margin-bottom: 10px; }
-      .search-box input { flex: 1; padding: 9px 12px; border: 1px solid #d4ddf5; border-radius: 8px; font-size: 14px; font-family: inherit; outline: none; }
-      .search-box input:focus { border-color: #2952cc; }
-
-      .search-results { font-size: 13px; color: #6b82b8; padding: 6px 2px; min-height: 22px; }
-      #submit-result { margin-top: 10px; font-size: 13px; color: #1f7a45; font-weight: 600; min-height: 18px; }
-
-      /* ── Mobile ── */
-      @media (max-width: 860px) {
-        .layout { grid-template-columns: 1fr; grid-template-rows: 60vh 1fr; height: auto; }
-        .chat-panel { border-right: none; border-bottom: 1px solid #dae2f5; }
-        .demo-panel { padding: 16px; }
-        .form-grid { grid-template-columns: 1fr; }
-      }
-    </style>
-  </head>
-  <body>
-    <header>
-      <a class="brand" href="/">OmniBrowser Agent</a>
-      <a class="back" href="/">← Back to docs</a>
-    </header>
-
-    <div class="layout">
-      <!-- ── Chat panel ── -->
-      <div class="chat-panel">
-        <div class="chat-header">
-          <h1>Live Demo</h1>
-          <p>Type a goal and watch the agent interact with the form on the right.</p>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OmniBrowser Agent — Live Demo</title>
+  <style>
+    :root {
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+      --blue:    #3b82f6;
+      --blue-d:  #1d4ed8;
+      --blue-l:  #dbeafe;
+      --green:   #22c55e;
+      --amber:   #f59e0b;
+      --red:     #ef4444;
+      --s0: #f8fafc; --s1: #f1f5f9; --s2: #e2e8f0;
+      --s4: #94a3b8; --s5: #64748b; --s7: #334155; --s9: #0f172a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { min-height: 100vh; background: var(--s1); color: var(--s9); }
+
+    /* ── Header ── */
+    header {
+      height: 54px;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--s2);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; position: sticky; top: 0; z-index: 100;
+    }
+    .brand { font-weight: 800; font-size: 14px; color: var(--s9); text-decoration: none; display: flex; align-items: center; gap: 8px; }
+    .brand-icon { width: 26px; height: 26px; background: linear-gradient(135deg, var(--blue), var(--blue-d)); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #fff; }
+    a.back { font-size: 13px; color: var(--s5); text-decoration: none; font-weight: 500; padding: 5px 12px; border-radius: 8px; border: 1px solid var(--s2); transition: all .15s; }
+    a.back:hover { background: #fff; color: var(--s7); }
+
+    /* ── Layout ── */
+    .layout { display: grid; grid-template-columns: 440px 1fr; height: calc(100vh - 54px); }
+
+    /* ── Chat panel ── */
+    .chat-panel { background: #fff; border-right: 1px solid var(--s2); display: flex; flex-direction: column; overflow: hidden; box-shadow: 2px 0 20px rgba(0,0,0,0.04); }
+
+    .chat-header { padding: 16px 20px 12px; border-bottom: 1px solid var(--s2); flex-shrink: 0; }
+    .chat-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+    .chat-title { font-size: 15px; font-weight: 800; color: var(--s9); display: flex; align-items: center; gap: 8px; }
+    .chat-title-icon { width: 28px; height: 28px; background: linear-gradient(135deg, var(--blue), var(--blue-d)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; }
+    .chat-sub { font-size: 12px; color: var(--s5); line-height: 1.45; }
+
+    .ai-pill { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 3px 9px 3px 7px; border-radius: 999px; border: 1px solid var(--s2); color: var(--s5); background: var(--s0); transition: all .2s; }
+    .ai-pill.ready   { color: #15803d; background: #f0fdf4; border-color: #bbf7d0; }
+    .ai-pill.loading { color: #b45309; background: #fffbeb; border-color: #fde68a; }
+    .sdot { width: 6px; height: 6px; border-radius: 50%; background: var(--s4); flex-shrink: 0; }
+    .sdot.ready   { background: var(--green); }
+    .sdot.loading { background: var(--amber); animation: pulse 1s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* ── Model loader ── */
+    .model-loader { padding: 10px 20px; border-bottom: 1px solid var(--s2); background: var(--s0); flex-shrink: 0; }
+    .model-row { display: flex; gap: 8px; align-items: center; }
+    .model-select { flex: 1; font-size: 12px; border: 1px solid var(--s2); border-radius: 8px; padding: 6px 10px; color: var(--s7); background: #fff; font-family: inherit; cursor: pointer; outline: none; }
+    .load-btn { padding: 6px 16px; background: linear-gradient(135deg, var(--blue), var(--blue-d)); color: #fff; border: none; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; transition: opacity .15s, transform .1s; }
+    .load-btn:not(:disabled):hover { opacity: .9; transform: translateY(-1px); }
+    .load-btn:disabled { opacity: .45; cursor: not-allowed; }
+    .progress-wrap { margin-top: 8px; display: none; }
+    .progress-wrap.visible { display: block; }
+    .progress-track { height: 3px; background: var(--s2); border-radius: 999px; overflow: hidden; margin-bottom: 4px; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--blue), #60a5fa); border-radius: 999px; width: 0%; transition: width .4s ease; }
+    .progress-text { font-size: 11px; color: var(--s5); }
+    .webgpu-warn { margin-top: 8px; padding: 7px 10px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; font-size: 11.5px; color: #92400e; display: none; }
+    .webgpu-warn.visible { display: block; }
+
+    /* ── Suggestions ── */
+    .sugg-section { padding: 10px 20px; border-bottom: 1px solid var(--s2); flex-shrink: 0; }
+    .sugg-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--s4); margin-bottom: 7px; }
+    .sugg-row { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+    .sugg-row::-webkit-scrollbar { display: none; }
+    .chip { background: var(--s0); border: 1px solid var(--s2); border-radius: 999px; padding: 5px 12px; font-size: 12px; color: var(--s7); cursor: pointer; white-space: nowrap; transition: all .15s; font-family: inherit; flex-shrink: 0; }
+    .chip:hover { background: var(--blue-l); border-color: #93c5fd; color: var(--blue-d); }
+
+    /* ── Messages ── */
+    .messages { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 14px; display: flex; flex-direction: column; gap: 8px; scroll-behavior: smooth; }
+    .message { display: flex; gap: 8px; align-items: flex-end; animation: msgIn .18s ease; }
+    @keyframes msgIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+    .message.user { flex-direction: row-reverse; }
+    .avatar { width: 27px; height: 27px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+    .message.user   .avatar { display: none; }
+    .message.agent  .avatar { background: linear-gradient(135deg, #e0e7ff, var(--blue-l)); color: var(--blue-d); border: 1px solid #c7d2fe; }
+    .message.system .avatar { display: none; }
+    .bubble { max-width: 88%; padding: 9px 13px; font-size: 13px; line-height: 1.55; }
+    .message.user   .bubble { background: linear-gradient(135deg, var(--blue), var(--blue-d)); color: #fff; border-radius: 18px 18px 4px 18px; box-shadow: 0 2px 10px rgba(59,130,246,.25); }
+    .message.agent  .bubble { background: #fff; border: 1px solid var(--s2); color: var(--s7); border-radius: 4px 18px 18px 18px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+    .message.agent.ok      .bubble { border-color: #bbf7d0; background: #f0fdf4; color: #15803d; }
+    .message.agent.pending .bubble { border-color: #fde68a; background: #fffbeb; color: #92400e; }
+    .message.agent.error   .bubble { border-color: #fecaca; background: #fef2f2; color: #991b1b; }
+    .message.agent.info    .bubble { border-color: var(--blue-l); background: #eff6ff; color: #1e40af; }
+    .message.system { justify-content: center; }
+    .message.system .bubble { background: var(--s1); border: 1px solid var(--s2); color: var(--s5); font-size: 11.5px; border-radius: 999px; padding: 5px 14px; text-align: center; }
+
+    /* Typing indicator */
+    .typing { display: flex; gap: 8px; align-items: flex-end; animation: msgIn .18s ease; }
+    .typing .avatar { width: 27px; height: 27px; border-radius: 50%; background: linear-gradient(135deg, #e0e7ff, var(--blue-l)); border: 1px solid #c7d2fe; display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--blue-d); flex-shrink: 0; }
+    .typing-dots { background: #fff; border: 1px solid var(--s2); border-radius: 4px 18px 18px 18px; padding: 11px 14px; display: flex; gap: 4px; align-items: center; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+    .tdot { width: 6px; height: 6px; border-radius: 50%; background: var(--s4); animation: tdot 1.2s ease-in-out infinite; }
+    .tdot:nth-child(2) { animation-delay: .15s; }
+    .tdot:nth-child(3) { animation-delay: .3s; }
+    @keyframes tdot { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
+
+    /* ── Approval banner ── */
+    .approval-banner { margin: 0 12px 10px; border: 1px solid #fde68a; background: #fffbeb; border-radius: 14px; padding: 12px 14px; font-size: 13px; color: #92400e; display: none; flex-shrink: 0; }
+    .approval-banner.visible { display: block; }
+    .approval-banner strong { display: block; margin-bottom: 6px; }
+    .action-detail { font-family: ui-monospace, monospace; font-size: 11px; background: rgba(0,0,0,.06); padding: 6px 8px; border-radius: 7px; margin-bottom: 10px; word-break: break-all; white-space: pre-wrap; color: #78350f; }
+    .approval-actions { display: flex; gap: 8px; }
+    .approve-btn, .reject-btn { flex: 1; padding: 8px; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; font-family: inherit; transition: opacity .15s; }
+    .approve-btn { background: #16a34a; color: #fff; }
+    .reject-btn  { background: var(--s1); border: 1px solid var(--s2); color: var(--s5); }
+    .approve-btn:hover { opacity: .9; }
+    .reject-btn:hover  { background: var(--s2); }
+
+    /* ── Input area ── */
+    .input-area { padding: 12px 16px; border-top: 1px solid var(--s2); background: #fff; flex-shrink: 0; }
+    .input-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .meta-lbl { font-size: 11.5px; color: var(--s4); font-weight: 600; }
+    .mode-select { font-size: 12px; border: 1px solid var(--s2); border-radius: 7px; padding: 4px 8px; color: var(--s7); background: var(--s0); font-family: inherit; cursor: pointer; outline: none; }
+    .planner-badge { font-size: 10.5px; font-weight: 700; padding: 2px 9px; border-radius: 999px; border: 1px solid; margin-left: auto; text-transform: uppercase; letter-spacing: .05em; }
+    .planner-badge.heuristic { background: var(--s1); border-color: var(--s2); color: var(--s5); }
+    .planner-badge.webllm    { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+    .input-row { display: flex; gap: 8px; }
+    .goal-input { flex: 1; padding: 10px 14px; border: 1.5px solid var(--s2); border-radius: 12px; font-size: 13.5px; font-family: inherit; color: var(--s9); background: var(--s0); outline: none; transition: border-color .15s, box-shadow .15s, background .15s; }
+    .goal-input:focus { border-color: var(--blue); background: #fff; box-shadow: 0 0 0 3px rgba(59,130,246,.12); }
+    .goal-input::placeholder { color: var(--s4); }
+    .run-btn { padding: 10px 18px; background: linear-gradient(135deg, var(--blue), var(--blue-d)); color: #fff; border: none; border-radius: 12px; font-size: 13.5px; font-weight: 700; cursor: pointer; font-family: inherit; transition: opacity .15s, transform .1s, box-shadow .15s; white-space: nowrap; box-shadow: 0 2px 8px rgba(59,130,246,.3); }
+    .run-btn:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(59,130,246,.35); }
+    .run-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* ── Right: demo panel ── */
+    .demo-panel { overflow-y: auto; background: var(--s1); display: flex; flex-direction: column; }
+    .demo-nav { background: #fff; border-bottom: 1px solid var(--s2); padding: 0 28px; display: flex; align-items: center; gap: 4px; flex-shrink: 0; position: sticky; top: 0; z-index: 5; }
+    .demo-nav-label { font-size: 11px; font-weight: 700; color: var(--s4); text-transform: uppercase; letter-spacing: .08em; margin-right: 8px; }
+    .demo-tab { padding: 14px 18px 12px; font-size: 13px; font-weight: 600; color: var(--s5); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-family: inherit; transition: all .15s; white-space: nowrap; }
+    .demo-tab:hover { color: var(--s7); }
+    .demo-tab.active { color: var(--blue-d); border-bottom-color: var(--blue); }
+    .demo-agent-tag { margin-left: auto; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; background: #eff6ff; color: var(--blue-d); border: 1px solid var(--blue-l); border-radius: 999px; padding: 3px 10px; }
+    .demo-content { padding: 24px 28px; display: flex; flex-direction: column; gap: 20px; flex: 1; }
+    .demo-section { display: none; flex-direction: column; gap: 20px; }
+    .demo-section.active { display: flex; }
+
+    /* Demo cards */
+    .demo-card { background: #fff; border: 1px solid var(--s2); border-radius: 16px; padding: 22px 24px; box-shadow: 0 1px 8px rgba(15,23,42,.06); transition: box-shadow .2s; }
+    .demo-card:hover { box-shadow: 0 4px 20px rgba(15,23,42,.09); }
+    .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+    .card-icon { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+    .card-icon.blue   { background: #eff6ff; }
+    .card-icon.green  { background: #f0fdf4; }
+    .card-icon.purple { background: #faf5ff; }
+    .card-title { font-size: 14px; font-weight: 700; color: var(--s9); }
+    .card-desc  { font-size: 12px; color: var(--s4); margin-top: 2px; }
+
+    /* Form fields */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field.full { grid-column: 1 / -1; }
+    .field label { font-size: 11.5px; font-weight: 600; color: var(--s5); }
+    .field input, .field textarea, .field select { padding: 9px 12px; border: 1.5px solid var(--s2); border-radius: 9px; font-size: 13.5px; font-family: inherit; color: var(--s9); background: var(--s0); outline: none; transition: border-color .15s, background .15s, box-shadow .15s; }
+    .field input:focus, .field textarea:focus { border-color: var(--blue); background: #fff; box-shadow: 0 0 0 3px rgba(59,130,246,.1); }
+    .field textarea { resize: vertical; min-height: 72px; }
+
+    /* Buttons */
+    .btn { display: inline-flex; align-items: center; gap: 7px; padding: 10px 20px; border-radius: 10px; border: none; font-size: 13.5px; font-weight: 700; cursor: pointer; font-family: inherit; transition: opacity .15s, transform .1s; }
+    .btn:hover { opacity: .88; transform: translateY(-1px); }
+    .btn.primary   { background: linear-gradient(135deg, var(--blue), var(--blue-d)); color: #fff; box-shadow: 0 2px 8px rgba(59,130,246,.25); }
+    .btn.secondary { background: var(--s1); border: 1px solid var(--s2); color: var(--s7); }
+    .btn.danger    { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+    .btn.sm { padding: 7px 14px; font-size: 12.5px; }
+
+    /* Search */
+    .search-row { display: flex; gap: 8px; }
+    .search-row input { flex: 1; padding: 9px 12px; border: 1.5px solid var(--s2); border-radius: 9px; font-size: 13.5px; font-family: inherit; outline: none; background: var(--s0); transition: border-color .15s, background .15s; }
+    .search-row input:focus { border-color: var(--blue); background: #fff; box-shadow: 0 0 0 3px rgba(59,130,246,.1); }
+    .result-box { margin-top: 10px; padding: 10px 14px; background: var(--s0); border: 1px solid var(--s2); border-radius: 9px; font-size: 13px; color: var(--s5); min-height: 42px; display: flex; align-items: center; gap: 8px; transition: all .2s; }
+    .result-box.hit { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+    .submit-result { margin-top: 12px; padding: 10px 14px; border-radius: 9px; font-size: 13px; font-weight: 600; display: none; align-items: center; gap: 8px; }
+    .submit-result.ok  { display: flex; background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
+    .submit-result.err { display: flex; background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+
+    /* Task Manager */
+    .task-input-row { display: flex; gap: 8px; margin-bottom: 14px; }
+    .task-input-row input { flex: 1; padding: 9px 12px; border: 1.5px solid var(--s2); border-radius: 9px; font-size: 13.5px; font-family: inherit; outline: none; background: var(--s0); transition: border-color .15s, background .15s; }
+    .task-input-row input:focus { border-color: var(--blue); background: #fff; box-shadow: 0 0 0 3px rgba(59,130,246,.1); }
+    .task-list { display: flex; flex-direction: column; gap: 6px; }
+    .task-item { display: flex; align-items: center; gap: 12px; padding: 11px 14px; background: var(--s0); border: 1px solid var(--s2); border-radius: 10px; transition: all .2s; }
+    .task-item.done { background: #f0fdf4; border-color: #bbf7d0; }
+    .task-item.done .task-text { text-decoration: line-through; color: var(--s4); }
+    .task-check { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #cbd5e1; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 10px; color: transparent; transition: all .15s; }
+    .task-check:hover { border-color: var(--blue); }
+    .task-item.done .task-check { background: var(--green); border-color: var(--green); color: #fff; }
+    .task-text { flex: 1; font-size: 13.5px; color: var(--s7); transition: all .2s; }
+    .task-del { width: 22px; height: 22px; border-radius: 6px; border: none; background: transparent; color: var(--s4); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: all .15s; flex-shrink: 0; }
+    .task-del:hover { background: #fef2f2; color: var(--red); }
+    .task-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--s2); }
+    .task-count { font-size: 12px; color: var(--s4); }
+
+    /* Stats */
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .stat-card { background: var(--s0); border: 1px solid var(--s2); border-radius: 10px; padding: 14px; text-align: center; }
+    .stat-val { font-size: 28px; font-weight: 800; color: var(--s9); line-height: 1; }
+    .stat-lbl { font-size: 11px; color: var(--s4); margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+
+    /* Agent highlight flash */
+    @keyframes actPulse { 0%{box-shadow:0 0 0 0 rgba(59,130,246,.5)} 50%{box-shadow:0 0 0 6px rgba(59,130,246,.1)} 100%{box-shadow:0 0 0 0 rgba(59,130,246,0)} }
+    .agent-act { animation: actPulse 1.2s ease !important; }
+
+    /* Mobile */
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; grid-template-rows: 55vh 1fr; height: auto; }
+      .chat-panel { border-right: none; border-bottom: 1px solid var(--s2); }
+      .demo-content { padding: 16px; }
+      .form-grid, .stats-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="brand" href="/"><div class="brand-icon">🌐</div>OmniBrowser Agent</a>
+    <a class="back" href="/">← Docs</a>
+  </header>
+
+  <div class="layout">
+    <!-- ── Chat panel ── -->
+    <div class="chat-panel">
+      <div class="chat-header">
+        <div class="chat-header-row">
+          <div class="chat-title"><div class="chat-title-icon">🤖</div>Agent Console</div>
+          <div class="ai-pill" id="ai-pill"><div class="sdot" id="sdot"></div><span id="model-status-text">No model</span></div>
         </div>
+        <div class="chat-sub">Give the agent a goal — it plans and executes actions on the demo.</div>
+      </div>
 
-        <!-- Model loader -->
-        <div class="model-loader">
-          <div class="model-loader-title">
-            <span class="dot" id="model-dot"></span>
-            <span id="model-status-text">WebLLM — load a model to use AI planning</span>
-          </div>
-          <div class="model-row">
-            <select class="model-select" id="model-select">
-              <option value="Llama-3.2-1B-Instruct-q4f16_1-MLC">Llama 3.2 1B (fast, ~600 MB)</option>
-              <option value="Llama-3.2-3B-Instruct-q4f16_1-MLC">Llama 3.2 3B (better, ~1.5 GB)</option>
-              <option value="Phi-3.5-mini-instruct-q4f16_1-MLC">Phi-3.5 Mini (quality, ~2 GB)</option>
-            </select>
-            <button class="load-btn" id="load-btn">Load</button>
-          </div>
-          <div class="progress-wrap" id="progress-wrap">
-            <div class="progress-bar-track">
-              <div class="progress-bar-fill" id="progress-fill"></div>
-            </div>
-            <div class="progress-text" id="progress-text">Initialising…</div>
-          </div>
-          <div class="webgpu-warning" id="webgpu-warning">
-            ⚠️ WebGPU not available in this browser. Try Chrome 113+ or Edge. Falling back to heuristic planner.
-          </div>
+      <div class="model-loader">
+        <div class="model-row">
+          <select class="model-select" id="model-select">
+            <option value="Llama-3.2-1B-Instruct-q4f16_1-MLC">Llama 3.2 1B — fast, ~600 MB</option>
+            <option value="Llama-3.2-3B-Instruct-q4f16_1-MLC">Llama 3.2 3B — better, ~1.5 GB</option>
+            <option value="Phi-3.5-mini-instruct-q4f16_1-MLC">Phi-3.5 Mini — quality, ~2 GB</option>
+          </select>
+          <button class="load-btn" id="load-btn">Load AI</button>
         </div>
-
-        <!-- Suggestions -->
-        <div class="suggestions">
-          <div class="suggestions-label">Try these goals</div>
-          <button class="suggestion-btn" data-goal="Type hello world into the search box">Search for something</button>
-          <button class="suggestion-btn" data-goal="Fill the name field with Jane Doe">Fill a contact name</button>
-          <button class="suggestion-btn" data-goal="Fill the email with jane@example.com">Fill an email</button>
-          <button class="suggestion-btn" data-goal="Click the Submit Contact button">Submit the form</button>
+        <div class="progress-wrap" id="progress-wrap">
+          <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+          <div class="progress-text" id="progress-text">Initialising…</div>
         </div>
+        <div class="webgpu-warn" id="webgpu-warn">⚠️ WebGPU unavailable. Try Chrome 113+. Using heuristic planner.</div>
+      </div>
 
-        <!-- Messages -->
-        <div class="messages" id="messages">
-          <div class="message system">
-            <div class="avatar">ℹ</div>
-            <div class="bubble">Load a WebLLM model above for AI-powered planning, or run goals immediately using the heuristic planner.</div>
-          </div>
+      <div class="sugg-section">
+        <div class="sugg-label">Try these goals</div>
+        <div class="sugg-row" id="sugg-crm">
+          <button class="chip" data-goal="Search for Jane in the contacts">🔍 Search contact</button>
+          <button class="chip" data-goal="Fill the name field with Jane Doe">✏️ Fill name</button>
+          <button class="chip" data-goal="Fill the email with jane@example.com">📧 Fill email</button>
+          <button class="chip" data-goal="Fill the phone with 555-0192">📞 Fill phone</button>
+          <button class="chip" data-goal="Click the Submit Contact button">🚀 Submit form</button>
         </div>
-
-        <!-- Approval banner -->
-        <div class="approval-banner" id="approval-banner">
-          <strong>Action requires approval</strong>
-          <div class="action-detail" id="approval-detail"></div>
-          <div class="approval-actions">
-            <button class="approve-btn" id="approve-btn">Approve</button>
-            <button class="reject-btn" id="reject-btn">Stop</button>
-          </div>
-        </div>
-
-        <!-- Input -->
-        <div class="input-area">
-          <div class="mode-row">
-            <span class="mode-label">Mode</span>
-            <select class="mode-select" id="mode-select">
-              <option value="autonomous">Autonomous</option>
-              <option value="human-approved" selected>Human-approved</option>
-            </select>
-            <span class="planner-badge heuristic" id="planner-badge">heuristic</span>
-          </div>
-          <div class="input-row">
-            <input class="goal-input" id="goal-input" type="text" placeholder="e.g. Fill the name field with John Smith" autocomplete="off" />
-            <button class="run-btn" id="run-btn">Run</button>
-          </div>
+        <div class="sugg-row" id="sugg-tasks" style="display:none">
+          <button class="chip" data-goal="Add a task called Buy groceries">➕ Add task</button>
+          <button class="chip" data-goal="Mark the first task as done">✅ Complete #1</button>
+          <button class="chip" data-goal="Mark the second task as done">✅ Complete #2</button>
+          <button class="chip" data-goal="Add a task called Review code">➕ Add another</button>
+          <button class="chip" data-goal="Clear all completed tasks">🧹 Clear done</button>
         </div>
       </div>
 
-      <!-- ── Demo target page ── -->
-      <div class="demo-panel">
-        <div class="demo-panel-header">
-          <h2>Demo Page</h2>
-          <span class="demo-tag">Agent Target</span>
-        </div>
+      <div class="messages" id="messages">
+        <div class="message system"><div class="bubble">Load a WebLLM model for AI planning, or run goals with the heuristic planner.</div></div>
+      </div>
 
-        <div class="demo-card">
-          <h3>Search</h3>
-          <div class="search-box">
-            <input type="text" id="search-input" placeholder="Search contacts…" />
-            <button class="demo-btn secondary" id="search-btn">Search</button>
-          </div>
-          <div class="search-results" id="search-results">Enter a search term above.</div>
+      <div class="approval-banner" id="approval-banner">
+        <strong>⏸ Action requires approval</strong>
+        <div class="action-detail" id="approval-detail"></div>
+        <div class="approval-actions">
+          <button class="approve-btn" id="approve-btn">✓ Approve</button>
+          <button class="reject-btn"  id="reject-btn">Stop</button>
         </div>
+      </div>
 
-        <div class="demo-card">
-          <h3>Contact Form</h3>
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="name">Name</label>
-              <input type="text" id="name" placeholder="Full name" />
-            </div>
-            <div class="form-group">
-              <label for="email">Email</label>
-              <input type="email" id="email" placeholder="email@example.com" />
-            </div>
-            <div class="form-group">
-              <label for="phone">Phone</label>
-              <input type="tel" id="phone" placeholder="+1 555 000 0000" />
-            </div>
-            <div class="form-group">
-              <label for="company">Company</label>
-              <input type="text" id="company" placeholder="Company name" />
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="notes">Notes</label>
-            <textarea id="notes" placeholder="Any additional notes…"></textarea>
-          </div>
-          <button class="demo-btn primary" id="submit-contact">Submit Contact</button>
-          <div id="submit-result"></div>
+      <div class="input-area">
+        <div class="input-meta">
+          <span class="meta-lbl">Mode</span>
+          <select class="mode-select" id="mode-select">
+            <option value="autonomous">Autonomous</option>
+            <option value="human-approved" selected>Human-approved</option>
+          </select>
+          <span class="planner-badge heuristic" id="planner-badge">heuristic</span>
+        </div>
+        <div class="input-row">
+          <input class="goal-input" id="goal-input" type="text" placeholder="Describe what the agent should do…" autocomplete="off" />
+          <button class="run-btn" id="run-btn">Run ↵</button>
         </div>
       </div>
     </div>
 
-    <script type="module">
-      import { createBrowserAgent } from "https://unpkg.com/@akshayram1/omnibrowser-agent/dist/lib.js";
-      import * as webllm from "https://esm.run/@mlc-ai/web-llm";
+    <!-- ── Demo panel ── -->
+    <div class="demo-panel">
+      <div class="demo-nav">
+        <span class="demo-nav-label">Example</span>
+        <button class="demo-tab active" data-tab="crm">📋 Contact CRM</button>
+        <button class="demo-tab"        data-tab="tasks">✅ Task Manager</button>
+        <span class="demo-agent-tag">Agent Target</span>
+      </div>
 
-      // ── Demo page interactions ──
-      document.getElementById("search-btn").addEventListener("click", () => {
-        const q = document.getElementById("search-input").value.trim();
-        document.getElementById("search-results").textContent =
-          q ? `Showing results for "${q}"` : "Enter a search term above.";
+      <div class="demo-content">
+        <!-- CRM -->
+        <div class="demo-section active" id="demo-crm">
+          <div class="demo-card">
+            <div class="card-header">
+              <div class="card-icon blue">🔍</div>
+              <div><div class="card-title">Search</div><div class="card-desc">Find contacts by name or company</div></div>
+            </div>
+            <div class="search-row">
+              <input type="text" id="search-input" placeholder="Search contacts…" />
+              <button class="btn secondary sm" id="search-btn">Search</button>
+            </div>
+            <div class="result-box" id="search-results">Enter a search term above.</div>
+          </div>
+
+          <div class="demo-card">
+            <div class="card-header">
+              <div class="card-icon green">👤</div>
+              <div><div class="card-title">Add Contact</div><div class="card-desc">Fill in the details and submit</div></div>
+            </div>
+            <div class="form-grid">
+              <div class="field"><label for="name">Full Name</label><input type="text" id="name" placeholder="Jane Doe" /></div>
+              <div class="field"><label for="email">Email</label><input type="email" id="email" placeholder="jane@example.com" /></div>
+              <div class="field"><label for="phone">Phone</label><input type="tel" id="phone" placeholder="+1 555 000 0000" /></div>
+              <div class="field"><label for="company">Company</label><input type="text" id="company" placeholder="Acme Inc." /></div>
+              <div class="field full"><label for="notes">Notes</label><textarea id="notes" placeholder="Any additional notes…"></textarea></div>
+            </div>
+            <button class="btn primary" id="submit-contact">Submit Contact</button>
+            <div class="submit-result" id="submit-result"></div>
+          </div>
+        </div>
+
+        <!-- Task Manager -->
+        <div class="demo-section" id="demo-tasks">
+          <div class="demo-card">
+            <div class="card-header">
+              <div class="card-icon purple">✅</div>
+              <div><div class="card-title">Task Manager</div><div class="card-desc">Add, complete, and clear tasks</div></div>
+            </div>
+            <div class="task-input-row">
+              <input type="text" id="task-input" placeholder="New task description…" />
+              <button class="btn primary sm" id="add-task-btn">Add Task</button>
+            </div>
+            <div class="task-list" id="task-list"></div>
+            <div class="task-footer">
+              <span class="task-count" id="task-count">0 tasks</span>
+              <button class="btn danger sm" id="clear-completed-btn">Clear Completed</button>
+            </div>
+          </div>
+
+          <div class="demo-card">
+            <div class="card-header">
+              <div class="card-icon blue">📊</div>
+              <div><div class="card-title">Progress</div><div class="card-desc">Your productivity at a glance</div></div>
+            </div>
+            <div class="stats-grid">
+              <div class="stat-card"><div class="stat-val" id="stat-total">0</div><div class="stat-lbl">Total</div></div>
+              <div class="stat-card"><div class="stat-val" id="stat-done">0</div><div class="stat-lbl">Done</div></div>
+              <div class="stat-card"><div class="stat-val" id="stat-left">0</div><div class="stat-lbl">Left</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createBrowserAgent } from "https://unpkg.com/@akshayram1/omnibrowser-agent/dist/lib.js";
+    import * as webllm from "https://esm.run/@mlc-ai/web-llm";
+
+    // ── Task state ──
+    let tasks = [
+      { id: 1, text: "Design new landing page",  done: false },
+      { id: 2, text: "Review pull requests",      done: false },
+      { id: 3, text: "Update project roadmap",    done: false },
+    ];
+    let nextId = 4;
+
+    function renderTasks() {
+      const list = document.getElementById("task-list");
+      list.innerHTML = "";
+      tasks.forEach(t => {
+        const div = document.createElement("div");
+        div.className = "task-item" + (t.done ? " done" : "");
+        div.id = `task-${t.id}`;
+        div.innerHTML = `
+          <button class="task-check" id="check-task-${t.id}" aria-label="${t.done ? "Uncheck" : "Complete"}: ${t.text}">${t.done ? "✓" : ""}</button>
+          <span class="task-text">${t.text}</span>
+          <button class="task-del" id="delete-task-${t.id}" title="Delete">×</button>`;
+        list.appendChild(div);
+        document.getElementById(`check-task-${t.id}`).onclick = () => { t.done = !t.done; renderTasks(); };
+        document.getElementById(`delete-task-${t.id}`).onclick = () => { tasks = tasks.filter(x => x.id !== t.id); renderTasks(); };
       });
+      const total = tasks.length, done = tasks.filter(t => t.done).length;
+      document.getElementById("task-count").textContent = `${total} task${total !== 1 ? "s" : ""}`;
+      document.getElementById("stat-total").textContent = total;
+      document.getElementById("stat-done").textContent  = done;
+      document.getElementById("stat-left").textContent  = total - done;
+    }
+    renderTasks();
 
-      document.getElementById("submit-contact").addEventListener("click", () => {
-        const name = document.getElementById("name").value.trim();
-        document.getElementById("submit-result").textContent =
-          name ? `✓ Contact "${name}" submitted successfully.` : "Please fill in the name field first.";
-      });
+    document.getElementById("add-task-btn").onclick = () => {
+      const inp = document.getElementById("task-input");
+      const text = inp.value.trim();
+      if (!text) return;
+      tasks.push({ id: nextId++, text, done: false });
+      inp.value = "";
+      renderTasks();
+    };
+    document.getElementById("task-input").addEventListener("keydown", e => { if (e.key === "Enter") document.getElementById("add-task-btn").click(); });
+    document.getElementById("clear-completed-btn").onclick = () => { tasks = tasks.filter(t => !t.done); renderTasks(); };
 
-      // ── UI refs ──
-      const messagesEl    = document.getElementById("messages");
-      const approvalBanner = document.getElementById("approval-banner");
-      const approvalDetail = document.getElementById("approval-detail");
-      const modelDot       = document.getElementById("model-dot");
-      const modelStatusText = document.getElementById("model-status-text");
-      const progressWrap  = document.getElementById("progress-wrap");
-      const progressFill  = document.getElementById("progress-fill");
-      const progressText  = document.getElementById("progress-text");
-      const plannerBadge  = document.getElementById("planner-badge");
-      const loadBtn       = document.getElementById("load-btn");
-      const modelSelect   = document.getElementById("model-select");
-      const webgpuWarning = document.getElementById("webgpu-warning");
+    // ── CRM interactions ──
+    document.getElementById("search-btn").onclick = () => {
+      const q = document.getElementById("search-input").value.trim();
+      const box = document.getElementById("search-results");
+      if (q) { box.className = "result-box hit"; box.innerHTML = `✓ Found 3 contacts matching "<strong>${q}</strong>"`; }
+      else   { box.className = "result-box"; box.textContent = "Enter a search term above."; }
+    };
+    document.getElementById("submit-contact").onclick = () => {
+      const name = document.getElementById("name").value.trim();
+      const el = document.getElementById("submit-result");
+      if (name) { el.className = "submit-result ok";  el.innerHTML = `✓ Contact "<strong>${name}</strong>" submitted.`; }
+      else      { el.className = "submit-result err"; el.textContent = "⚠ Fill in the name field first."; }
+    };
 
-      // ── State ──
-      let llmEngine  = null;   // WebLLM engine once loaded
-      let currentAgent = null;
+    // ── Tab switching ──
+    let activeTab = "crm";
+    document.querySelectorAll(".demo-tab").forEach(tab => {
+      tab.onclick = () => {
+        activeTab = tab.dataset.tab;
+        document.querySelectorAll(".demo-tab").forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+        document.querySelectorAll(".demo-section").forEach(s => s.classList.remove("active"));
+        document.getElementById(`demo-${activeTab}`).classList.add("active");
+        document.getElementById("sugg-crm").style.display   = activeTab === "crm"   ? "flex" : "none";
+        document.getElementById("sugg-tasks").style.display = activeTab === "tasks" ? "flex" : "none";
+      };
+    });
 
-      // ── WebLLM loading ──
-      async function loadModel() {
-        if (!navigator.gpu) {
-          webgpuWarning.classList.add("visible");
-          modelDot.className = "dot";
-          modelStatusText.textContent = "WebGPU unavailable — using heuristic planner";
-          return;
-        }
+    // ── UI refs ──
+    const messagesEl   = document.getElementById("messages");
+    const approvalBanner = document.getElementById("approval-banner");
+    const sdot         = document.getElementById("sdot");
+    const aiPill       = document.getElementById("ai-pill");
+    const modelStatusText = document.getElementById("model-status-text");
+    const progressWrap = document.getElementById("progress-wrap");
+    const progressFill = document.getElementById("progress-fill");
+    const progressText = document.getElementById("progress-text");
+    const plannerBadge = document.getElementById("planner-badge");
+    const loadBtn      = document.getElementById("load-btn");
+    const modelSelect  = document.getElementById("model-select");
 
-        const modelId = modelSelect.value;
-        loadBtn.disabled = true;
-        modelSelect.disabled = true;
-        modelDot.className = "dot loading";
-        modelStatusText.textContent = `Loading ${modelSelect.options[modelSelect.selectedIndex].text.split(" (")[0]}…`;
-        progressWrap.classList.add("visible");
+    let llmEngine = null, currentAgent = null;
 
-        try {
-          llmEngine = await webllm.CreateMLCEngine(modelId, {
-            initProgressCallback({ progress, text }) {
-              progressFill.style.width = `${Math.round(progress * 100)}%`;
-              progressText.textContent = text || `${Math.round(progress * 100)}%`;
-            }
-          });
+    // ── Flash element when agent acts ──
+    function flash(selector) {
+      if (!selector) return;
+      try {
+        const el = document.querySelector(selector);
+        if (!el) return;
+        el.classList.remove("agent-act");
+        void el.offsetWidth;
+        el.classList.add("agent-act");
+        setTimeout(() => el.classList.remove("agent-act"), 1200);
+      } catch {}
+    }
 
-          // Wire the bridge
-          window.__browserAgentWebLLM = {
-            async plan(input, mid) {
-              return planWithWebLLM(input);
-            }
-          };
+    // ── Typing indicator ──
+    let typingEl = null;
+    function showTyping() {
+      if (typingEl) return;
+      typingEl = document.createElement("div");
+      typingEl.className = "typing";
+      typingEl.innerHTML = `<div class="avatar">🤖</div><div class="typing-dots"><div class="tdot"></div><div class="tdot"></div><div class="tdot"></div></div>`;
+      messagesEl.appendChild(typingEl);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+    function hideTyping() { typingEl?.remove(); typingEl = null; }
 
-          progressWrap.classList.remove("visible");
-          modelDot.className = "dot ready";
-          modelStatusText.textContent = `${modelSelect.options[modelSelect.selectedIndex].text.split(" (")[0]} ready`;
-          plannerBadge.textContent = "webllm";
-          plannerBadge.className = "planner-badge webllm";
-          loadBtn.textContent = "Reload";
-          loadBtn.disabled = false;
-          modelSelect.disabled = false;
+    // ── Messages ──
+    function addMessage(text, type = "agent", variant = "") {
+      hideTyping();
+      const div = document.createElement("div");
+      div.className = `message ${type} ${variant}`.trim();
+      if (type === "user")   div.innerHTML = `<div class="bubble">${text}</div>`;
+      else if (type === "system") div.innerHTML = `<div class="bubble">${text}</div>`;
+      else div.innerHTML = `<div class="avatar">🤖</div><div class="bubble">${text}</div>`;
+      messagesEl.appendChild(div);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+    function setRunning(on) {
+      document.getElementById("run-btn").disabled = on;
+      document.getElementById("run-btn").textContent = on ? "Running…" : "Run ↵";
+    }
 
-          addMessage("✅ WebLLM model loaded. AI planning is now active.", "system");
-        } catch (err) {
-          progressWrap.classList.remove("visible");
-          modelDot.className = "dot";
-          modelStatusText.textContent = "Load failed — using heuristic planner";
-          loadBtn.disabled = false;
-          modelSelect.disabled = false;
-          addMessage(`❌ Model load failed: ${String(err)}`, "agent", "error");
-        }
+    // ── WebLLM load ──
+    async function loadModel() {
+      if (!navigator.gpu) {
+        document.getElementById("webgpu-warn").classList.add("visible");
+        sdot.className = "sdot"; modelStatusText.textContent = "WebGPU unavailable"; return;
       }
-
-      loadBtn.addEventListener("click", loadModel);
-
-      // ── Collect demo-panel elements grouped by section card ──
-      function buildDemoContext() {
-        const sections = [];
-        document.querySelectorAll(".demo-panel .demo-card").forEach(card => {
-          const title = card.querySelector("h3")?.textContent?.trim() ?? "Section";
-          const SELECTOR = "input,textarea,select,button,a,[role='button']";
-          const items = Array.from(card.querySelectorAll(SELECTOR))
-            .filter(el => {
-              const s = window.getComputedStyle(el);
-              return s.display !== "none" && s.visibility !== "hidden";
-            })
-            .map(el => {
-              const selector = el.id ? `#${el.id}` : el.tagName.toLowerCase();
-              // Prefer associated <label> text, then innerText, then aria-label
-              const labelEl = el.id ? document.querySelector(`label[for="${el.id}"]`) : null;
-              const labelText = (labelEl?.innerText || el.getAttribute("aria-label") || el.innerText || "").trim();
-              const placeholder = el.placeholder || "";
-              const desc = [labelText, placeholder].filter(Boolean).join(" / ") || selector;
-              return `  - selector="${selector}" desc="${desc}" type=${el.type || el.tagName.toLowerCase()}`;
-            });
-          if (items.length) sections.push(`${title}:\n${items.join("\n")}`);
+      const modelId = modelSelect.value;
+      loadBtn.disabled = true; modelSelect.disabled = true;
+      sdot.className = "sdot loading"; aiPill.className = "ai-pill loading";
+      modelStatusText.textContent = "Loading…"; progressWrap.classList.add("visible");
+      try {
+        llmEngine = await webllm.CreateMLCEngine(modelId, {
+          initProgressCallback({ progress, text }) {
+            progressFill.style.width = `${Math.round(progress * 100)}%`;
+            progressText.textContent = text || `${Math.round(progress * 100)}%`;
+          }
         });
-        return sections.join("\n\n");
+        window.__browserAgentWebLLM = { async plan(input) { return planWithWebLLM(input); } };
+        progressWrap.classList.remove("visible");
+        sdot.className = "sdot ready"; aiPill.className = "ai-pill ready";
+        modelStatusText.textContent = modelSelect.options[modelSelect.selectedIndex].text.split("—")[0].trim();
+        plannerBadge.textContent = "webllm"; plannerBadge.className = "planner-badge webllm";
+        loadBtn.textContent = "Reload"; loadBtn.disabled = false; modelSelect.disabled = false;
+        addMessage("✅ WebLLM ready — AI planning active.", "system");
+      } catch (err) {
+        progressWrap.classList.remove("visible");
+        sdot.className = "sdot"; aiPill.className = "ai-pill";
+        modelStatusText.textContent = "Load failed";
+        loadBtn.disabled = false; modelSelect.disabled = false;
+        addMessage(`❌ Model load failed: ${String(err)}`, "agent", "error");
       }
+    }
+    loadBtn.addEventListener("click", loadModel);
 
-      // ── Robust JSON action parser (handles prose, fences, bare objects) ──
-      function parseActionFromRaw(raw) {
-        const VALID = new Set(["click","type","navigate","extract","scroll","focus","wait","done"]);
-        const fenceMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
-        const candidate = fenceMatch ? fenceMatch[1].trim() : raw.trim();
-        const objectMatch = candidate.match(/\{[\s\S]*\}/);
-        if (!objectMatch) return { type: "done", reason: `No JSON found: ${raw.slice(0, 80)}` };
-        try {
-          const obj = JSON.parse(objectMatch[0]);
-          if (typeof obj?.type === "string" && VALID.has(obj.type)) return obj;
-          return { type: "done", reason: `Unknown action type: ${obj?.type}` };
-        } catch {
-          return { type: "done", reason: `JSON parse error: ${objectMatch[0].slice(0, 80)}` };
-        }
-      }
+    // ── Build context from active demo section ──
+    function buildDemoContext() {
+      const active = document.querySelector(".demo-section.active");
+      if (!active) return "";
+      const sections = [];
+      active.querySelectorAll(".demo-card").forEach(card => {
+        const title = card.querySelector(".card-title")?.textContent?.trim() ?? "Section";
+        const items = Array.from(card.querySelectorAll("input,textarea,select,button"))
+          .filter(el => { const s = window.getComputedStyle(el); return s.display !== "none" && s.visibility !== "hidden"; })
+          .map(el => {
+            const sel = el.id ? `#${el.id}` : el.tagName.toLowerCase();
+            const labelEl = el.id ? document.querySelector(`label[for="${el.id}"]`) : null;
+            const desc = [labelEl?.innerText, el.getAttribute("aria-label"), el.innerText, el.placeholder].filter(Boolean).map(s => s.trim()).filter(Boolean).join(" / ").slice(0, 60);
+            return `  - selector="${sel}" desc="${desc || sel}" type=${el.type || el.tagName.toLowerCase()}`;
+          });
+        if (items.length) sections.push(`${title}:\n${items.join("\n")}`);
+      });
+      return sections.join("\n\n");
+    }
 
-      // ── WebLLM bridge ──
-      async function planWithWebLLM(input) {
-        const { goal, history, lastError } = input;
+    // ── JSON parser ──
+    function parseRaw(raw) {
+      const VALID = new Set(["click","type","navigate","extract","scroll","focus","wait","done"]);
+      const fence = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+      const candidate = fence ? fence[1].trim() : raw.trim();
+      const m = candidate.match(/\{[\s\S]*\}/);
+      if (!m) return { type: "done", reason: `No JSON: ${raw.slice(0, 80)}` };
+      try {
+        const obj = JSON.parse(m[0]);
+        if (typeof obj?.type === "string" && VALID.has(obj.type)) return obj;
+        return { type: "done", reason: `Unknown type: ${obj?.type}` };
+      } catch { return { type: "done", reason: `Parse error: ${m[0].slice(0, 80)}` }; }
+    }
 
-        const demoContext = buildDemoContext();
-        const recentHistory = history.slice(-4).join(" → ") || "none";
-        const errorHint = lastError ? `\nLast action failed: "${lastError}". Try a different approach.` : "";
+    // ── WebLLM bridge ──
+    async function planWithWebLLM(input) {
+      const { goal, history, lastError } = input;
+      const ctx = buildDemoContext();
+      const recent = history.slice(-4).join(" → ") || "none";
+      const errHint = lastError ? `\nLast action failed: "${lastError}". Try differently.` : "";
 
-        const systemMsg = `You are a browser automation agent. Output ONLY a single valid JSON object. No text, no markdown, no explanation.`;
-
-        const userMsg = `Goal: "${goal}"
-Recent: ${recentHistory}${errorHint}
+      const resp = await llmEngine.chat.completions.create({
+        messages: [
+          { role: "system", content: "You are a browser automation agent. Output ONLY a single valid JSON object. No text, no markdown." },
+          { role: "user",   content:
+`Goal: "${goal}"
+Recent: ${recent}${errHint}
 
 Page elements:
-${demoContext}
+${ctx}
 
-ACTION RULES — read carefully:
-1. To put text into any input or textarea → use type action
-2. To press a button → use click action
-3. If goal is already done → use done action
-
+RULES: input/textarea→type, button→click, done→done
 EXAMPLES:
-goal "fill the name field with Jane Doe"  → {"type":"type","selector":"#name","text":"Jane Doe","clearFirst":true}
-goal "fill email with bob@test.com"        → {"type":"type","selector":"#email","text":"bob@test.com","clearFirst":true}
-goal "type hello into the search box"      → {"type":"type","selector":"#search-input","text":"hello","clearFirst":true}
-goal "click submit"                        → {"type":"click","selector":"#submit-contact","label":"Submit Contact"}
+"fill name with Jane"   → {"type":"type","selector":"#name","text":"Jane","clearFirst":true}
+"fill email bob@x.com"  → {"type":"type","selector":"#email","text":"bob@x.com","clearFirst":true}
+"click submit"          → {"type":"click","selector":"#submit-contact"}
+"add task Buy milk"     → {"type":"type","selector":"#task-input","text":"Buy milk","clearFirst":true}
+"mark first task done"  → {"type":"click","selector":"#check-task-1"}
+"clear completed"       → {"type":"click","selector":"#clear-completed-btn"}
 
-Now output the JSON for goal: "${goal}"`;
-
-        const resp = await llmEngine.chat.completions.create({
-          messages: [
-            { role: "system", content: systemMsg },
-            { role: "user",   content: userMsg }
-          ],
-          temperature: 0,
-          max_tokens: 100
-        });
-
-        const raw = resp.choices[0].message.content.trim();
-        let action = parseActionFromRaw(raw);
-
-        // Guard: if model clicked an input/textarea, convert to type
-        if (action.type === "click" && action.selector) {
-          const el = document.querySelector(action.selector);
-          if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA")) {
-            const textMatch = goal.match(/(?:with|to|:)\s+"?([^"]+)"?\s*$/i);
-            if (textMatch) {
-              action = { type: "type", selector: action.selector, text: textMatch[1].trim(), clearFirst: true };
-            }
+Output JSON for: "${goal}"`
           }
-        }
+        ],
+        temperature: 0,
+        max_tokens: 100
+      });
 
-        // Guard: if field already has the correct value, we're done
-        if (action.type === "type" && action.selector) {
-          const el = document.querySelector(action.selector);
-          if (el && el.value.trim() === action.text?.trim()) {
-            return { type: "done", reason: `Goal complete — "${action.selector}" already contains "${action.text}"` };
-          }
-        }
+      let action = parseRaw(resp.choices[0].message.content.trim());
 
-        // Guard: if this click was already done in the last step, we're done
-        if (action.type === "click" && action.selector) {
-          const lastEntry = history[history.length - 1] ?? "";
-          if (lastEntry.includes(action.selector)) {
-            return { type: "done", reason: `Already clicked ${action.selector}` };
-          }
+      // Guard: click on input → convert to type
+      if (action.type === "click" && action.selector) {
+        const el = document.querySelector(action.selector);
+        if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA")) {
+          const m = goal.match(/(?:with|to|called?|:)\s+"?([^"]+)"?\s*$/i);
+          if (m) action = { type: "type", selector: action.selector, text: m[1].trim(), clearFirst: true };
         }
-
-        return action;
       }
-
-      // ── Chat helpers ──
-      function addMessage(text, type = "agent", variant = "") {
-        const avatars = { user: "👤", agent: "🤖", system: "ℹ" };
-        const div = document.createElement("div");
-        div.className = `message ${type} ${variant}`.trim();
-        div.innerHTML = `<div class="avatar">${avatars[type] ?? "·"}</div><div class="bubble">${text}</div>`;
-        messagesEl.appendChild(div);
-        messagesEl.scrollTop = messagesEl.scrollHeight;
+      // Guard: field already correct → done
+      if (action.type === "type" && action.selector) {
+        const el = document.querySelector(action.selector);
+        if (el && el.value.trim() === action.text?.trim())
+          return { type: "done", reason: `Already filled "${action.selector}"` };
       }
-
-      function setRunning(on) {
-        document.getElementById("run-btn").disabled = on;
-        document.getElementById("run-btn").textContent = on ? "Running…" : "Run";
+      // Guard: repeated click → done
+      if (action.type === "click" && action.selector) {
+        const last = history[history.length - 1] ?? "";
+        if (last.includes(action.selector))
+          return { type: "done", reason: `Already clicked ${action.selector}` };
       }
+      return action;
+    }
 
-      // ── Run agent ──
-      async function runAgent(goal) {
-        if (currentAgent) currentAgent.stop();
+    // ── Run agent ──
+    async function runAgent(goal) {
+      if (currentAgent) currentAgent.stop();
+      hideTyping();
+      addMessage(goal, "user");
+      setRunning(true);
+      approvalBanner.classList.remove("visible");
+      if (!llmEngine) addMessage("ℹ Running with heuristic planner — load WebLLM for AI planning.", "system");
+      showTyping();
 
-        addMessage(goal, "user");
-        setRunning(true);
-        approvalBanner.classList.remove("visible");
-
-        const planner = llmEngine
-          ? { kind: "webllm" }
-          : { kind: "heuristic" };
-
-        if (!llmEngine) {
-          addMessage("ℹ WebLLM not loaded — running with heuristic planner.", "system");
-        }
-
-        currentAgent = createBrowserAgent(
-          {
-            goal,
-            mode: document.getElementById("mode-select").value,
-            planner,
-            maxSteps: 12,
-            stepDelayMs: 700
+      currentAgent = createBrowserAgent(
+        { goal, mode: document.getElementById("mode-select").value, planner: llmEngine ? { kind: "webllm" } : { kind: "heuristic" }, maxSteps: 12, stepDelayMs: 800 },
+        {
+          onStep(result) {
+            hideTyping();
+            const icon = result.status === "executed" ? "✅" : result.status === "error" ? "⚠️" : result.status === "blocked" ? "🚫" : "·";
+            const v = result.status === "executed" ? "ok" : result.status === "error" ? "info" : result.status === "blocked" ? "error" : "";
+            addMessage(`${icon} ${result.message}`, "agent", v);
+            if (result.status === "executed" && result.action?.selector) flash(result.action.selector);
+            if (!["done","error","blocked"].includes(result.status)) showTyping();
           },
-          {
-            onStep(result) {
-              const icon = result.status === "executed" ? "✅"
-                         : result.status === "blocked"  ? "🚫" : "·";
-              const variant = result.status === "executed" ? "ok"
-                            : result.status === "blocked"  ? "error" : "";
-              addMessage(`${icon} ${result.message}`, "agent", variant);
-            },
-            onApprovalRequired(action) {
-              approvalDetail.textContent = JSON.stringify(action, null, 2);
-              approvalBanner.classList.add("visible");
-              addMessage(`⏸ Approval needed for <strong>${action.type}</strong>`, "agent", "pending");
-            },
-            onDone(result) {
-              addMessage(`🏁 ${result.message}`, "agent", "ok");
-              setRunning(false);
-              approvalBanner.classList.remove("visible");
-            },
-            onMaxStepsReached() {
-              addMessage("⚠️ Reached max steps.", "agent");
-              setRunning(false);
-            },
-            onError(err) {
-              addMessage(`❌ ${String(err)}`, "agent", "error");
-              setRunning(false);
-            }
-          }
-        );
+          onApprovalRequired(action) {
+            hideTyping();
+            document.getElementById("approval-detail").textContent = JSON.stringify(action, null, 2);
+            approvalBanner.classList.add("visible");
+            addMessage(`⏸ Approval needed for <strong>${action.type}</strong>`, "agent", "pending");
+          },
+          onDone(result)        { hideTyping(); addMessage(`🏁 ${result.message}`, "agent", "ok"); setRunning(false); approvalBanner.classList.remove("visible"); },
+          onMaxStepsReached()   { hideTyping(); addMessage("⚠️ Reached max steps.", "agent", "info"); setRunning(false); },
+          onError(err)          { hideTyping(); addMessage(`❌ ${String(err)}`, "agent", "error"); setRunning(false); }
+        }
+      );
+      await currentAgent.start();
+      hideTyping(); setRunning(false);
+    }
 
-        await currentAgent.start();
-        setRunning(false);
-      }
-
-      // ── Controls ──
-      document.getElementById("run-btn").addEventListener("click", () => {
-        const goal = document.getElementById("goal-input").value.trim();
-        if (!goal) return;
-        document.getElementById("goal-input").value = "";
-        runAgent(goal);
-      });
-
-      document.getElementById("goal-input").addEventListener("keydown", e => {
-        if (e.key === "Enter") document.getElementById("run-btn").click();
-      });
-
-      document.querySelectorAll(".suggestion-btn").forEach(btn => {
-        btn.addEventListener("click", () => runAgent(btn.dataset.goal));
-      });
-
-      document.getElementById("approve-btn").addEventListener("click", async () => {
-        if (!currentAgent) return;
-        approvalBanner.classList.remove("visible");
-        setRunning(true);
-        await currentAgent.resume();
-        setRunning(false);
-      });
-
-      document.getElementById("reject-btn").addEventListener("click", () => {
-        currentAgent?.stop();
-        approvalBanner.classList.remove("visible");
-        addMessage("⛔ Stopped.", "agent");
-        setRunning(false);
-      });
-    </script>
-  </body>
+    // ── Controls ──
+    document.getElementById("run-btn").onclick = () => {
+      const g = document.getElementById("goal-input").value.trim();
+      if (!g) return;
+      document.getElementById("goal-input").value = "";
+      runAgent(g);
+    };
+    document.getElementById("goal-input").addEventListener("keydown", e => { if (e.key === "Enter") document.getElementById("run-btn").click(); });
+    document.querySelectorAll(".chip").forEach(btn => btn.addEventListener("click", () => runAgent(btn.dataset.goal)));
+    document.getElementById("approve-btn").onclick = async () => {
+      if (!currentAgent) return;
+      approvalBanner.classList.remove("visible"); setRunning(true); showTyping();
+      await currentAgent.resume();
+      hideTyping(); setRunning(false);
+    };
+    document.getElementById("reject-btn").onclick = () => {
+      currentAgent?.stop(); approvalBanner.classList.remove("visible");
+      addMessage("⛔ Stopped.", "agent", "info"); setRunning(false);
+    };
+  </script>
+</body>
 </html>
