@@ -8,28 +8,34 @@ let stopped = false;
 
 async function runTick(session: AgentSession): Promise<ContentResult> {
   const snapshot = collectSnapshot();
-  const action = await planNextAction(session.planner, {
+  const plannerResult = await planNextAction(session.planner, {
     goal: session.goal,
     snapshot,
     history: session.history,
-    lastError: session.lastError
+    lastError: session.lastError,
+    memory: session.memory
   });
+
+  const { action } = plannerResult;
+  const reflection = plannerResult.evaluation !== undefined || plannerResult.memory !== undefined || plannerResult.nextGoal !== undefined
+    ? { evaluation: plannerResult.evaluation, memory: plannerResult.memory, nextGoal: plannerResult.nextGoal }
+    : undefined;
 
   const risk = assessRisk(action);
   if (risk === "blocked") {
-    return { status: "blocked", action, message: `Blocked action: ${JSON.stringify(action)}` };
+    return { status: "blocked", action, message: `Blocked action: ${JSON.stringify(action)}`, reflection };
   }
 
   if (session.mode === "human-approved" && risk === "review") {
-    return { status: "needs_approval", action, message: `Approval needed for ${action.type}` };
+    return { status: "needs_approval", action, message: `Approval needed for ${action.type}`, reflection };
   }
 
   if (action.type === "done") {
-    return { status: "done", action, message: action.reason };
+    return { status: "done", action, message: action.reason, reflection };
   }
 
   const message = await executeAction(action);
-  return { status: "executed", action, message };
+  return { status: "executed", action, message, reflection };
 }
 
 async function executePendingAction(session: AgentSession): Promise<ContentResult> {

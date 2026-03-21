@@ -17,7 +17,7 @@ export interface CandidateElement {
   role: string;
   text: string;
   placeholder?: string;
-  /** Associated <label> text resolved via for/id, wrapping label, or aria-labelledby */
+  /** Associated <label> text resolved via for/id, aria-labelledby, aria-label, or wrapping <label> */
   label?: string;
 }
 
@@ -34,6 +34,23 @@ export interface PlannerInput {
   history: string[];
   /** Error message from the previous step, fed back so the planner can recover */
   lastError?: string;
+  /** Accumulated working memory written by the planner across steps */
+  memory?: string;
+}
+
+/**
+ * What the planner returns: the next action plus optional reflection fields.
+ *
+ * Inspired by page-agent's evaluate → remember → plan → act loop.
+ * - `evaluation`  — what happened in the previous step
+ * - `memory`      — facts to carry into the next step
+ * - `nextGoal`    — what the planner intends to do next (shown as a thought bubble in UI)
+ */
+export interface PlannerResult {
+  action: AgentAction;
+  evaluation?: string;
+  memory?: string;
+  nextGoal?: string;
 }
 
 export interface PlannerConfig {
@@ -50,8 +67,10 @@ export interface AgentSession {
   history: string[];
   isRunning: boolean;
   pendingAction?: AgentAction;
-  /** Carried between ticks by the background/runner so the planner can see the last error */
+  /** Carried between ticks — last error for retry feedback */
   lastError?: string;
+  /** Working memory accumulated by the planner across steps */
+  memory?: string;
 }
 
 export interface LibraryAgentConfig {
@@ -80,4 +99,10 @@ export type ContentResult = {
   status: "executed" | "needs_approval" | "blocked" | "done" | "error";
   message: string;
   action?: AgentAction;
+  /** Reflection fields from the planner — evaluation, memory, and next goal */
+  reflection?: {
+    evaluation?: string;
+    memory?: string;
+    nextGoal?: string;
+  };
 };

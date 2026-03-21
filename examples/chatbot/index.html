@@ -557,54 +557,80 @@
       return sections.join("\n\n");
     }
 
-    // ── JSON parser ──
-    function parseRaw(raw) {
-      const VALID = new Set(["click","type","navigate","extract","scroll","focus","wait","done"]);
+    // ── JSON helpers ──
+    const VALID_TYPES = new Set(["click","type","navigate","extract","scroll","focus","wait","done"]);
+
+    function parseAction(raw) {
       const fence = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
       const candidate = fence ? fence[1].trim() : raw.trim();
       const m = candidate.match(/\{[\s\S]*\}/);
       if (!m) return { type: "done", reason: `No JSON: ${raw.slice(0, 80)}` };
       try {
         const obj = JSON.parse(m[0]);
-        if (typeof obj?.type === "string" && VALID.has(obj.type)) return obj;
+        if (typeof obj?.type === "string" && VALID_TYPES.has(obj.type)) return obj;
         return { type: "done", reason: `Unknown type: ${obj?.type}` };
       } catch { return { type: "done", reason: `Parse error: ${m[0].slice(0, 80)}` }; }
     }
 
+    function parsePlannerResult(raw) {
+      const fence = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+      const candidate = fence ? fence[1].trim() : raw.trim();
+      const m = candidate.match(/\{[\s\S]*\}/);
+      if (!m) return { action: { type: "done", reason: `No JSON: ${raw.slice(0, 80)}` } };
+      try {
+        const obj = JSON.parse(m[0]);
+        if (typeof obj?.action === "object" && obj.action !== null) {
+          return {
+            action:     parseAction(JSON.stringify(obj.action)),
+            evaluation: typeof obj.evaluation === "string" ? obj.evaluation : undefined,
+            memory:     typeof obj.memory     === "string" ? obj.memory     : undefined,
+            nextGoal:   typeof obj.next_goal  === "string" ? obj.next_goal  : undefined,
+          };
+        }
+        return { action: parseAction(m[0]) };
+      } catch { return { action: { type: "done", reason: `Parse error: ${m[0].slice(0, 80)}` } }; }
+    }
+
     // ── WebLLM bridge ──
     async function planWithWebLLM(input) {
-      const { goal, history, lastError } = input;
+      const { goal, history, lastError, memory } = input;
       const ctx = buildDemoContext();
       const recent = history.slice(-4).join(" → ") || "none";
-      const errHint = lastError ? `\nLast action failed: "${lastError}". Try differently.` : "";
+      const errHint = lastError ? `\nLast action FAILED: "${lastError}". Try a different approach.` : "";
+      const memHint = memory ? `\nWorking memory: ${memory}` : "";
 
       const resp = await llmEngine.chat.completions.create({
         messages: [
-          { role: "system", content: "You are a browser automation agent. Output ONLY a single valid JSON object. No text, no markdown." },
-          { role: "user",   content:
+          { role: "system", content:
+`You are a browser automation agent. You MUST output ONLY a single valid JSON object in this exact format:
+{"evaluation":"<what happened last step>","memory":"<key facts to remember>","next_goal":"<what you will do next>","action":<action object>}
+
+The action must be one of:
+- {"type":"type","selector":"#id","text":"value","clearFirst":true}
+- {"type":"click","selector":"#id"}
+- {"type":"done","reason":"goal complete"}
+
+No extra text. No markdown. Only the JSON object.` },
+          { role: "user", content:
 `Goal: "${goal}"
-Recent: ${recent}${errHint}
+Recent history: ${recent}${errHint}${memHint}
 
 Page elements:
 ${ctx}
 
-RULES: input/textarea→type, button→click, done→done
 EXAMPLES:
-"fill name with Jane"   → {"type":"type","selector":"#name","text":"Jane","clearFirst":true}
-"fill email bob@x.com"  → {"type":"type","selector":"#email","text":"bob@x.com","clearFirst":true}
-"click submit"          → {"type":"click","selector":"#submit-contact"}
-"add task Buy milk"     → {"type":"type","selector":"#task-input","text":"Buy milk","clearFirst":true}
-"mark first task done"  → {"type":"click","selector":"#check-task-1"}
-"clear completed"       → {"type":"click","selector":"#clear-completed-btn"}
+Fill name → {"evaluation":"page loaded","memory":"name field is #name","next_goal":"fill name field","action":{"type":"type","selector":"#name","text":"Jane","clearFirst":true}}
+Click submit → {"evaluation":"fields filled","memory":"form ready","next_goal":"submit the form","action":{"type":"click","selector":"#submit-contact"}}
+Add task → {"evaluation":"ready","memory":"task input is #task-input","next_goal":"type task text","action":{"type":"type","selector":"#task-input","text":"Buy milk","clearFirst":true}}
 
-Output JSON for: "${goal}"`
-          }
+Now output JSON for: "${goal}"` }
         ],
         temperature: 0,
-        max_tokens: 100
+        max_tokens: 200
       });
 
-      let action = parseRaw(resp.choices[0].message.content.trim());
+      const result = parsePlannerResult(resp.choices[0].message.content.trim());
+      let { action } = result;
 
       // Guard: click on input → convert to type
       if (action.type === "click" && action.selector) {
@@ -618,15 +644,16 @@ Output JSON for: "${goal}"`
       if (action.type === "type" && action.selector) {
         const el = document.querySelector(action.selector);
         if (el && el.value.trim() === action.text?.trim())
-          return { type: "done", reason: `Already filled "${action.selector}"` };
+          return { action: { type: "done", reason: `Already filled "${action.selector}"` } };
       }
       // Guard: repeated click → done
       if (action.type === "click" && action.selector) {
         const last = history[history.length - 1] ?? "";
         if (last.includes(action.selector))
-          return { type: "done", reason: `Already clicked ${action.selector}` };
+          return { action: { type: "done", reason: `Already clicked ${action.selector}` } };
       }
-      return action;
+
+      return { ...result, action };
     }
 
     // ── Run agent ──
@@ -644,6 +671,9 @@ Output JSON for: "${goal}"`
         {
           onStep(result) {
             hideTyping();
+            if (result.reflection?.nextGoal) {
+              addMessage(`💭 ${result.reflection.nextGoal}`, "agent", "info");
+            }
             const icon = result.status === "executed" ? "✅" : result.status === "error" ? "⚠️" : result.status === "blocked" ? "🚫" : "·";
             const v = result.status === "executed" ? "ok" : result.status === "error" ? "info" : result.status === "blocked" ? "error" : "";
             addMessage(`${icon} ${result.message}`, "agent", v);

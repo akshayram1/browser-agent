@@ -2,12 +2,12 @@ import { executeAction } from "../core/executor";
 import { collectSnapshot } from "../core/observer";
 import { planNextAction } from "../core/planner";
 import type {
-  AgentAction,
   AgentSession,
   ContentResult,
   LibraryAgentConfig,
   LibraryAgentEvents,
-  PlannerConfig
+  PlannerConfig,
+  PlannerResult
 } from "../shared/contracts";
 import { assessRisk } from "../shared/safety";
 
@@ -57,7 +57,6 @@ export class BrowserAgent {
     this.isStopped = false;
     this.session.isRunning = true;
     this.events.onStart?.(this.getSession());
-
     return this.runLoop();
   }
 
@@ -101,7 +100,6 @@ export class BrowserAgent {
           return result;
         }
 
-        // Retry with error context on the next iteration
         await this.delay(this.stepDelayMs);
         continue;
       }
@@ -168,47 +166,46 @@ export class BrowserAgent {
   private async tick(lastError?: string): Promise<ContentResult> {
     try {
       const snapshot = collectSnapshot();
-      const action = await planNextAction(this.session.planner, {
+      const plannerResult = await planNextAction(this.session.planner, {
         goal: this.session.goal,
         snapshot,
         history: this.session.history,
-        lastError
+        lastError,
+        memory: this.session.memory
       });
 
-      return this.processAction(action);
+      // Carry working memory forward across steps
+      if (plannerResult.memory !== undefined) {
+        this.session.memory = plannerResult.memory;
+      }
+
+      return this.processAction(plannerResult);
     } catch (error) {
       return { status: "error", message: String(error) };
     }
   }
 
-  private async processAction(action: AgentAction): Promise<ContentResult> {
+  private async processAction(plannerResult: PlannerResult): Promise<ContentResult> {
+    const { action } = plannerResult;
+    const reflection = plannerResult.evaluation !== undefined || plannerResult.memory !== undefined || plannerResult.nextGoal !== undefined
+      ? { evaluation: plannerResult.evaluation, memory: plannerResult.memory, nextGoal: plannerResult.nextGoal }
+      : undefined;
+
     const risk = assessRisk(action);
     if (risk === "blocked") {
-      return {
-        status: "blocked",
-        action,
-        message: `Blocked action: ${JSON.stringify(action)}`
-      };
+      return { status: "blocked", action, message: `Blocked action: ${JSON.stringify(action)}`, reflection };
     }
 
     if (this.session.mode === "human-approved" && risk === "review") {
-      return {
-        status: "needs_approval",
-        action,
-        message: `Approval needed for ${action.type}`
-      };
+      return { status: "needs_approval", action, message: `Approval needed for ${action.type}`, reflection };
     }
 
     if (action.type === "done") {
-      return {
-        status: "done",
-        action,
-        message: action.reason
-      };
+      return { status: "done", action, message: action.reason, reflection };
     }
 
     const message = await executeAction(action);
-    return { status: "executed", action, message };
+    return { status: "executed", action, message, reflection };
   }
 
   private async delay(ms: number): Promise<void> {
@@ -220,7 +217,7 @@ export function createBrowserAgent(config: LibraryAgentConfig, events?: LibraryA
   return new BrowserAgent(config, events);
 }
 
-export { parseAction } from "../shared/parse-action";
+export { parseAction, parsePlannerResult } from "../shared/parse-action";
 
 export type {
   AgentAction,
@@ -232,5 +229,6 @@ export type {
   PlannerConfig,
   PlannerInput,
   PlannerKind,
+  PlannerResult,
   RiskLevel
 } from "../shared/contracts";

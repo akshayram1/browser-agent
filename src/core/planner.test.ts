@@ -23,27 +23,27 @@ const submitBtn: CandidateElement   = { selector: "#submit", role: "button", tex
 
 describe("heuristic planner — navigate", () => {
   it("extracts URL from goal", async () => {
-    const action = await planNextAction(heuristic, makeInput("go to https://example.com"));
+    const { action } = await planNextAction(heuristic, makeInput("go to https://example.com"));
     assert.equal(action.type, "navigate");
     assert.equal((action as any).url, "https://example.com");
   });
 
   it("handles 'navigate to' prefix", async () => {
-    const action = await planNextAction(heuristic, makeInput("navigate to https://foo.com"));
+    const { action } = await planNextAction(heuristic, makeInput("navigate to https://foo.com"));
     assert.equal(action.type, "navigate");
   });
 });
 
 describe("heuristic planner — type / fill", () => {
   it("fills a named field", async () => {
-    const action = await planNextAction(heuristic, makeInput('fill "Jane" in Search', [searchInput]));
+    const { action } = await planNextAction(heuristic, makeInput('fill "Jane" in Search', [searchInput]));
     assert.equal(action.type, "type");
     assert.equal((action as any).text, "Jane");
     assert.equal((action as any).selector, "#search");
   });
 
   it("fills first input when no field hint matches", async () => {
-    const action = await planNextAction(heuristic, makeInput('search for hello', [searchInput]));
+    const { action } = await planNextAction(heuristic, makeInput('search for hello', [searchInput]));
     assert.equal(action.type, "type");
     assert.equal((action as any).selector, "#search");
   });
@@ -51,7 +51,7 @@ describe("heuristic planner — type / fill", () => {
 
 describe("heuristic planner — click", () => {
   it("clicks a button matching label", async () => {
-    const action = await planNextAction(heuristic, makeInput("click Submit", [submitBtn]));
+    const { action } = await planNextAction(heuristic, makeInput("click Submit", [submitBtn]));
     assert.equal(action.type, "click");
     assert.equal((action as any).selector, "#submit");
   });
@@ -59,17 +59,30 @@ describe("heuristic planner — click", () => {
 
 describe("heuristic planner — done fallback", () => {
   it("returns done when no candidates", async () => {
-    const action = await planNextAction(heuristic, makeInput("do something", []));
+    const { action } = await planNextAction(heuristic, makeInput("do something", []));
     assert.equal(action.type, "done");
   });
 
   it("returns done when no input or button found in fallback path", async () => {
-    // History-aware fallback only applies when no pattern matches.
-    // An unrecognised goal with no candidates → done.
-    const action = await planNextAction(
+    const { action } = await planNextAction(
       heuristic,
       makeInput("do something unusual xyz", [], ["Typed into #name", "Clicked #submit"])
     );
     assert.equal(action.type, "done");
+  });
+});
+
+describe("heuristic planner — PlannerResult shape", () => {
+  it("always wraps action in PlannerResult", async () => {
+    const result = await planNextAction(heuristic, makeInput("go to https://example.com"));
+    assert.ok("action" in result, "result should have action field");
+    assert.equal(result.action.type, "navigate");
+  });
+
+  it("heuristic planner has no reflection fields", async () => {
+    const result = await planNextAction(heuristic, makeInput("go to https://example.com"));
+    assert.equal(result.evaluation, undefined);
+    assert.equal(result.memory, undefined);
+    assert.equal(result.nextGoal, undefined);
   });
 });

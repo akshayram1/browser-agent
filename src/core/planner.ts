@@ -1,7 +1,8 @@
-import type { AgentAction, CandidateElement, PlannerConfig, PlannerInput } from "../shared/contracts";
+import type { AgentAction, CandidateElement, PlannerConfig, PlannerInput, PlannerResult } from "../shared/contracts";
 
 type WebLLMBridge = {
-  plan(input: PlannerInput, modelId?: string): Promise<AgentAction>;
+  // Bridge may return either PlannerResult (new, with reflection) or AgentAction (legacy)
+  plan(input: PlannerInput, modelId?: string): Promise<PlannerResult | AgentAction>;
 };
 
 const URL_PATTERN = /(?:go to|navigate to|open)\s+(https?:\/\/\S+)/i;
@@ -79,18 +80,31 @@ function heuristicPlan(input: PlannerInput): AgentAction {
   return { type: "done", reason: "No further heuristic actions available" };
 }
 
-export async function planNextAction(config: PlannerConfig, input: PlannerInput): Promise<AgentAction> {
+/** Normalize whatever a bridge returns into a PlannerResult. */
+function toPlannerResult(raw: PlannerResult | AgentAction): PlannerResult {
+  // New format: has an `action` key that is an object
+  if ("action" in raw && typeof (raw as PlannerResult).action === "object") {
+    return raw as PlannerResult;
+  }
+  // Legacy format: bare AgentAction
+  return { action: raw as AgentAction };
+}
+
+export async function planNextAction(config: PlannerConfig, input: PlannerInput): Promise<PlannerResult> {
   if (config.kind === "heuristic") {
-    return heuristicPlan(input);
+    return { action: heuristicPlan(input) };
   }
 
   const bridge = (window as Window & { __browserAgentWebLLM?: WebLLMBridge }).__browserAgentWebLLM;
   if (!bridge) {
     return {
-      type: "done",
-      reason: "WebLLM bridge is not configured. Use heuristic mode or wire a WebLLM bridge implementation."
+      action: {
+        type: "done",
+        reason: "WebLLM bridge is not configured. Use heuristic mode or wire a WebLLM bridge implementation."
+      }
     };
   }
 
-  return bridge.plan(input, config.modelId);
+  const raw = await bridge.plan(input, config.modelId);
+  return toPlannerResult(raw);
 }
