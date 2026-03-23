@@ -3,11 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OmniBrowser Agent</title>
-    <meta
-      name="description"
-      content="OmniBrowser Agent - local-first browser AI operator library."
-    />
+    <title>OmniBrowser Agent — Local-first Browser AI</title>
+    <meta name="description" content="OmniBrowser Agent — local-first browser AI operator. No API keys. No cloud. Runs entirely in the browser via WebLLM + WebGPU." />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -16,6 +13,7 @@
         <a class="brand" href="#home">OmniBrowser Agent</a>
         <nav class="nav">
           <a href="#home">Home</a>
+          <a href="#whats-new">What's New</a>
           <a href="#docs">Docs</a>
           <a href="#architecture">Architecture</a>
           <a href="#embedding">Embedding</a>
@@ -29,37 +27,29 @@
       <!-- HOME -->
       <section id="home" class="section hero">
         <div class="wrap">
-          <p class="eyebrow">Open-source browser automation SDK</p>
+          <p class="eyebrow">Open-source browser automation SDK · v0.2.6</p>
           <h1>Local-first browser AI automation library</h1>
           <p>
-            OmniBrowser Agent helps you run page observation, planning, and execution flows directly in the browser.
+            OmniBrowser Agent plans and executes DOM actions entirely in the browser — no API keys, no cloud costs, no data leaving your machine.
+            Wire in a WebLLM model and it reasons, remembers, and acts on any webpage.
           </p>
           <div class="chips">
             <span>Privacy-first</span>
-            <span>WebLLM-ready</span>
+            <span>WebLLM + WebGPU</span>
+            <span>Reflection loop</span>
             <span>Human-approved mode</span>
+            <span>Custom system prompt</span>
             <span>Embeddable API</span>
           </div>
           <div class="actions">
             <a class="btn primary" href="./examples/chatbot/">Live Demo</a>
-            <a
-              class="btn"
-              href="https://www.npmjs.com/package/@akshayram1/omnibrowser-agent"
-              target="_blank"
-              rel="noreferrer"
-              >NPM Package</a
-            >
-            <a
-              class="btn"
-              href="https://github.com/akshayram1/omnibrowser-agent"
-              target="_blank"
-              rel="noreferrer"
-              >GitHub Repo</a
-            >
+            <a class="btn" href="https://www.npmjs.com/package/@akshayram1/omnibrowser-agent" target="_blank" rel="noreferrer">NPM Package</a>
+            <a class="btn" href="https://github.com/akshayram1/omnibrowser-agent" target="_blank" rel="noreferrer">GitHub</a>
           </div>
           <div class="stats" aria-label="project stats">
-            <div class="stat"><strong>2</strong><span>Execution Modes</span></div>
-            <div class="stat"><strong>3</strong><span>Planner Options</span></div>
+            <div class="stat"><strong>2</strong><span>Agent Modes</span></div>
+            <div class="stat"><strong>2</strong><span>Planner Modes</span></div>
+            <div class="stat"><strong>8</strong><span>Action Types</span></div>
             <div class="stat"><strong>MIT</strong><span>License</span></div>
           </div>
           <div class="home-grid">
@@ -67,16 +57,18 @@
               <h3>Use Cases</h3>
               <ul>
                 <li>CRM profile lookup automation</li>
-                <li>Guided web task execution</li>
+                <li>Guided form-filling workflows</li>
                 <li>Assisted data extraction flows</li>
+                <li>Multi-step task automation</li>
               </ul>
             </article>
             <article class="card">
-              <h3>Core Modules</h3>
+              <h3>Core Engine</h3>
               <ul>
-                <li><strong>Observer:</strong> page signals and candidates</li>
-                <li><strong>Planner:</strong> next best action selection</li>
-                <li><strong>Executor:</strong> safe browser action runtime</li>
+                <li><strong>Observer:</strong> DOM snapshot + candidate elements</li>
+                <li><strong>Planner:</strong> reflection → next action</li>
+                <li><strong>Safety:</strong> safe / review / blocked gating</li>
+                <li><strong>Executor:</strong> DOM actions with framework compat</li>
               </ul>
             </article>
             <article class="card">
@@ -84,9 +76,79 @@
               <ul>
                 <li><a href="https://www.npmjs.com/package/@akshayram1/omnibrowser-agent" target="_blank" rel="noreferrer">NPM package</a></li>
                 <li><a href="https://github.com/akshayram1/omnibrowser-agent" target="_blank" rel="noreferrer">GitHub repository</a></li>
-                <li><a href="./README.md" target="_blank" rel="noreferrer">README</a></li>
+                <li><a href="./examples/chatbot/" target="_blank">Live Demo</a></li>
               </ul>
             </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- WHAT'S NEW -->
+      <section id="whats-new" class="section">
+        <div class="wrap">
+          <div class="surface">
+            <h2>What's New in v0.2.6</h2>
+            <p>This release implements the <strong>reflection-before-action pattern</strong> — the same loop used by leading browser agents — plus a new <code>systemPrompt</code> option so you can shape agent behaviour without rewriting the bridge.</p>
+
+            <h3>Reflection Loop <span class="badge new">New</span></h3>
+            <p>Before every action the agent now goes through a 4-step inner loop:</p>
+            <div class="docs-grid">
+              <article class="doc-card">
+                <h4>1 · Evaluate</h4>
+                <p>What happened in the previous step? Did it succeed? What changed on the page?</p>
+              </article>
+              <article class="doc-card">
+                <h4>2 · Remember</h4>
+                <p>What key facts should be carried into the next step? Selector mappings, field values, task state.</p>
+              </article>
+              <article class="doc-card">
+                <h4>3 · Plan</h4>
+                <p>State the next goal in plain English before choosing an action.</p>
+              </article>
+              <article class="doc-card">
+                <h4>4 · Act</h4>
+                <p>Output the specific DOM action: click, type, navigate, scroll, etc.</p>
+              </article>
+            </div>
+
+            <p>The WebLLM bridge now returns the full reflection object:</p>
+            <pre><code>{
+  "evaluation": "The name field was filled successfully.",
+  "memory":     "Name=#name done. Next: fill email at #email.",
+  "next_goal":  "Type the email address into #email",
+  "action":     { "type": "type", "selector": "#email", "text": "jane@example.com", "clearFirst": true }
+}</code></pre>
+
+            <p>The <code>nextGoal</code> field is surfaced in the live demo as a <strong>💭 thought bubble</strong> before each action, so you can follow the agent's reasoning in real time.</p>
+
+            <h3>Working Memory Across Steps <span class="badge new">New</span></h3>
+            <p>The agent's <code>memory</code> string is automatically carried forward from one tick to the next inside <code>AgentSession</code>. The planner receives it as <code>input.memory</code> and can update it each step — giving the agent a scratchpad across the whole task.</p>
+
+            <h3>Custom System Prompt <span class="badge new">New</span></h3>
+            <p>Pass your own system prompt directly in the planner config — no need to rewrite the bridge:</p>
+            <pre><code>const agent = createBrowserAgent({
+  goal: "Fill the checkout form",
+  planner: {
+    kind: "webllm",
+    systemPrompt: "You are a careful checkout assistant. Never submit before all required fields are filled."
+  }
+});</code></pre>
+
+            <h3>New Exports <span class="badge new">New</span></h3>
+            <ul>
+              <li><code>parsePlannerResult(raw)</code> — parse the full reflection+action JSON from raw LLM output, with fallback to bare AgentAction for backward compatibility.</li>
+              <li><code>PlannerResult</code> type — <code>{ action, evaluation?, memory?, nextGoal? }</code></li>
+            </ul>
+            <pre><code>import { parsePlannerResult } from "@akshayram1/omnibrowser-agent";
+
+const result = parsePlannerResult(llmRawOutput);
+// result.action    → AgentAction
+// result.evaluation → string | undefined
+// result.memory    → string | undefined
+// result.nextGoal  → string | undefined</code></pre>
+
+            <h3>Backward Compatible</h3>
+            <p>Existing bridges that return a bare <code>AgentAction</code> object still work without any changes. The library normalises both formats automatically.</p>
           </div>
         </div>
       </section>
@@ -96,7 +158,7 @@
         <div class="wrap">
           <div class="surface">
             <h2>Docs</h2>
-            <p>Everything you need to install, initialize, and run your first browser agent.</p>
+            <p>Everything you need to install, initialise, and run your first browser agent.</p>
 
             <h3>Installation</h3>
             <pre><code>npm install @akshayram1/omnibrowser-agent</code></pre>
@@ -107,83 +169,94 @@
 const agent = createBrowserAgent(
   {
     goal: "Open CRM and find customer John Smith",
-    mode: "human-approved",
-    planner: { kind: "heuristic" }
+    mode: "human-approved",        // or "autonomous"
+    planner: { kind: "heuristic" } // or "webllm"
   },
   {
-    onStep: (result) => console.log(result.message),
-    onApprovalRequired: (action) => console.log("Needs approval:", action),
-    onDone: (result) => console.log("Done:", result.message),
-    onMaxStepsReached: (session) => console.log("Max steps hit", session.history)
+    onStep:            (result, session) => console.log(result.message),
+    onApprovalRequired:(action, session) => console.log("Needs approval:", action),
+    onDone:            (result, session) => console.log("Done:", result.message),
+    onError:           (err,    session) => console.error(err),
+    onMaxStepsReached: (session)         => console.log("Max steps hit"),
   }
 );
 
 await agent.start();
 
-// Resume after approval:
+// Resume after an approval prompt:
 await agent.resume();
 
-// Inspect state:
+// Inspect state at any time:
 console.log(agent.isRunning, agent.hasPendingAction);
 
 // Stop:
 agent.stop();</code></pre>
 
-            <h3>AbortSignal support</h3>
+            <h3>AbortSignal Support</h3>
             <pre><code>const controller = new AbortController();
 const agent = createBrowserAgent({ goal: "...", signal: controller.signal });
 agent.start();
 
-// Cancel from outside:
-controller.abort();</code></pre>
+controller.abort(); // cancel from outside</code></pre>
 
-            <h3>Execution Modes</h3>
+            <h3>Reading Reflection Fields</h3>
+            <p>Every <code>onStep</code> result now includes optional reflection data from the planner:</p>
+            <pre><code>onStep(result, session) {
+  if (result.reflection?.nextGoal) {
+    console.log("Agent thinking:", result.reflection.nextGoal);
+  }
+  if (result.reflection?.memory) {
+    console.log("Agent memory:", result.reflection.memory);
+  }
+  console.log("Action:", result.message);
+}</code></pre>
+
+            <h3>Agent Modes</h3>
             <div class="docs-grid">
               <article class="doc-card">
                 <h4>human-approved</h4>
-                <p>Requires explicit approval for sensitive actions. Best for production-like workflows.</p>
+                <p>Pauses on review-rated actions and fires <code>onApprovalRequired</code>. Call <code>agent.resume()</code> to continue. Recommended for CRM, finance, and admin flows.</p>
               </article>
               <article class="doc-card">
                 <h4>autonomous</h4>
-                <p>Runs actions continuously with fewer pauses. Best for rapid iteration and demos.</p>
+                <p>Executes all safe and review actions without pausing. Best for rapid prototyping and demos.</p>
               </article>
             </div>
 
-            <h3>Planner Options</h3>
+            <h3>Planner Modes</h3>
             <div class="docs-grid">
               <article class="doc-card">
                 <h4>heuristic</h4>
-                <p>Zero-dependency regex-based planner. Works offline. Best for simple, predictable goals.</p>
+                <p>Zero-dependency regex planner. Works fully offline. Best for simple, predictable goals: navigate, fill a field, click a button.</p>
               </article>
               <article class="doc-card">
                 <h4>webllm</h4>
-                <p>Delegates to a local WebLLM bridge (<code>window.__browserAgentWebLLM</code>). Fully private, no API calls.</p>
+                <p>On-device LLM via WebGPU through <code>window.__browserAgentWebLLM</code>. Fully private. Supports the reflection loop and custom system prompts.</p>
               </article>
-
             </div>
 
             <h3>Supported Actions</h3>
             <table>
               <thead>
-                <tr><th>Action</th><th>Description</th></tr>
+                <tr><th>Action</th><th>Description</th><th>Risk level</th></tr>
               </thead>
               <tbody>
-                <tr><td><code>click</code></td><td>Click an element by CSS selector</td></tr>
-                <tr><td><code>type</code></td><td>Type text into an input or textarea</td></tr>
-                <tr><td><code>navigate</code></td><td>Navigate to a URL</td></tr>
-                <tr><td><code>extract</code></td><td>Extract text from an element</td></tr>
-                <tr><td><code>scroll</code></td><td>Scroll a container or the page</td></tr>
-                <tr><td><code>focus</code></td><td>Focus an element (useful for dropdowns)</td></tr>
-                <tr><td><code>wait</code></td><td>Pause for a given number of milliseconds</td></tr>
-                <tr><td><code>done</code></td><td>Signal task completion</td></tr>
+                <tr><td><code>navigate</code></td><td>Navigate to a URL (http/https only)</td><td>safe</td></tr>
+                <tr><td><code>click</code></td><td>Click an element by CSS selector</td><td>safe / review</td></tr>
+                <tr><td><code>type</code></td><td>Type text into an input or textarea</td><td>safe / review</td></tr>
+                <tr><td><code>scroll</code></td><td>Scroll a container or the page</td><td>safe</td></tr>
+                <tr><td><code>focus</code></td><td>Focus an element (useful for dropdowns)</td><td>safe</td></tr>
+                <tr><td><code>wait</code></td><td>Pause for N milliseconds</td><td>safe</td></tr>
+                <tr><td><code>extract</code></td><td>Extract text from an element</td><td>review</td></tr>
+                <tr><td><code>done</code></td><td>Signal task completion</td><td>safe</td></tr>
               </tbody>
             </table>
 
-            <h3>Safety Notes</h3>
+            <h3>Safety Model</h3>
             <ul>
-              <li>Prefer scoped selectors for deterministic action targeting.</li>
-              <li>Use <code>human-approved</code> mode for workflows that mutate critical data.</li>
-              <li>Log <code>onStep</code> output for auditability and debugging.</li>
+              <li><strong>safe</strong> — executes immediately in all modes.</li>
+              <li><strong>review</strong> — pauses in <code>human-approved</code> mode; executes in <code>autonomous</code>. Triggered by actions on labels matching delete / submit / pay / confirm / transfer.</li>
+              <li><strong>blocked</strong> — never executes. Triggered by <code>javascript:</code>, <code>file:</code>, or malformed URLs.</li>
             </ul>
           </div>
         </div>
@@ -194,77 +267,85 @@ controller.abort();</code></pre>
         <div class="wrap">
           <div class="surface">
             <h2>Architecture</h2>
-            <p>How OmniBrowser Agent is structured internally and how its components interact.</p>
+            <p>OmniBrowser Agent is split into two delivery modes that share the same underlying engine. See the full breakdown in <a href="https://github.com/akshayram1/omnibrowser-agent/blob/main/docs/arch.md" target="_blank" rel="noreferrer">docs/arch.md</a>.</p>
 
-            <h3>Goals</h3>
-            <ul>
-              <li>Local-first runtime in browser</li>
-              <li>Privacy-first defaults</li>
-              <li>Open-source composable planner/executor contracts</li>
-              <li>Human-approved mode for risky actions</li>
-            </ul>
-
-            <h3>Runtime Components</h3>
+            <h3>Delivery Layer</h3>
             <div class="docs-grid">
               <article class="doc-card">
-                <h4>Popup UI</h4>
-                <p>Starts/stops sessions. Picks execution mode (<code>autonomous</code>, <code>human-approved</code>) and planner (<code>heuristic</code>, <code>webllm</code>).</p>
+                <h4>🧩 Chrome Extension</h4>
+                <p>Popup UI + background service worker. Manages sessions per tab and drives the tick loop via <code>chrome.tabs.sendMessage</code>.</p>
               </article>
               <article class="doc-card">
-                <h4>Background Service Worker</h4>
-                <p>Session state machine per tab. Tick loop orchestration and approval handling.</p>
-              </article>
-              <article class="doc-card">
-                <h4>Content Agent</h4>
-                <p><strong>pageObserver</strong> — page snapshot extraction.<br>
-                <strong>planner</strong> — next-action decision.<br>
-                <strong>safety</strong> — risk gating.<br>
-                <strong>executor</strong> — DOM action execution.</p>
+                <h4>📦 npm Library</h4>
+                <p><code>createBrowserAgent()</code> — runs the same tick loop in-process inside your web app. No extension required.</p>
               </article>
             </div>
 
-            <h3>Action Contracts</h3>
-            <p>All components share a typed action protocol defined in <code>src/shared/contracts.ts</code>:</p>
-            <ul>
-              <li><code>click</code> — click element by CSS selector</li>
-              <li><code>type</code> — type text into input/textarea</li>
-              <li><code>navigate</code> — navigate to URL</li>
-              <li><code>extract</code> — extract text from element</li>
-              <li><code>scroll</code> — scroll container or page</li>
-              <li><code>focus</code> — focus an element</li>
-              <li><code>wait</code> — pause for N milliseconds</li>
-              <li><code>done</code> — signal task completion</li>
-            </ul>
+            <h3>Core Modules <code>src/core/</code></h3>
+            <div class="docs-grid">
+              <article class="doc-card">
+                <h4>observer.ts</h4>
+                <p>Queries all interactive elements, filters invisible ones, resolves accessible labels (<code>aria-label</code>, <code>for/id</code>, wrapping <code>&lt;label&gt;</code>), caps at 60 candidates. Returns <code>PageSnapshot</code>.</p>
+              </article>
+              <article class="doc-card">
+                <h4>planner.ts</h4>
+                <p>Calls heuristic regex or the <code>window.__browserAgentWebLLM</code> bridge. Returns <code>PlannerResult</code> — action plus optional <code>evaluation</code>, <code>memory</code>, <code>nextGoal</code>.</p>
+              </article>
+              <article class="doc-card">
+                <h4>executor.ts</h4>
+                <p>Performs DOM actions. Uses <code>InputEvent</code> with <code>bubbles: true</code> for React/Vue compat. Verifies element exists, is not disabled, and value updated. Throws on failure so the retry loop feeds <code>lastError</code> back.</p>
+              </article>
+            </div>
 
-            <h3>Safety Model</h3>
-            <ul>
-              <li>Block invalid URL protocols</li>
-              <li>Review risky actions (submit/delete/pay-like selectors)</li>
-              <li>In <code>human-approved</code> mode, review-level actions require manual approval before execution</li>
-            </ul>
+            <h3>Data Flow — One Tick</h3>
+            <pre><code>goal + history + memory
+        │
+        ▼
+observer.collectSnapshot()   →  PageSnapshot (url, title, candidates[])
+        │
+        ▼
+planner.planNextAction()     →  PlannerResult
+                                  { action, evaluation?, memory?, nextGoal? }
+        │
+        ▼
+safety.assessRisk(action)    →  safe | review | blocked
+        │
+   ┌────┴──────────────────────────┐
+blocked                  review (human-approved mode)
+   │                               │
+  stop                   pause → user approves → resume()
+                                   │
+                              safe / approved
+                                   │
+                                   ▼
+                executor.executeAction(action)  →  result string
+                                   │
+                                   ▼
+                       session.history.push(result)
+                       session.memory = plannerResult.memory
+                       → next tick</code></pre>
 
-            <h3>Planner Bridges</h3>
-            <p>
-              All planner bridges follow the same pattern — an object attached to <code>window</code>
-              that implements a <code>plan()</code> method returning an <code>AgentAction</code>.
-              The core library has <strong>zero runtime dependencies</strong>; bridge implementations are provided by the consumer.
-            </p>
-
-            <h4>WebLLM bridge</h4>
+            <h3>WebLLM Bridge Contract</h3>
+            <p>Attach an object to <code>window.__browserAgentWebLLM</code> before starting the agent. The bridge can return either the new <code>PlannerResult</code> format or a bare <code>AgentAction</code> (backward compatible).</p>
             <pre><code>window.__browserAgentWebLLM = {
   async plan(input, modelId) {
-    // call your local WebLLM engine and return one AgentAction
-    return { type: "done", reason: "result from model" };
+    // input.goal, input.snapshot, input.history,
+    // input.lastError, input.memory, input.systemPrompt
+    return {
+      evaluation: "Previous step succeeded.",
+      memory:     "Name field is #name.",
+      next_goal:  "Fill the email field.",
+      action: { "type": "type", "selector": "#email", "text": "jane@example.com", "clearFirst": true }
+    };
   }
 };</code></pre>
 
-
             <h3>Current Limitations</h3>
             <ul>
-              <li>No persistent long-term memory yet</li>
-              <li>No task DSL or skills registry yet</li>
-              <li>Risk scoring is a simple keyword heuristic</li>
-              <li>No robust selector healing yet</li>
+              <li>No persistent long-term memory (IndexedDB) yet</li>
+              <li>No goal decomposition / multi-step task graphs yet</li>
+              <li>Risk scoring is keyword-based, not semantic</li>
+              <li>No selector healing or fallback strategy yet</li>
             </ul>
           </div>
         </div>
@@ -275,12 +356,12 @@ controller.abort();</code></pre>
         <div class="wrap">
           <div class="surface">
             <h2>Embedding Guide</h2>
-            <p>How to embed OmniBrowser Agent as a library inside your own web application.</p>
+            <p>Embed OmniBrowser Agent as a library in any web application. Full reference in <a href="https://github.com/akshayram1/omnibrowser-agent/blob/main/docs/EMBEDDING.md" target="_blank" rel="noreferrer">docs/EMBEDDING.md</a>.</p>
 
             <h3>Install</h3>
             <pre><code>npm install @akshayram1/omnibrowser-agent</code></pre>
 
-            <h3>Basic Usage</h3>
+            <h3>Heuristic Planner (zero setup)</h3>
             <pre><code>import { createBrowserAgent } from "@akshayram1/omnibrowser-agent";
 
 const agent = createBrowserAgent(
@@ -292,41 +373,79 @@ const agent = createBrowserAgent(
     stepDelayMs: 400
   },
   {
-    onStep: (result) => console.log("step", result),
-    onApprovalRequired: (action) => {
-      console.log("approval required", action);
-      // Show your own modal/button then call approvePendingAction()
-    },
-    onDone: (result) => console.log("done", result),
-    onError: (error) => console.error(error)
+    onStep:             (result) => console.log("step", result),
+    onApprovalRequired: (action) => showApprovalModal(action),
+    onDone:             (result) => console.log("done", result),
+    onError:            (error)  => console.error(error)
   }
 );
 
-await agent.start();</code></pre>
+await agent.start();
 
-            <h3>Approve a Pending Action</h3>
-            <pre><code>await agent.approvePendingAction();</code></pre>
+// Approve a paused action:
+await agent.approvePendingAction();
 
-            <h3>Stop Running Session</h3>
-            <pre><code>agent.stop();</code></pre>
+// Stop at any time:
+agent.stop();</code></pre>
 
-            <h3>WebLLM Mode</h3>
-            <p>To use planner mode <code>webllm</code>, provide a local bridge in your app:</p>
-            <pre><code>window.__browserAgentWebLLM = {
+            <h3>WebLLM Planner with Reflection</h3>
+            <p>Load a WebLLM engine, wire the bridge, then start the agent. The bridge receives the full reflection input and should return the reflection+action object:</p>
+            <pre><code>import * as webllm from "@mlc-ai/web-llm";
+import { createBrowserAgent, parsePlannerResult } from "@akshayram1/omnibrowser-agent";
+
+const engine = await webllm.CreateMLCEngine("Llama-3.2-3B-Instruct-q4f16_1-MLC");
+
+window.__browserAgentWebLLM = {
   async plan(input, modelId) {
-    // call your local WebLLM engine and return one AgentAction JSON
-    return { type: "done", reason: `Implement bridge with model ${modelId ?? "default"}` };
+    const { goal, history, lastError, memory, systemPrompt } = input;
+
+    const defaultSystem = `You are a browser automation agent.
+Output ONLY a JSON object in this format:
+{"evaluation":"...","memory":"...","next_goal":"...","action":{...}}`;
+
+    const resp = await engine.chat.completions.create({
+      messages: [
+        { role: "system", content: systemPrompt || defaultSystem },
+        { role: "user",   content: `Goal: "${goal}"\nHistory: ${history.slice(-4).join(" → ")}${memory ? "\nMemory: " + memory : ""}${lastError ? "\nLast error: " + lastError : ""}` }
+      ],
+      temperature: 0,
+      max_tokens: 200
+    });
+
+    return parsePlannerResult(resp.choices[0].message.content);
   }
 };
 
-// Then configure:
-planner: { kind: "webllm", modelId: "Llama-3.2-1B-Instruct-q4f16_1-MLC" }</code></pre>
+const agent = createBrowserAgent({
+  goal: "Fill the checkout form with my details",
+  planner: { kind: "webllm" }
+}, {
+  onStep(result) {
+    if (result.reflection?.nextGoal) console.log("💭", result.reflection.nextGoal);
+    console.log("✅", result.message);
+  }
+});
+
+await agent.start();</code></pre>
+
+            <h3>Custom System Prompt</h3>
+            <p>Shape the agent's personality or constraints without touching the bridge:</p>
+            <pre><code>const agent = createBrowserAgent({
+  goal: "Book a meeting room for tomorrow",
+  planner: {
+    kind: "webllm",
+    systemPrompt: `You are a careful meeting room booking assistant.
+Always confirm the room is available before clicking Book.
+Never navigate away from the booking portal.`
+  }
+});</code></pre>
 
             <h3>Notes</h3>
             <ul>
-              <li>For production, mount this inside an authenticated app shell and add your own permission checks.</li>
-              <li><code>human-approved</code> mode is recommended for CRM, finance, and admin actions.</li>
               <li>The WebLLM bridge is not bundled — bring your own engine and attach it to <code>window.__browserAgentWebLLM</code>.</li>
+              <li>Use <code>human-approved</code> mode for CRM, finance, and admin actions.</li>
+              <li>Bridges returning a bare <code>AgentAction</code> still work — backward compatible.</li>
+              <li>For production apps, mount inside an authenticated shell and add your own permission checks.</li>
             </ul>
           </div>
         </div>
@@ -337,6 +456,7 @@ planner: { kind: "webllm", modelId: "Llama-3.2-1B-Instruct-q4f16_1-MLC" }</code>
         <div class="wrap">
           <div class="surface">
             <h2>Roadmap</h2>
+            <p>Full roadmap in <a href="https://github.com/akshayram1/omnibrowser-agent/blob/main/docs/ROADMAP.md" target="_blank" rel="noreferrer">docs/ROADMAP.md</a>.</p>
 
             <h3>v0.1</h3>
             <ul>
@@ -346,20 +466,30 @@ planner: { kind: "webllm", modelId: "Llama-3.2-1B-Instruct-q4f16_1-MLC" }</code>
               <li>Human-approved mode</li>
             </ul>
 
-            <h3>v0.2 <span class="badge">current</span></h3>
+            <h3>v0.2 <span class="badge">stable</span></h3>
             <ul>
               <li>New actions: <code>scroll</code>, <code>focus</code></li>
               <li>Improved heuristic planner with regex goal patterns</li>
-              <li>Better page observation (visibility filtering, placeholder capture, up to 60 candidates)</li>
+              <li>Better page observation (visibility filtering, up to 60 candidates)</li>
               <li>Library API: <code>resume()</code>, <code>isRunning</code>, <code>hasPendingAction</code>, <code>AbortSignal</code>, <code>onMaxStepsReached</code></li>
+              <li>CI pipeline with auto version bump on push to main</li>
+            </ul>
+
+            <h3>v0.2.6 <span class="badge new">current</span></h3>
+            <ul>
+              <li>Reflection-before-action pattern (<code>evaluation → memory → next_goal → act</code>)</li>
+              <li>Working memory carried across ticks via <code>AgentSession.memory</code></li>
+              <li><code>parsePlannerResult()</code> exported from library</li>
+              <li><code>systemPrompt</code> option in <code>PlannerConfig</code></li>
+              <li>Thought bubble (💭) messages in live demo</li>
+              <li>Chatbot UI redesign: tabs, typing indicator, right-aligned messages</li>
             </ul>
 
             <h3>v0.3</h3>
             <ul>
               <li>Site profile and policy engine (allowlist, blocked domains)</li>
               <li>Selector healing and fallback strategy</li>
-              <li>Session memory and action replay log</li>
-              <li>Drupal CRM starter skills</li>
+              <li>Session replay log</li>
             </ul>
 
             <h3>v1.0</h3>
@@ -382,27 +512,11 @@ planner: { kind: "webllm", modelId: "Llama-3.2-1B-Instruct-q4f16_1-MLC" }</code>
             <h2>Contact</h2>
             <p>Maintainer: Akshay Chame</p>
             <ul>
-              <li>
-                Email:
-                <a href="mailto:akshaychame2@gmail.com">akshaychame2@gmail.com</a>
-              </li>
-              <li>
-                GitHub:
-                <a href="https://github.com/akshayram1" target="_blank" rel="noreferrer">@akshayram1</a>
-              </li>
-              <li>
-                Package:
-                <a
-                  href="https://www.npmjs.com/package/@akshayram1/omnibrowser-agent"
-                  target="_blank"
-                  rel="noreferrer"
-                  >@akshayram1/omnibrowser-agent</a
-                >
-              </li>
+              <li>Email: <a href="mailto:akshaychame2@gmail.com">akshaychame2@gmail.com</a></li>
+              <li>GitHub: <a href="https://github.com/akshayram1" target="_blank" rel="noreferrer">@akshayram1</a></li>
+              <li>Package: <a href="https://www.npmjs.com/package/@akshayram1/omnibrowser-agent" target="_blank" rel="noreferrer">@akshayram1/omnibrowser-agent</a></li>
             </ul>
-            <p class="contact-note">
-              For feature requests or bugs, please open an issue on GitHub with reproduction steps.
-            </p>
+            <p class="contact-note">For feature requests or bugs, please open an issue on GitHub with reproduction steps.</p>
           </div>
         </div>
       </section>
@@ -410,7 +524,7 @@ planner: { kind: "webllm", modelId: "Llama-3.2-1B-Instruct-q4f16_1-MLC" }</code>
 
     <footer class="footer">
       <div class="wrap">
-        <p>© 2026 OmniBrowser Agent · MIT License</p>
+        <p>© 2026 OmniBrowser Agent · MIT License · <a href="https://github.com/akshayram1/omnibrowser-agent" target="_blank" rel="noreferrer">GitHub</a></p>
       </div>
     </footer>
   </body>
