@@ -11,70 +11,69 @@ const profileEmailEl = document.getElementById("profile-email");
 const profileCompanyEl = document.getElementById("profile-company");
 const profileSourceEl = document.getElementById("profile-source");
 
-const startBtn = document.getElementById("start");
-const approveBtn = document.getElementById("approve");
-const stopBtn = document.getElementById("stop");
+const startBtn    = document.getElementById("start");
+const approveBtn  = document.getElementById("approve");
+const stopBtn     = document.getElementById("stop");
+const loadModelBtn   = document.getElementById("load-model");
+const progressWrapEl = document.getElementById("progress-wrap");
+const progressFillEl = document.getElementById("progress-fill");
+const progressTextEl = document.getElementById("progress-text");
+const webgpuWarnEl   = document.getElementById("webgpu-warn");
+const sdotEl         = document.getElementById("sdot");
+const modelStatusTextEl = document.getElementById("model-status-text");
 
 let agent = null;
-let enginePromise = null;
+let loadedEngine = null;
 const AGENT_SCOPE_SELECTOR = "#crm-root";
 const PLANNER_TIMEOUT_MS = 7000;
 let isStarting = false;
 let lastOpenedProfileName = "";
 
-async function loadWebLLMModule() {
-  const sources = [
-    "https://esm.run/@mlc-ai/web-llm@0.2.82",
-    "https://esm.run/@mlc-ai/web-llm",
-    "https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.82/+esm"
-  ];
-
-  let lastError = null;
-  for (const source of sources) {
-    try {
-      log("Trying WebLLM source", { source });
-      return await import(source);
-    } catch (error) {
-      lastError = error;
-      log("WebLLM source failed", { source, message: String(error) });
-    }
+async function loadModel() {
+  if (!navigator.gpu) {
+    webgpuWarnEl.classList.add("visible");
+    modelStatusTextEl.textContent = "WebGPU unavailable — using heuristic planner";
+    return;
   }
 
-  throw lastError ?? new Error("Failed to load WebLLM module from all configured CDN sources");
-}
+  const modelId = modelEl.value;
+  loadModelBtn.disabled = true;
+  modelEl.disabled = true;
+  sdotEl.className = "sdot loading";
+  modelStatusTextEl.textContent = "Loading model…";
+  progressWrapEl.classList.add("visible");
+  setStatus("loading WebLLM model");
 
-async function loadEngine(modelId) {
-  if (enginePromise) {
-    return enginePromise;
-  }
-
-  enginePromise = (async () => {
-    setStatus(`loading WebLLM model: ${modelId}`);
-    log("Loading WebLLM from CDN", { modelId });
-
-    const webllm = await loadWebLLMModule();
-    const engine = await webllm.CreateMLCEngine(modelId, {
-      initProgressCallback: (report) => {
-        const progress = Math.round((report.progress ?? 0) * 100);
-        setStatus(`loading model ${progress}%`);
+  try {
+    const webllm = await import("https://esm.run/@mlc-ai/web-llm");
+    loadedEngine = await webllm.CreateMLCEngine(modelId, {
+      initProgressCallback({ progress, text }) {
+        progressFillEl.style.width = `${Math.round(progress * 100)}%`;
+        progressTextEl.textContent = text || `${Math.round(progress * 100)}%`;
       }
     });
 
+    progressWrapEl.classList.remove("visible");
+    sdotEl.className = "sdot ready";
+    modelStatusTextEl.textContent = `${modelEl.options[modelEl.selectedIndex].text.split("—")[0].trim()} ready`;
+    loadModelBtn.textContent = "Reload";
+    loadModelBtn.disabled = false;
+    modelEl.disabled = false;
     setStatus("WebLLM model loaded");
     log("WebLLM ready", { modelId });
-    return engine;
-  })().catch((error) => {
-    enginePromise = null;
+  } catch (error) {
+    loadedEngine = null;
+    progressWrapEl.classList.remove("visible");
+    sdotEl.className = "sdot";
+    modelStatusTextEl.textContent = "Load failed — check WebGPU support";
+    loadModelBtn.disabled = false;
+    modelEl.disabled = false;
     setStatus("WebLLM load failed");
-    log("WebLLM load error", {
-      message: String(error),
-      hint: "Check WebGPU support and try Chrome/Edge latest version."
-    });
-    throw error;
-  });
-
-  return enginePromise;
+    log("WebLLM load error", { message: String(error) });
+  }
 }
+
+loadModelBtn.addEventListener("click", loadModel);
 
 function parseActionFromModel(content) {
   if (typeof content !== "string" || content.trim().length === 0) {
@@ -237,9 +236,8 @@ function withTimeout(promise, ms, label) {
 }
 
 window.__browserAgentWebLLM = {
-  async plan(input, modelId) {
-    const resolvedModel = modelId || modelEl.value;
-    const engine = await loadEngine(resolvedModel);
+  async plan(input) {
+    const engine = loadedEngine;
 
     const scopedCandidates = (input.snapshot.candidates || [])
       .filter((candidate) => isSelectorInScope(candidate.selector))

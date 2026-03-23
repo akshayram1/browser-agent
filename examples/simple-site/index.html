@@ -126,6 +126,67 @@
         border-color: #93c5fd;
         color: #1d4ed8;
       }
+      .model-loader {
+        display: grid;
+        gap: 8px;
+      }
+      .model-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+        align-items: center;
+      }
+      .model-row select {
+        font-size: 13px;
+        padding: 8px 10px;
+      }
+      .load-btn {
+        width: auto;
+        padding: 8px 18px;
+        background: #3b82f6;
+        font-size: 13px;
+        font-weight: 700;
+        white-space: nowrap;
+        border-radius: 8px;
+      }
+      .load-btn:disabled { opacity: .45; cursor: not-allowed; }
+      .progress-wrap { display: none; }
+      .progress-wrap.visible { display: grid; gap: 4px; }
+      .progress-track {
+        height: 4px;
+        background: #e3e7ef;
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #3b82f6, #60a5fa);
+        border-radius: 999px;
+        width: 0%;
+        transition: width .4s ease;
+      }
+      .progress-text { font-size: 11px; color: #64748b; }
+      .webgpu-warn {
+        padding: 7px 10px;
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        border-radius: 8px;
+        font-size: 12px;
+        color: #92400e;
+        display: none;
+      }
+      .webgpu-warn.visible { display: block; }
+      .model-status {
+        display: flex; align-items: center; gap: 6px;
+        font-size: 12px; color: #64748b;
+      }
+      .sdot {
+        width: 7px; height: 7px; border-radius: 50%;
+        background: #cbd5e1; flex-shrink: 0;
+      }
+      .sdot.ready   { background: #22c55e; }
+      .sdot.loading { background: #f59e0b; animation: pulse 1s ease-in-out infinite; }
+      @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
       .profile-result {
         display: none;
         margin-top: 12px;
@@ -169,18 +230,33 @@
         <label for="goal">Goal</label>
         <textarea id="goal">search Jane Doe and open profile</textarea>
 
-        <div class="row">
+        <div class="model-loader">
+          <label>WebLLM Model</label>
+          <div class="model-row">
+            <select id="model">
+              <option value="Llama-3.2-1B-Instruct-q4f16_1-MLC">Llama 3.2 1B — fast, ~600 MB</option>
+              <option value="Llama-3.2-3B-Instruct-q4f16_1-MLC">Llama 3.2 3B — better, ~1.5 GB</option>
+              <option value="Phi-3.5-mini-instruct-q4f16_1-MLC">Phi-3.5 Mini — quality, ~2 GB</option>
+            </select>
+            <button class="load-btn" id="load-model">Load AI</button>
+          </div>
+          <div class="progress-wrap" id="progress-wrap">
+            <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+            <div class="progress-text" id="progress-text">Initialising…</div>
+          </div>
+          <div class="webgpu-warn" id="webgpu-warn">⚠️ WebGPU unavailable — try Chrome 113+. Agent will use heuristic planner.</div>
+          <div class="model-status">
+            <div class="sdot" id="sdot"></div>
+            <span id="model-status-text">No model loaded — click Load AI or start with heuristic planner</span>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:4px">
           <div>
             <label for="mode">Mode</label>
             <select id="mode">
               <option value="human-approved">human-approved</option>
               <option value="autonomous">autonomous</option>
-            </select>
-          </div>
-          <div>
-            <label for="model">WebLLM Model</label>
-            <select id="model">
-              <option value="Llama-3.2-1B-Instruct-q4f16_1-MLC">Llama-3.2-1B-Instruct-q4f16_1-MLC</option>
             </select>
           </div>
         </div>
@@ -191,7 +267,7 @@
           <button id="stop" class="secondary">Stop</button>
         </div>
 
-        <div class="status" id="status">Status: idle (WebLLM not loaded)</div>
+        <div class="status" id="status">Status: idle</div>
       </div>
 
       <div class="panel" id="crm-root">
