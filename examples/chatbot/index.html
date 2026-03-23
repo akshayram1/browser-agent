@@ -593,15 +593,13 @@
 
     // ── WebLLM bridge ──
     async function planWithWebLLM(input) {
-      const { goal, history, lastError, memory } = input;
+      const { goal, history, lastError, memory, systemPrompt } = input;
       const ctx = buildDemoContext();
       const recent = history.slice(-4).join(" → ") || "none";
       const errHint = lastError ? `\nLast action FAILED: "${lastError}". Try a different approach.` : "";
       const memHint = memory ? `\nWorking memory: ${memory}` : "";
 
-      const resp = await llmEngine.chat.completions.create({
-        messages: [
-          { role: "system", content:
+      const defaultSystem =
 `You are a browser automation agent. You MUST output ONLY a single valid JSON object in this exact format:
 {"evaluation":"<what happened last step>","memory":"<key facts to remember>","next_goal":"<what you will do next>","action":<action object>}
 
@@ -610,7 +608,11 @@ The action must be one of:
 - {"type":"click","selector":"#id"}
 - {"type":"done","reason":"goal complete"}
 
-No extra text. No markdown. Only the JSON object.` },
+No extra text. No markdown. Only the JSON object.`;
+
+      const resp = await llmEngine.chat.completions.create({
+        messages: [
+          { role: "system", content: systemPrompt || defaultSystem },
           { role: "user", content:
 `Goal: "${goal}"
 Recent history: ${recent}${errHint}${memHint}

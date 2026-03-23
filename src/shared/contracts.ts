@@ -36,6 +36,8 @@ export interface PlannerInput {
   lastError?: string;
   /** Accumulated working memory written by the planner across steps */
   memory?: string;
+  /** Custom system prompt forwarded from PlannerConfig */
+  systemPrompt?: string;
 }
 
 /**
@@ -56,6 +58,8 @@ export interface PlannerResult {
 export interface PlannerConfig {
   kind: PlannerKind;
   modelId?: string;
+  /** Custom system prompt injected into the WebLLM bridge — lets users shape agent behaviour without rewriting the bridge */
+  systemPrompt?: string;
 }
 
 export interface AgentSession {

@@ -105,6 +105,6 @@ export async function planNextAction(config: PlannerConfig, input: PlannerInput)
     };
   }
 
-  const raw = await bridge.plan(input, config.modelId);
+  const raw = await bridge.plan({ ...input, systemPrompt: config.systemPrompt }, config.modelId);
   return toPlannerResult(raw);
 }
