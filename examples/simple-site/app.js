@@ -1,4 +1,4 @@
-import { createBrowserAgent } from "../../dist/lib.js";
+import { createBrowserAgent } from "https://unpkg.com/@akshayram1/omnibrowser-agent/dist/lib.js";
 
 const goalEl = document.getElementById("goal");
 const modeEl = document.getElementById("mode");
