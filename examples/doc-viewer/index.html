@@ -748,19 +748,17 @@ window.__browserAgentWebLLM = {
       const memHint = memory ? `\nWorking memory: ${memory}` : "";
 
       const systemPrompt =
-`You are a documentation navigation agent. You MUST output ONLY a single valid JSON object.
-Format: {"evaluation":"...","memory":"...","next_goal":"...","action":<action>}
-
-The action must be one of:
-- {"type":"click","selector":"#id"} — click a nav link or tab to navigate
-- {"type":"done","reason":"..."} — goal complete
+`You are a documentation navigation agent. Output ONLY one JSON action object, nothing else.
+Use exactly one of these formats:
+{"type":"click","selector":"#id"}
+{"type":"done","reason":"..."}
 
 RULES:
-- To navigate to a section, click its sidebar nav link (e.g. #nav-installation).
-- If the section is in Advanced or FAQ and the More button is not open, click #more-btn first.
-- After clicking a nav link, the page scrolls automatically. Then output done.
-- Do NOT type, scroll, or navigate. Only click nav links.
-No extra text. No markdown. Only the JSON object.`;
+- Click sidebar nav links (e.g. #nav-installation) to navigate to sections.
+- If the target is in Advanced or FAQ, click #more-btn first to reveal it.
+- After clicking a nav link, output done.
+- Only click. No type, scroll, or navigate actions.
+No markdown. No extra text. Only the JSON object.`;
 
       const resp = await llmEngine.chat.completions.create({
         messages: [
@@ -772,14 +770,15 @@ Recent history: ${recent}${errHint}${memHint}
 ${ctx}
 
 EXAMPLES:
-"show me Installation" → {"evaluation":"need to navigate","memory":"target is #nav-installation","next_goal":"click nav link","action":{"type":"click","selector":"#nav-installation"}}
-"go to Security" → step 1: {"evaluation":"Security is in Advanced, need to reveal it","memory":"click more first","next_goal":"reveal hidden sections","action":{"type":"click","selector":"#more-btn"}}
-"go to Security" → step 2: {"evaluation":"more sections revealed","memory":"now click security","next_goal":"click security nav","action":{"type":"click","selector":"#nav-security"}}
+"show me Installation" → {"type":"click","selector":"#nav-installation"}
+"go to Security" (More not open) → {"type":"click","selector":"#more-btn"}
+"go to Security" (More open) → {"type":"click","selector":"#nav-security"}
+"already navigated" → {"type":"done","reason":"navigated"}
 
 Now output JSON for: "${goal}"` }
         ],
         temperature: 0,
-        max_tokens: 200
+        max_tokens: 80
       });
 
       const result = parsePlannerResult(resp.choices[0].message.content.trim());
