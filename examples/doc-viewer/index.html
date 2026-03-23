@@ -1,0 +1,953 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OmniBrowser Agent — Doc Viewer Demo</title>
+  <style>
+    :root {
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+      --blue:    #3b82f6;
+      --blue-d:  #1d4ed8;
+      --blue-l:  #dbeafe;
+      --green:   #22c55e;
+      --amber:   #f59e0b;
+      --red:     #ef4444;
+      --s0: #f8fafc; --s1: #f1f5f9; --s2: #e2e8f0;
+      --s4: #94a3b8; --s5: #64748b; --s7: #334155; --s9: #0f172a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { min-height: 100vh; background: var(--s1); color: var(--s9); }
+
+    /* ── Header ── */
+    header {
+      height: 54px;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--s2);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; position: sticky; top: 0; z-index: 100;
+    }
+    .brand { font-weight: 800; font-size: 14px; color: var(--s9); text-decoration: none; display: flex; align-items: center; gap: 8px; }
+    .brand-icon { width: 26px; height: 26px; background: linear-gradient(135deg, var(--blue), var(--blue-d)); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #fff; }
+
+    /* ── Layout: sidebar + doc + chat ── */
+    .layout { display: grid; grid-template-columns: 220px 1fr 380px; height: calc(100vh - 54px); }
+
+    /* ── Sidebar nav ── */
+    .sidebar {
+      background: #fff; border-right: 1px solid var(--s2); overflow-y: auto;
+      padding: 16px 0; display: flex; flex-direction: column; gap: 2px;
+    }
+    .sidebar-label {
+      font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--s4); padding: 10px 16px 4px; user-select: none;
+    }
+    .nav-link {
+      display: block; padding: 7px 16px 7px 24px; font-size: 13px; color: var(--s5);
+      text-decoration: none; border-left: 2px solid transparent; cursor: pointer;
+      transition: all .12s; font-family: inherit; background: none; border-right: none;
+      border-top: none; border-bottom: none; text-align: left; width: 100%;
+    }
+    .nav-link:hover { color: var(--s7); background: var(--s0); }
+    .nav-link.active { color: var(--blue-d); border-left-color: var(--blue); background: #eff6ff; font-weight: 600; }
+
+    .hidden-group { display: none; }
+    .hidden-group.revealed { display: block; }
+    .more-btn {
+      display: flex; align-items: center; gap: 5px;
+      padding: 8px 16px; font-size: 12px; color: var(--s4); background: none;
+      border: none; cursor: pointer; font-family: inherit; font-weight: 600;
+      transition: color .15s;
+    }
+    .more-btn:hover { color: var(--s7); }
+    .more-btn.open { color: var(--blue-d); }
+
+    /* ── Doc content ── */
+    .doc-main {
+      overflow-y: auto; padding: 32px 40px; scroll-behavior: smooth;
+      display: flex; flex-direction: column; gap: 0;
+    }
+    .doc-tab-bar {
+      display: flex; gap: 4px; border-bottom: 1px solid var(--s2);
+      margin-bottom: 28px; position: sticky; top: 0; background: var(--s1);
+      z-index: 5; padding-top: 4px;
+    }
+    .doc-tab {
+      padding: 10px 18px 8px; font-size: 13px; font-weight: 600; color: var(--s5);
+      background: none; border: none; border-bottom: 2px solid transparent;
+      cursor: pointer; font-family: inherit; transition: all .15s; white-space: nowrap;
+    }
+    .doc-tab:hover { color: var(--s7); }
+    .doc-tab.active { color: var(--blue-d); border-bottom-color: var(--blue); }
+    .doc-tab.hidden-tab { display: none; }
+    .doc-tab.hidden-tab.revealed { display: block; }
+
+    .doc-section { display: none; flex-direction: column; gap: 24px; }
+    .doc-section.active { display: flex; }
+
+    .section-block { scroll-margin-top: 60px; }
+    .section-block h2 {
+      font-size: 20px; font-weight: 800; color: var(--s9); margin-bottom: 12px;
+      padding-bottom: 8px; border-bottom: 1px solid var(--s2);
+    }
+    .section-block h3 { font-size: 15px; font-weight: 700; color: var(--s7); margin-bottom: 8px; }
+    .section-block p { font-size: 14px; color: var(--s5); line-height: 1.7; margin-bottom: 12px; }
+    .section-block code {
+      background: #f1f5f9; padding: 2px 6px; border-radius: 4px;
+      font-size: 12.5px; font-family: ui-monospace, monospace; color: var(--blue-d);
+    }
+    .section-block pre {
+      background: #0f172a; color: #e2e8f0; padding: 16px; border-radius: 10px;
+      font-size: 12.5px; font-family: ui-monospace, monospace; line-height: 1.6;
+      overflow-x: auto; margin-bottom: 12px;
+    }
+    .section-block ul { padding-left: 20px; margin-bottom: 12px; }
+    .section-block li { font-size: 14px; color: var(--s5); line-height: 1.7; margin-bottom: 4px; }
+    .callout {
+      padding: 12px 16px; border-radius: 10px; font-size: 13px; line-height: 1.6; margin-bottom: 12px;
+    }
+    .callout.info { background: #eff6ff; border: 1px solid var(--blue-l); color: #1e40af; }
+    .callout.warn { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+    .callout.tip  { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
+
+    /* ── Agent highlight flash ── */
+    @keyframes actPulse { 0%{box-shadow:0 0 0 0 rgba(59,130,246,.5)} 50%{box-shadow:0 0 0 6px rgba(59,130,246,.1)} 100%{box-shadow:0 0 0 0 rgba(59,130,246,0)} }
+    .agent-act { animation: actPulse 1.2s ease !important; }
+    @keyframes scrollHighlight { 0%{background:rgba(59,130,246,.15)} 100%{background:transparent} }
+    .scroll-highlight { animation: scrollHighlight 2s ease; }
+
+    /* ── Chat panel ── */
+    .chat-panel { background: #fff; border-left: 1px solid var(--s2); display: flex; flex-direction: column; overflow: hidden; }
+    .chat-header { padding: 16px 18px 12px; border-bottom: 1px solid var(--s2); flex-shrink: 0; }
+    .chat-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+    .chat-title { font-size: 15px; font-weight: 800; color: var(--s9); display: flex; align-items: center; gap: 8px; }
+    .chat-title-icon { width: 28px; height: 28px; background: linear-gradient(135deg, var(--blue), var(--blue-d)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; }
+    .chat-sub { font-size: 12px; color: var(--s5); line-height: 1.45; }
+
+    .ai-pill { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 3px 9px 3px 7px; border-radius: 999px; border: 1px solid var(--s2); color: var(--s5); background: var(--s0); transition: all .2s; }
+    .ai-pill.ready   { color: #15803d; background: #f0fdf4; border-color: #bbf7d0; }
+    .ai-pill.loading { color: #b45309; background: #fffbeb; border-color: #fde68a; }
+    .sdot { width: 6px; height: 6px; border-radius: 50%; background: var(--s4); flex-shrink: 0; }
+    .sdot.ready   { background: var(--green); }
+    .sdot.loading { background: var(--amber); animation: pulse 1s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* Model loader */
+    .model-loader { padding: 10px 18px; border-bottom: 1px solid var(--s2); background: var(--s0); flex-shrink: 0; }
+    .model-row { display: flex; gap: 8px; align-items: center; }
+    .model-select { flex: 1; font-size: 12px; border: 1px solid var(--s2); border-radius: 8px; padding: 6px 10px; color: var(--s7); background: #fff; font-family: inherit; cursor: pointer; outline: none; }
+    .load-btn { padding: 6px 16px; background: linear-gradient(135deg, var(--blue), var(--blue-d)); color: #fff; border: none; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; }
+    .load-btn:disabled { opacity: .45; cursor: not-allowed; }
+    .progress-wrap { margin-top: 8px; display: none; }
+    .progress-wrap.visible { display: block; }
+    .progress-track { height: 3px; background: var(--s2); border-radius: 999px; overflow: hidden; margin-bottom: 4px; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--blue), #60a5fa); border-radius: 999px; width: 0%; transition: width .4s ease; }
+    .progress-text { font-size: 11px; color: var(--s5); }
+    .webgpu-warn { margin-top: 8px; padding: 7px 10px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; font-size: 11.5px; color: #92400e; display: none; }
+    .webgpu-warn.visible { display: block; }
+
+    /* Suggestions */
+    .sugg-section { padding: 10px 18px; border-bottom: 1px solid var(--s2); flex-shrink: 0; }
+    .sugg-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--s4); margin-bottom: 7px; }
+    .sugg-row { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; flex-wrap: wrap; }
+    .sugg-row::-webkit-scrollbar { display: none; }
+    .chip { background: var(--s0); border: 1px solid var(--s2); border-radius: 999px; padding: 5px 12px; font-size: 12px; color: var(--s7); cursor: pointer; white-space: nowrap; transition: all .15s; font-family: inherit; flex-shrink: 0; }
+    .chip:hover { background: var(--blue-l); border-color: #93c5fd; color: var(--blue-d); }
+
+    /* Messages */
+    .messages { flex: 1; min-height: 0; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 8px; scroll-behavior: smooth; }
+    .message { display: flex; gap: 8px; align-items: flex-end; animation: msgIn .18s ease; }
+    @keyframes msgIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+    .message.user { flex-direction: row-reverse; }
+    .avatar { width: 27px; height: 27px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+    .message.user   .avatar { display: none; }
+    .message.agent  .avatar { background: linear-gradient(135deg, #e0e7ff, var(--blue-l)); color: var(--blue-d); border: 1px solid #c7d2fe; }
+    .message.system .avatar { display: none; }
+    .bubble { max-width: 88%; padding: 9px 13px; font-size: 13px; line-height: 1.55; }
+    .message.user   .bubble { background: linear-gradient(135deg, var(--blue), var(--blue-d)); color: #fff; border-radius: 18px 18px 4px 18px; box-shadow: 0 2px 10px rgba(59,130,246,.25); }
+    .message.agent  .bubble { background: #fff; border: 1px solid var(--s2); color: var(--s7); border-radius: 4px 18px 18px 18px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+    .message.agent.ok      .bubble { border-color: #bbf7d0; background: #f0fdf4; color: #15803d; }
+    .message.agent.pending .bubble { border-color: #fde68a; background: #fffbeb; color: #92400e; }
+    .message.agent.error   .bubble { border-color: #fecaca; background: #fef2f2; color: #991b1b; }
+    .message.agent.info    .bubble { border-color: var(--blue-l); background: #eff6ff; color: #1e40af; }
+    .message.system { justify-content: center; }
+    .message.system .bubble { background: var(--s1); border: 1px solid var(--s2); color: var(--s5); font-size: 11.5px; border-radius: 999px; padding: 5px 14px; text-align: center; }
+
+    /* Typing */
+    .typing { display: flex; gap: 8px; align-items: flex-end; animation: msgIn .18s ease; }
+    .typing .avatar { width: 27px; height: 27px; border-radius: 50%; background: linear-gradient(135deg, #e0e7ff, var(--blue-l)); border: 1px solid #c7d2fe; display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--blue-d); flex-shrink: 0; }
+    .typing-dots { background: #fff; border: 1px solid var(--s2); border-radius: 4px 18px 18px 18px; padding: 11px 14px; display: flex; gap: 4px; align-items: center; }
+    .tdot { width: 6px; height: 6px; border-radius: 50%; background: var(--s4); animation: tdot 1.2s ease-in-out infinite; }
+    .tdot:nth-child(2) { animation-delay: .15s; }
+    .tdot:nth-child(3) { animation-delay: .3s; }
+    @keyframes tdot { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
+
+    /* Input area */
+    .input-area { padding: 12px 16px; border-top: 1px solid var(--s2); background: #fff; flex-shrink: 0; }
+    .input-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .meta-lbl { font-size: 11.5px; color: var(--s4); font-weight: 600; }
+    .mode-select { font-size: 12px; border: 1px solid var(--s2); border-radius: 7px; padding: 4px 8px; color: var(--s7); background: var(--s0); font-family: inherit; cursor: pointer; outline: none; }
+    .planner-badge { font-size: 10.5px; font-weight: 700; padding: 2px 9px; border-radius: 999px; border: 1px solid; margin-left: auto; text-transform: uppercase; letter-spacing: .05em; }
+    .planner-badge.heuristic { background: var(--s1); border-color: var(--s2); color: var(--s5); }
+    .planner-badge.webllm    { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+    .input-row { display: flex; gap: 8px; }
+    .goal-input { flex: 1; padding: 10px 14px; border: 1.5px solid var(--s2); border-radius: 12px; font-size: 13.5px; font-family: inherit; color: var(--s9); background: var(--s0); outline: none; transition: border-color .15s, box-shadow .15s; }
+    .goal-input:focus { border-color: var(--blue); background: #fff; box-shadow: 0 0 0 3px rgba(59,130,246,.12); }
+    .goal-input::placeholder { color: var(--s4); }
+    .run-btn { padding: 10px 18px; background: linear-gradient(135deg, var(--blue), var(--blue-d)); color: #fff; border: none; border-radius: 12px; font-size: 13.5px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; box-shadow: 0 2px 8px rgba(59,130,246,.3); }
+    .run-btn:hover:not(:disabled) { opacity: .9; }
+    .run-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+    /* Mobile */
+    @media (max-width: 1100px) {
+      .layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr 50vh; }
+      .sidebar { flex-direction: row; overflow-x: auto; border-right: none; border-bottom: 1px solid var(--s2); padding: 8px; }
+      .chat-panel { border-left: none; border-top: 1px solid var(--s2); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="brand" href="/"><div class="brand-icon">📚</div>OmniBrowser Agent — Doc Viewer</a>
+  </header>
+
+  <div class="layout">
+    <!-- ── Left sidebar nav ── -->
+    <nav class="sidebar" id="doc-sidebar">
+      <div class="sidebar-label">Getting Started</div>
+      <button class="nav-link active" id="nav-intro"         data-tab="getting-started" data-section="sec-intro">Introduction</button>
+      <button class="nav-link"        id="nav-installation"  data-tab="getting-started" data-section="sec-installation">Installation</button>
+      <button class="nav-link"        id="nav-quickstart"    data-tab="getting-started" data-section="sec-quickstart">Quick Start</button>
+
+      <div class="sidebar-label">API Reference</div>
+      <button class="nav-link" id="nav-create-agent"   data-tab="api" data-section="sec-create-agent">createBrowserAgent</button>
+      <button class="nav-link" id="nav-agent-session"  data-tab="api" data-section="sec-agent-session">AgentSession</button>
+      <button class="nav-link" id="nav-planner-config" data-tab="api" data-section="sec-planner-config">PlannerConfig</button>
+      <button class="nav-link" id="nav-actions"        data-tab="api" data-section="sec-actions">Actions</button>
+
+      <div class="sidebar-label">Configuration</div>
+      <button class="nav-link" id="nav-modes"     data-tab="config" data-section="sec-modes">Modes</button>
+      <button class="nav-link" id="nav-planners"  data-tab="config" data-section="sec-planners">Planners</button>
+      <button class="nav-link" id="nav-selectors" data-tab="config" data-section="sec-selectors">Selectors &amp; Scope</button>
+
+      <button class="more-btn" id="more-btn">▶ More sections</button>
+
+      <div class="hidden-group" id="hidden-nav">
+        <div class="sidebar-label">Advanced</div>
+        <button class="nav-link" id="nav-webllm"       data-tab="advanced" data-section="sec-webllm">WebLLM Integration</button>
+        <button class="nav-link" id="nav-custom-bridge" data-tab="advanced" data-section="sec-custom-bridge">Custom Bridges</button>
+        <button class="nav-link" id="nav-reflection"    data-tab="advanced" data-section="sec-reflection">Reflection Loop</button>
+        <button class="nav-link" id="nav-security"      data-tab="advanced" data-section="sec-security">Security</button>
+
+        <div class="sidebar-label">FAQ</div>
+        <button class="nav-link" id="nav-faq-general"  data-tab="faq" data-section="sec-faq-general">General Questions</button>
+        <button class="nav-link" id="nav-faq-trouble"  data-tab="faq" data-section="sec-faq-trouble">Troubleshooting</button>
+      </div>
+    </nav>
+
+    <!-- ── Doc content ── -->
+    <main class="doc-main" id="doc-root">
+      <div class="doc-tab-bar">
+        <button class="doc-tab active" data-tab="getting-started">Getting Started</button>
+        <button class="doc-tab"        data-tab="api">API Reference</button>
+        <button class="doc-tab"        data-tab="config">Configuration</button>
+        <button class="doc-tab hidden-tab" data-tab="advanced">Advanced</button>
+        <button class="doc-tab hidden-tab" data-tab="faq">FAQ</button>
+      </div>
+
+      <!-- Getting Started -->
+      <div class="doc-section active" id="tab-getting-started">
+        <div class="section-block" id="sec-intro">
+          <h2>Introduction</h2>
+          <p>OmniBrowser Agent is a lightweight, open-source library for building browser automation agents that run <strong>entirely in the browser</strong>. No server required — the AI planning runs locally via WebLLM or uses a simple heuristic planner.</p>
+          <div class="callout info">This library is designed for demos, prototyping, and educational purposes. It ships as a single ES module you can import from a CDN.</div>
+          <p>The agent observes the current page state, plans the next action (click, type, scroll, etc.), executes it, and repeats until the goal is achieved or the step limit is reached.</p>
+        </div>
+
+        <div class="section-block" id="sec-installation">
+          <h2>Installation</h2>
+          <h3>From NPM</h3>
+<pre>npm install @akshayram1/omnibrowser-agent</pre>
+          <h3>From CDN (no build step)</h3>
+<pre>import { createBrowserAgent }
+  from "https://unpkg.com/@akshayram1/omnibrowser-agent/dist/lib.js";</pre>
+          <p>The library is a pure ES module. It works in any modern browser that supports <code>import</code> statements.</p>
+        </div>
+
+        <div class="section-block" id="sec-quickstart">
+          <h2>Quick Start</h2>
+          <p>Create an agent, give it a goal, and start it:</p>
+<pre>const agent = createBrowserAgent(
+  { goal: "Click the Sign Up button", mode: "autonomous" },
+  {
+    onStep(result) { console.log(result.message); },
+    onDone(result) { console.log("Done:", result.message); }
+  }
+);
+
+await agent.start();</pre>
+          <div class="callout tip">Use <code>mode: "human-approved"</code> to review each action before it runs — great for debugging.</div>
+        </div>
+      </div>
+
+      <!-- API Reference -->
+      <div class="doc-section" id="tab-api">
+        <div class="section-block" id="sec-create-agent">
+          <h2>createBrowserAgent(config, callbacks)</h2>
+          <p>The main entry point. Returns an <code>AgentSession</code> object.</p>
+          <h3>Parameters</h3>
+          <ul>
+            <li><code>config.goal</code> — The natural language goal for the agent</li>
+            <li><code>config.mode</code> — <code>"autonomous"</code> or <code>"human-approved"</code></li>
+            <li><code>config.planner</code> — Planner configuration (<code>{ kind: "heuristic" }</code> or <code>{ kind: "webllm" }</code>)</li>
+            <li><code>config.maxSteps</code> — Maximum actions before stopping (default: 10)</li>
+            <li><code>config.stepDelayMs</code> — Delay between steps in ms (default: 500)</li>
+            <li><code>config.scopeSelector</code> — CSS selector to limit the agent's scope</li>
+          </ul>
+        </div>
+
+        <div class="section-block" id="sec-agent-session">
+          <h2>AgentSession</h2>
+          <p>The object returned by <code>createBrowserAgent()</code>.</p>
+          <h3>Methods</h3>
+          <ul>
+            <li><code>start()</code> — Begin executing toward the goal. Returns a Promise.</li>
+            <li><code>stop()</code> — Stop the agent after the current step.</li>
+            <li><code>approve()</code> — Approve a pending action (in human-approved mode).</li>
+          </ul>
+          <h3>Callbacks</h3>
+          <ul>
+            <li><code>onStep(result)</code> — Called after each step with status and action info</li>
+            <li><code>onDone(result)</code> — Called when the agent completes the goal</li>
+            <li><code>onError(error)</code> — Called on fatal errors</li>
+            <li><code>onApprovalRequired(action)</code> — Called when an action needs user approval</li>
+            <li><code>onMaxStepsReached()</code> — Called when step limit is hit</li>
+          </ul>
+        </div>
+
+        <div class="section-block" id="sec-planner-config">
+          <h2>PlannerConfig</h2>
+          <p>Controls how the agent decides what to do next.</p>
+<pre>{
+  kind: "webllm" | "heuristic",
+  systemPrompt?: string,  // Custom system prompt for WebLLM
+  model?: string           // WebLLM model ID
+}</pre>
+          <div class="callout info">The <code>systemPrompt</code> option lets you customize the agent's behavior — for example, making it a careful meeting-room booking assistant.</div>
+        </div>
+
+        <div class="section-block" id="sec-actions">
+          <h2>Actions</h2>
+          <p>Actions the agent can perform on the page:</p>
+          <ul>
+            <li><code>click</code> — Click an element by selector</li>
+            <li><code>type</code> — Type text into an input or textarea</li>
+            <li><code>scroll</code> — Scroll an element or the page</li>
+            <li><code>navigate</code> — Navigate to a URL</li>
+            <li><code>extract</code> — Read text content from an element</li>
+            <li><code>focus</code> — Focus an element</li>
+            <li><code>wait</code> — Wait a specified number of milliseconds</li>
+            <li><code>done</code> — Signal that the goal is complete</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Configuration -->
+      <div class="doc-section" id="tab-config">
+        <div class="section-block" id="sec-modes">
+          <h2>Modes</h2>
+          <h3>Autonomous</h3>
+          <p>The agent plans and executes actions without asking for permission. Best for trusted environments and demos.</p>
+          <h3>Human-Approved</h3>
+          <p>Every action must be approved before execution. The <code>onApprovalRequired</code> callback fires, and the agent pauses until <code>agent.approve()</code> is called.</p>
+          <div class="callout warn">Always use human-approved mode when the agent interacts with real services or sensitive data.</div>
+        </div>
+
+        <div class="section-block" id="sec-planners">
+          <h2>Planners</h2>
+          <h3>Heuristic Planner</h3>
+          <p>A rule-based planner that uses regex pattern matching to understand goals. No AI model needed. Works offline and is very fast, but limited to simple goals like "fill X with Y" and "click Z".</p>
+          <h3>WebLLM Planner</h3>
+          <p>Uses a local LLM (via WebLLM) running in the browser with WebGPU. Supports complex, multi-step goals with context awareness. Requires a WebGPU-capable browser and model download.</p>
+          <p>Recommended models:</p>
+          <ul>
+            <li><strong>Llama 3.2 1B</strong> — Fast, ~600 MB, good for simple goals</li>
+            <li><strong>Llama 3.2 3B</strong> — Better reasoning, ~1.5 GB</li>
+            <li><strong>Phi-3.5 Mini</strong> — Best quality, ~2 GB</li>
+          </ul>
+        </div>
+
+        <div class="section-block" id="sec-selectors">
+          <h2>Selectors &amp; Scope</h2>
+          <p>Use <code>scopeSelector</code> to restrict the agent to a portion of the page:</p>
+<pre>createBrowserAgent({
+  goal: "Fill in the form",
+  scopeSelector: "#my-form"
+});</pre>
+          <p>The observer will only collect candidates (inputs, buttons, links) within the scoped element. This prevents the agent from interacting with navigation, ads, or other unrelated UI.</p>
+        </div>
+      </div>
+
+      <!-- Advanced (hidden) -->
+      <div class="doc-section" id="tab-advanced">
+        <div class="section-block" id="sec-webllm">
+          <h2>WebLLM Integration</h2>
+          <p>To use WebLLM, set up a bridge on <code>window.__browserAgentWebLLM</code>:</p>
+<pre>import * as webllm from "https://esm.run/@mlc-ai/web-llm";
+
+const engine = await webllm.CreateMLCEngine("Phi-3.5-mini-instruct-q4f16_1-MLC");
+
+window.__browserAgentWebLLM = {
+  async plan(input) {
+    const response = await engine.chat.completions.create({
+      messages: [
+        { role: "system", content: "You are a browser planner..." },
+        { role: "user", content: \`Goal: \${input.goal}\` }
+      ]
+    });
+    return parseAction(response.choices[0].message.content);
+  }
+};</pre>
+          <div class="callout tip">The agent automatically detects <code>window.__browserAgentWebLLM</code> when you set planner to <code>{ kind: "webllm" }</code>.</div>
+        </div>
+
+        <div class="section-block" id="sec-custom-bridge">
+          <h2>Custom Bridges</h2>
+          <p>You can create custom planner bridges to connect any LLM — cloud APIs, local Ollama, or even rule-based systems:</p>
+<pre>window.__browserAgentWebLLM = {
+  async plan(input) {
+    // input contains: goal, history, snapshot, lastError, memory
+    const response = await fetch("/api/plan", {
+      method: "POST",
+      body: JSON.stringify(input)
+    });
+    return response.json();
+  }
+};</pre>
+          <p>The bridge must return an action object matching the <code>AgentAction</code> type.</p>
+        </div>
+
+        <div class="section-block" id="sec-reflection">
+          <h2>Reflection Loop</h2>
+          <p>When the planner returns <code>evaluation</code>, <code>memory</code>, and <code>next_goal</code> fields alongside the action, the agent enters a reflection loop:</p>
+          <ul>
+            <li><strong>evaluation</strong> — What happened in the last step</li>
+            <li><strong>memory</strong> — Key facts to carry forward</li>
+            <li><strong>next_goal</strong> — The refined sub-goal for the next step</li>
+          </ul>
+          <p>This allows the agent to adapt to unexpected page states and recover from errors.</p>
+        </div>
+
+        <div class="section-block" id="sec-security">
+          <h2>Security</h2>
+          <div class="callout warn">OmniBrowser Agent executes actions in the user's browser session. Always scope the agent narrowly and use human-approved mode for sensitive pages.</div>
+          <p>Security best practices:</p>
+          <ul>
+            <li>Use <code>scopeSelector</code> to prevent interaction outside the target area</li>
+            <li>Use <code>human-approved</code> mode for any real-world interaction</li>
+            <li>Set a low <code>maxSteps</code> to limit damage from runaway agents</li>
+            <li>Never pass untrusted user input directly as the agent goal</li>
+            <li>Review WebLLM model outputs — small models can produce unexpected actions</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- FAQ (hidden) -->
+      <div class="doc-section" id="tab-faq">
+        <div class="section-block" id="sec-faq-general">
+          <h2>General Questions</h2>
+          <h3>Does this work without an internet connection?</h3>
+          <p>The heuristic planner works fully offline. WebLLM requires an initial model download but runs locally after that.</p>
+          <h3>Which browsers are supported?</h3>
+          <p>Any modern browser supporting ES modules. WebLLM additionally requires WebGPU (Chrome 113+, Edge 113+). Firefox and Safari have experimental WebGPU support.</p>
+          <h3>Can the agent fill multi-step forms?</h3>
+          <p>Yes. Give a compound goal like "Fill name with Jane, email with jane@example.com, and submit the form". The agent breaks it into steps automatically.</p>
+        </div>
+
+        <div class="section-block" id="sec-faq-trouble">
+          <h2>Troubleshooting</h2>
+          <h3>WebLLM model won't load</h3>
+          <p>Check that your browser supports WebGPU. Visit <code>chrome://gpu</code> and look for "WebGPU: Enabled". Also ensure you have enough GPU memory for the chosen model.</p>
+          <h3>Agent clicks the wrong element</h3>
+          <p>Use <code>scopeSelector</code> to narrow the agent's view. Add clear <code>id</code> attributes to your interactive elements. The heuristic planner works best with descriptive IDs and labels.</p>
+          <h3>Agent keeps repeating the same action</h3>
+          <p>This usually means the action is silently failing. Check the <code>onStep</code> callback for error statuses. Enable the reflection loop by using WebLLM with a model that supports evaluation/memory fields.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- ── Chat panel ── -->
+    <div class="chat-panel">
+      <div class="chat-header">
+        <div class="chat-header-row">
+          <div class="chat-title"><div class="chat-title-icon">🤖</div>Doc Assistant</div>
+          <div class="ai-pill" id="ai-pill"><div class="sdot" id="sdot"></div><span id="model-status-text">No model</span></div>
+        </div>
+        <div class="chat-sub">Ask about any section — the agent navigates the docs for you.</div>
+      </div>
+
+      <div class="model-loader">
+        <div class="model-row">
+          <select class="model-select" id="model-select">
+            <option value="Llama-3.2-1B-Instruct-q4f16_1-MLC">Llama 3.2 1B — fast, ~600 MB</option>
+            <option value="Llama-3.2-3B-Instruct-q4f16_1-MLC">Llama 3.2 3B — better, ~1.5 GB</option>
+            <option value="Phi-3.5-mini-instruct-q4f16_1-MLC" selected>Phi-3.5 Mini — quality, ~2 GB</option>
+          </select>
+          <button class="load-btn" id="load-btn">Load AI</button>
+        </div>
+        <div class="progress-wrap" id="progress-wrap">
+          <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+          <div class="progress-text" id="progress-text">Initialising…</div>
+        </div>
+        <div class="webgpu-warn" id="webgpu-warn">⚠️ WebGPU unavailable. Using heuristic planner.</div>
+      </div>
+
+      <div class="sugg-section">
+        <div class="sugg-label">Try these</div>
+        <div class="sugg-row">
+          <button class="chip" data-goal="scroll to the Installation section">📦 Installation</button>
+          <button class="chip" data-goal="show me the Quick Start guide">🚀 Quick Start</button>
+          <button class="chip" data-goal="go to the Actions section in API Reference">⚡ Actions</button>
+          <button class="chip" data-goal="navigate to the Planners section">🧠 Planners</button>
+          <button class="chip" data-goal="show the WebLLM Integration section">🔗 WebLLM</button>
+          <button class="chip" data-goal="go to the Security section">🔒 Security</button>
+          <button class="chip" data-goal="show Troubleshooting in FAQ">🔧 Troubleshooting</button>
+        </div>
+      </div>
+
+      <div class="messages" id="messages">
+        <div class="message system"><div class="bubble">Ask about a topic to navigate. Load an AI model or use the heuristic planner.</div></div>
+      </div>
+
+      <div class="input-area">
+        <div class="input-meta">
+          <span class="meta-lbl">Mode</span>
+          <select class="mode-select" id="mode-select">
+            <option value="autonomous" selected>Autonomous</option>
+            <option value="human-approved">Human-approved</option>
+          </select>
+          <span class="planner-badge heuristic" id="planner-badge">HEURISTIC</span>
+        </div>
+        <div class="input-row">
+          <input class="goal-input" id="goal-input" placeholder="Ask about a section… e.g. 'show me Installation'" />
+          <button class="run-btn" id="run-btn">Run ↵</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createBrowserAgent } from "https://unpkg.com/@akshayram1/omnibrowser-agent/dist/lib.js";
+    import * as webllm from "https://esm.run/@mlc-ai/web-llm";
+
+    // ── Section registry for mapping keywords → tab + section ──
+    const SECTIONS = [
+      { id: "sec-intro",         tab: "getting-started", keywords: ["introduction", "intro", "overview", "about", "what is"] },
+      { id: "sec-installation",  tab: "getting-started", keywords: ["installation", "install", "npm", "cdn", "setup"] },
+      { id: "sec-quickstart",    tab: "getting-started", keywords: ["quick start", "quickstart", "getting started", "start", "hello world", "example"] },
+      { id: "sec-create-agent",  tab: "api",             keywords: ["createbrowseragent", "create agent", "create browser", "entry point", "main function"] },
+      { id: "sec-agent-session", tab: "api",             keywords: ["agentsession", "agent session", "session", "methods", "start stop approve"] },
+      { id: "sec-planner-config",tab: "api",             keywords: ["plannerconfig", "planner config", "systemprompt", "system prompt"] },
+      { id: "sec-actions",       tab: "api",             keywords: ["actions", "action types", "click type scroll", "click", "type", "scroll", "navigate", "extract"] },
+      { id: "sec-modes",         tab: "config",          keywords: ["modes", "autonomous", "human-approved", "human approved", "approval"] },
+      { id: "sec-planners",      tab: "config",          keywords: ["planners", "heuristic", "webllm planner", "llama", "phi", "model"] },
+      { id: "sec-selectors",     tab: "config",          keywords: ["selectors", "scope", "scopeselector", "css selector", "restrict"] },
+      { id: "sec-webllm",        tab: "advanced",        keywords: ["webllm integration", "webllm", "web llm", "mlc", "webgpu", "local llm"] },
+      { id: "sec-custom-bridge", tab: "advanced",        keywords: ["custom bridge", "bridge", "ollama", "cloud api", "custom planner"] },
+      { id: "sec-reflection",    tab: "advanced",        keywords: ["reflection", "reflection loop", "evaluation", "memory", "next_goal", "adapt"] },
+      { id: "sec-security",      tab: "advanced",        keywords: ["security", "safety", "safe", "scope", "trust", "sensitive"] },
+      { id: "sec-faq-general",   tab: "faq",             keywords: ["faq", "general", "questions", "offline", "browsers", "multi-step"] },
+      { id: "sec-faq-trouble",   tab: "faq",             keywords: ["troubleshooting", "trouble", "debug", "wrong element", "won't load", "repeating"] },
+    ];
+
+    // ── Tab switching ──
+    let activeTab = "getting-started";
+
+    function switchTab(tabName) {
+      activeTab = tabName;
+      document.querySelectorAll(".doc-tab").forEach(t => t.classList.toggle("active", t.dataset.tab === tabName));
+      document.querySelectorAll(".doc-section").forEach(s => s.classList.toggle("active", s.id === `tab-${tabName}`));
+      // Reveal hidden tabs if needed
+      if (tabName === "advanced" || tabName === "faq") {
+        revealHiddenSections();
+      }
+    }
+
+    document.querySelectorAll(".doc-tab").forEach(tab => {
+      tab.onclick = () => switchTab(tab.dataset.tab);
+    });
+
+    // ── Sidebar nav ──
+    document.querySelectorAll(".nav-link").forEach(link => {
+      link.onclick = () => {
+        const targetTab = link.dataset.tab;
+        const targetSection = link.dataset.section;
+        if (targetTab === "advanced" || targetTab === "faq") revealHiddenSections();
+        switchTab(targetTab);
+        document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
+        link.classList.add("active");
+        setTimeout(() => {
+          const el = document.getElementById(targetSection);
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "start" });
+            el.classList.add("scroll-highlight");
+            setTimeout(() => el.classList.remove("scroll-highlight"), 2000);
+          }
+        }, 50);
+      };
+    });
+
+    // ── Hidden sections toggle ──
+    function revealHiddenSections() {
+      document.getElementById("hidden-nav").classList.add("revealed");
+      document.querySelectorAll(".hidden-tab").forEach(t => t.classList.add("revealed"));
+      const btn = document.getElementById("more-btn");
+      btn.textContent = "▼ More sections";
+      btn.classList.add("open");
+    }
+
+    document.getElementById("more-btn").onclick = () => {
+      const hidden = document.getElementById("hidden-nav");
+      const isOpen = hidden.classList.contains("revealed");
+      if (isOpen) {
+        hidden.classList.remove("revealed");
+        document.querySelectorAll(".hidden-tab").forEach(t => t.classList.remove("revealed"));
+        document.getElementById("more-btn").textContent = "▶ More sections";
+        document.getElementById("more-btn").classList.remove("open");
+      } else {
+        revealHiddenSections();
+      }
+    };
+
+    // ── Find section from goal text (keyword matching) ──
+    function findSectionFromGoal(goal) {
+      const lower = goal.toLowerCase();
+      let best = null, bestScore = 0;
+      for (const sec of SECTIONS) {
+        for (const kw of sec.keywords) {
+          if (lower.includes(kw) && kw.length > bestScore) {
+            best = sec;
+            bestScore = kw.length;
+          }
+        }
+      }
+      return best;
+    }
+
+    // ── UI refs ──
+    const messagesEl    = document.getElementById("messages");
+    const sdot          = document.getElementById("sdot");
+    const aiPill        = document.getElementById("ai-pill");
+    const modelStatusText = document.getElementById("model-status-text");
+    const progressWrap  = document.getElementById("progress-wrap");
+    const progressFill  = document.getElementById("progress-fill");
+    const progressText  = document.getElementById("progress-text");
+    const plannerBadge  = document.getElementById("planner-badge");
+    const loadBtn       = document.getElementById("load-btn");
+    const modelSelect   = document.getElementById("model-select");
+
+    let llmEngine = null, currentAgent = null;
+
+    // ── Flash ──
+    function flash(selector) {
+      if (!selector) return;
+      try {
+        const el = document.querySelector(selector);
+        if (!el) return;
+        el.classList.remove("agent-act");
+        void el.offsetWidth;
+        el.classList.add("agent-act");
+        setTimeout(() => el.classList.remove("agent-act"), 1200);
+      } catch {}
+    }
+
+    // ── Typing indicator ──
+    let typingEl = null;
+    function showTyping() {
+      if (typingEl) return;
+      typingEl = document.createElement("div");
+      typingEl.className = "typing";
+      typingEl.innerHTML = `<div class="avatar">🤖</div><div class="typing-dots"><div class="tdot"></div><div class="tdot"></div><div class="tdot"></div></div>`;
+      messagesEl.appendChild(typingEl);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+    function hideTyping() { typingEl?.remove(); typingEl = null; }
+
+    // ── Messages ──
+    function addMessage(text, type = "agent", variant = "") {
+      hideTyping();
+      const div = document.createElement("div");
+      div.className = `message ${type} ${variant}`.trim();
+      if (type === "user") div.innerHTML = `<div class="bubble">${text}</div>`;
+      else if (type === "system") div.innerHTML = `<div class="bubble">${text}</div>`;
+      else div.innerHTML = `<div class="avatar">🤖</div><div class="bubble">${text}</div>`;
+      messagesEl.appendChild(div);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function setRunning(on) {
+      document.getElementById("run-btn").disabled = on;
+      document.getElementById("run-btn").textContent = on ? "Running…" : "Run ↵";
+    }
+
+    // ── Build context: list clickable nav links with their IDs ──
+    function buildDocContext() {
+      const links = Array.from(document.querySelectorAll(".nav-link")).map(el => {
+        const visible = el.offsetParent !== null;
+        return `  - selector="#${el.id}" text="${el.textContent.trim()}" tab=${el.dataset.tab} section=${el.dataset.section}${visible ? "" : " (hidden)"}`;
+      });
+      const tabs = Array.from(document.querySelectorAll(".doc-tab")).map(el => {
+        const isActive = el.classList.contains("active");
+        const isHidden = el.classList.contains("hidden-tab") && !el.classList.contains("revealed");
+        return `  - selector=".doc-tab[data-tab='${el.dataset.tab}']" text="${el.textContent.trim()}"${isActive ? " (active)" : ""}${isHidden ? " (hidden)" : ""}`;
+      });
+      return `Active tab: ${activeTab}\n\nTabs:\n${tabs.join("\n")}\n\nSidebar nav links (click to navigate):\n${links.join("\n")}\n\nMore button: selector="#more-btn" ${document.getElementById("hidden-nav").classList.contains("revealed") ? "(already open)" : "(click to reveal Advanced & FAQ)"}`;
+    }
+
+    // ── JSON helpers ──
+    const VALID_TYPES = new Set(["click","type","navigate","extract","scroll","focus","wait","done"]);
+
+    function parseAction(raw) {
+      const fence = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+      const candidate = fence ? fence[1].trim() : raw.trim();
+      const m = candidate.match(/\{[\s\S]*\}/);
+      if (!m) return { type: "done", reason: `No JSON: ${raw.slice(0, 80)}` };
+      try {
+        const obj = JSON.parse(m[0]);
+        if (typeof obj?.type === "string" && VALID_TYPES.has(obj.type)) return obj;
+        return { type: "done", reason: `Unknown type: ${obj?.type}` };
+      } catch { return { type: "done", reason: `Parse error: ${m[0].slice(0, 80)}` }; }
+    }
+
+    function parsePlannerResult(raw) {
+      const fence = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+      const candidate = fence ? fence[1].trim() : raw.trim();
+      const m = candidate.match(/\{[\s\S]*\}/);
+      if (!m) return { action: { type: "done", reason: `No JSON: ${raw.slice(0, 80)}` } };
+      try {
+        const obj = JSON.parse(m[0]);
+        if (typeof obj?.action === "object" && obj.action !== null) {
+          return {
+            action:     parseAction(JSON.stringify(obj.action)),
+            evaluation: typeof obj.evaluation === "string" ? obj.evaluation : undefined,
+            memory:     typeof obj.memory     === "string" ? obj.memory     : undefined,
+            nextGoal:   typeof obj.next_goal  === "string" ? obj.next_goal  : undefined,
+          };
+        }
+        return { action: parseAction(m[0]) };
+      } catch { return { action: { type: "done", reason: `Parse error: ${m[0].slice(0, 80)}` } }; }
+    }
+
+    // ── WebLLM bridge ──
+    async function planWithWebLLM(input) {
+      const { goal, history, lastError, memory } = input;
+      const ctx = buildDocContext();
+      const recent = history.slice(-4).join(" → ") || "none";
+      const errHint = lastError ? `\nLast action FAILED: "${lastError}". Try a different approach.` : "";
+      const memHint = memory ? `\nWorking memory: ${memory}` : "";
+
+      const systemPrompt =
+`You are a documentation navigation agent. You MUST output ONLY a single valid JSON object.
+Format: {"evaluation":"...","memory":"...","next_goal":"...","action":<action>}
+
+The action must be one of:
+- {"type":"click","selector":"#id"} — click a nav link or tab to navigate
+- {"type":"done","reason":"..."} — goal complete
+
+RULES:
+- To navigate to a section, click its sidebar nav link (e.g. #nav-installation).
+- If the section is in Advanced or FAQ and the More button is not open, click #more-btn first.
+- After clicking a nav link, the page scrolls automatically. Then output done.
+- Do NOT type, scroll, or navigate. Only click nav links.
+No extra text. No markdown. Only the JSON object.`;
+
+      const resp = await llmEngine.chat.completions.create({
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content:
+`Goal: "${goal}"
+Recent history: ${recent}${errHint}${memHint}
+
+${ctx}
+
+EXAMPLES:
+"show me Installation" → {"evaluation":"need to navigate","memory":"target is #nav-installation","next_goal":"click nav link","action":{"type":"click","selector":"#nav-installation"}}
+"go to Security" → step 1: {"evaluation":"Security is in Advanced, need to reveal it","memory":"click more first","next_goal":"reveal hidden sections","action":{"type":"click","selector":"#more-btn"}}
+"go to Security" → step 2: {"evaluation":"more sections revealed","memory":"now click security","next_goal":"click security nav","action":{"type":"click","selector":"#nav-security"}}
+
+Now output JSON for: "${goal}"` }
+        ],
+        temperature: 0,
+        max_tokens: 200
+      });
+
+      const result = parsePlannerResult(resp.choices[0].message.content.trim());
+      let { action } = result;
+
+      // Guard: repeated click → done
+      if (action.type === "click" && action.selector) {
+        const last = history[history.length - 1] ?? "";
+        if (last.includes(action.selector))
+          return { action: { type: "done", reason: `Already navigated to ${action.selector}` } };
+      }
+
+      return { ...result, action };
+    }
+
+    // ── Heuristic fallback: keyword match → click the right nav link ──
+    function heuristicPlan(input) {
+      const goal = input.goal;
+      const history = input.history || [];
+      const lastStep = history[history.length - 1] ?? "";
+
+      // Check if we need to reveal hidden sections first
+      const match = findSectionFromGoal(goal);
+      if (match) {
+        const isHiddenTab = match.tab === "advanced" || match.tab === "faq";
+        const moreRevealed = document.getElementById("hidden-nav").classList.contains("revealed");
+
+        if (isHiddenTab && !moreRevealed && !lastStep.includes("more-btn")) {
+          return { action: { type: "click", selector: "#more-btn" } };
+        }
+
+        const navId = `nav-${match.id.replace("sec-", "")}`;
+        const navEl = document.getElementById(navId);
+        if (navEl && !lastStep.includes(navId)) {
+          return { action: { type: "click", selector: `#${navId}` } };
+        }
+
+        return { action: { type: "done", reason: `Navigated to ${match.keywords[0]}` } };
+      }
+
+      return { action: { type: "done", reason: "Could not find a matching section" } };
+    }
+
+    // ── WebLLM load ──
+    async function loadModel() {
+      if (!navigator.gpu) {
+        document.getElementById("webgpu-warn").classList.add("visible");
+        sdot.className = "sdot"; modelStatusText.textContent = "WebGPU unavailable"; return;
+      }
+      const modelId = modelSelect.value;
+      loadBtn.disabled = true; modelSelect.disabled = true;
+      sdot.className = "sdot loading"; aiPill.className = "ai-pill loading";
+      modelStatusText.textContent = "Loading…"; progressWrap.classList.add("visible");
+      try {
+        llmEngine = await webllm.CreateMLCEngine(modelId, {
+          initProgressCallback({ progress, text }) {
+            progressFill.style.width = `${Math.round(progress * 100)}%`;
+            progressText.textContent = text || `${Math.round(progress * 100)}%`;
+          }
+        });
+        window.__browserAgentWebLLM = { async plan(input) { return planWithWebLLM(input); } };
+        progressWrap.classList.remove("visible");
+        sdot.className = "sdot ready"; aiPill.className = "ai-pill ready";
+        modelStatusText.textContent = modelSelect.options[modelSelect.selectedIndex].text.split("—")[0].trim();
+        plannerBadge.textContent = "WEBLLM"; plannerBadge.className = "planner-badge webllm";
+        loadBtn.textContent = "Reload"; loadBtn.disabled = false; modelSelect.disabled = false;
+        addMessage("✅ WebLLM ready — AI planning active.", "system");
+      } catch (err) {
+        progressWrap.classList.remove("visible");
+        sdot.className = "sdot"; aiPill.className = "ai-pill";
+        modelStatusText.textContent = "Load failed";
+        loadBtn.disabled = false; modelSelect.disabled = false;
+        addMessage(`❌ Model load failed: ${String(err)}`, "agent", "error");
+      }
+    }
+    loadBtn.addEventListener("click", loadModel);
+
+    // ── Run agent ──
+    async function runAgent(goal) {
+      if (currentAgent) currentAgent.stop();
+      hideTyping();
+      addMessage(goal, "user");
+      setRunning(true);
+
+      // If no LLM, try heuristic shortcut first
+      if (!llmEngine) {
+        addMessage("ℹ Using heuristic planner.", "system");
+        showTyping();
+
+        const match = findSectionFromGoal(goal);
+        if (match) {
+          const isHidden = match.tab === "advanced" || match.tab === "faq";
+          const moreRevealed = document.getElementById("hidden-nav").classList.contains("revealed");
+
+          if (isHidden && !moreRevealed) {
+            document.getElementById("more-btn").click();
+            await new Promise(r => setTimeout(r, 300));
+            hideTyping();
+            addMessage("✅ Revealed hidden sections", "agent", "ok");
+            showTyping();
+          }
+
+          switchTab(match.tab);
+          const navId = `nav-${match.id.replace("sec-", "")}`;
+          const navEl = document.getElementById(navId);
+          if (navEl) {
+            navEl.click();
+            flash(`#${navId}`);
+          }
+
+          await new Promise(r => setTimeout(r, 400));
+          hideTyping();
+          addMessage(`🏁 Navigated to <strong>${match.keywords[0]}</strong>`, "agent", "ok");
+          setRunning(false);
+          return;
+        }
+
+        hideTyping();
+        addMessage("⚠️ Could not find a matching section. Try being more specific.", "agent", "error");
+        setRunning(false);
+        return;
+      }
+
+      // WebLLM agent
+      showTyping();
+      currentAgent = createBrowserAgent(
+        {
+          goal,
+          mode: document.getElementById("mode-select").value,
+          planner: { kind: "webllm" },
+          maxSteps: 6,
+          stepDelayMs: 600,
+          scopeSelector: "#doc-sidebar"
+        },
+        {
+          onStep(result) {
+            hideTyping();
+            if (result.reflection?.nextGoal) {
+              addMessage(`💭 ${result.reflection.nextGoal}`, "agent", "info");
+            }
+            const icon = result.status === "executed" ? "✅" : result.status === "error" ? "⚠️" : "·";
+            const v = result.status === "executed" ? "ok" : result.status === "error" ? "info" : "";
+            addMessage(`${icon} ${result.message}`, "agent", v);
+            if (result.status === "executed" && result.action?.selector) flash(result.action.selector);
+            if (!["done","error","blocked"].includes(result.status)) showTyping();
+          },
+          onDone(result)      { hideTyping(); addMessage(`🏁 ${result.message}`, "agent", "ok"); setRunning(false); },
+          onMaxStepsReached() { hideTyping(); addMessage("⚠️ Reached max steps.", "agent", "info"); setRunning(false); },
+          onError(err)        { hideTyping(); addMessage(`❌ ${String(err)}`, "agent", "error"); setRunning(false); }
+        }
+      );
+      await currentAgent.start();
+      hideTyping(); setRunning(false);
+    }
+
+    // ── Controls ──
+    document.getElementById("run-btn").onclick = () => {
+      const g = document.getElementById("goal-input").value.trim();
+      if (!g) return;
+      document.getElementById("goal-input").value = "";
+      runAgent(g);
+    };
+    document.getElementById("goal-input").addEventListener("keydown", e => {
+      if (e.key === "Enter") document.getElementById("run-btn").click();
+    });
+    document.querySelectorAll(".chip").forEach(btn => {
+      btn.addEventListener("click", () => runAgent(btn.dataset.goal));
+    });
+  </script>
+</body>
+</html>

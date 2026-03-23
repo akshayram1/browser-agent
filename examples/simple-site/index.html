@@ -97,6 +97,35 @@
         font-size: 13px;
         color: #21304d;
       }
+      .examples-label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .07em;
+        color: #8891a5;
+        margin-bottom: 6px;
+      }
+      .examples-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .chip {
+        background: #f6f7fb;
+        border: 1px solid #cfd6e4;
+        border-radius: 999px;
+        padding: 5px 12px;
+        font-size: 12px;
+        color: #20293a;
+        cursor: pointer;
+        white-space: nowrap;
+        font-family: inherit;
+      }
+      .chip:hover {
+        background: #e8f0fe;
+        border-color: #93c5fd;
+        color: #1d4ed8;
+      }
       .profile-result {
         display: none;
         margin-top: 12px;
@@ -126,6 +155,17 @@
       </div>
 
       <div class="panel controls">
+        <div class="examples-label">Try these goals</div>
+        <div class="examples-row">
+          <button class="chip" data-goal="search Jane Doe and open profile">🔍 Search contact</button>
+          <button class="chip" data-goal="Fill the name field with Jane Doe">✏️ Fill name</button>
+          <button class="chip" data-goal="Fill the email with jane@example.com">📧 Fill email</button>
+          <button class="chip" data-goal="Fill the phone with 555-0192">📞 Fill phone</button>
+          <button class="chip" data-goal="Fill the company with Acme Corp">🏢 Fill company</button>
+          <button class="chip" data-goal="put notes as employee">📝 Fill notes</button>
+          <button class="chip" data-goal="Click the Submit Contact button">🚀 Submit form</button>
+        </div>
+
         <label for="goal">Goal</label>
         <textarea id="goal">search Jane Doe and open profile</textarea>
 

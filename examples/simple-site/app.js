@@ -1,4 +1,4 @@
-,import { createBrowserAgent } from "../../dist/lib.js";
+import { createBrowserAgent } from "../../dist/lib.js";
 
 const goalEl = document.getElementById("goal");
 const modeEl = document.getElementById("mode");
@@ -260,6 +260,13 @@ window.__browserAgentWebLLM = {
       "If type is navigate you must include a valid http/https url in url field.",
       "Only use selectors that are inside #crm-root.",
       "Do not output markdown.",
+      "IMPORTANT: For type actions, the text field must be the exact value specified in the goal — never use placeholder text from the page.",
+      "EXAMPLES:",
+      'Goal: put notes as employee → {"type":"type","selector":"#notes","text":"employee","clearFirst":true}',
+      'Goal: fill name as John Smith → {"type":"type","selector":"#name","text":"John Smith","clearFirst":true}',
+      'Goal: type company as Acme → {"type":"type","selector":"#company","text":"Acme","clearFirst":true}',
+      'Goal: click submit → {"type":"click","selector":"#submit-contact"}',
+      "END EXAMPLES.",
       "Goal:",
       input.goal,
       "Page:",
@@ -324,6 +331,12 @@ function renderOpenedProfile(button, trigger) {
 
   setStatus(`profile opened (${name})`);
   log("Profile opened", { name, trigger });
+}
+
+for (const chip of document.querySelectorAll(".chip[data-goal]")) {
+  chip.addEventListener("click", () => {
+    goalEl.value = chip.dataset.goal;
+  });
 }
 
 for (const button of document.querySelectorAll(".open-profile")) {
