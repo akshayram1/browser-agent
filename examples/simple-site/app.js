@@ -307,14 +307,9 @@ approveBtn.addEventListener("click", async () => {
     return;
   }
 
-  const result = await agent.approvePendingAction();
-  log("approvePendingAction()", result);
-
-  if (result.status === "executed") {
-    setStatus("approved and executed");
-    const continuation = await agent.start();
-    log("resume start()", continuation);
-  }
+  setStatus("resuming");
+  const continuation = await agent.resume();
+  log("resume()", continuation);
 });
 
 stopBtn.addEventListener("click", () => {

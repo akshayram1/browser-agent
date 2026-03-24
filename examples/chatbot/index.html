@@ -550,137 +550,6 @@
     }
     loadBtn.addEventListener("click", loadModel);
 
-    // ── Build context from active demo section ──
-    function buildDemoContext() {
-      const active = document.querySelector(".demo-section.active");
-      if (!active) return "";
-      const sections = [];
-      active.querySelectorAll(".demo-card").forEach(card => {
-        const title = card.querySelector(".card-title")?.textContent?.trim() ?? "Section";
-        const items = Array.from(card.querySelectorAll("input,textarea,select,button"))
-          .filter(el => { const s = window.getComputedStyle(el); return s.display !== "none" && s.visibility !== "hidden"; })
-          .map(el => {
-            const sel = el.id ? `#${el.id}` : el.tagName.toLowerCase();
-            const labelEl = el.id ? document.querySelector(`label[for="${el.id}"]`) : null;
-            const desc = [labelEl?.innerText, el.getAttribute("aria-label"), el.innerText, el.placeholder].filter(Boolean).map(s => s.trim()).filter(Boolean).join(" / ").slice(0, 60);
-            return `  - selector="${sel}" desc="${desc || sel}" type=${el.type || el.tagName.toLowerCase()}`;
-          });
-        if (items.length) sections.push(`${title}:\n${items.join("\n")}`);
-      });
-      return sections.join("\n\n");
-    }
-
-    // ── JSON helpers ──
-    const VALID_TYPES = new Set(["click","type","navigate","extract","scroll","focus","wait","done"]);
-
-    function parseAction(raw) {
-      const fence = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
-      const candidate = fence ? fence[1].trim() : raw.trim();
-      const m = candidate.match(/\{[\s\S]*\}/);
-      if (!m) return { type: "done", reason: `No JSON: ${raw.slice(0, 80)}` };
-      try {
-        const obj = JSON.parse(m[0]);
-        if (typeof obj?.type === "string" && VALID_TYPES.has(obj.type)) return obj;
-        return { type: "done", reason: `Unknown type: ${obj?.type}` };
-      } catch { return { type: "done", reason: `Parse error: ${m[0].slice(0, 80)}` }; }
-    }
-
-    function parsePlannerResult(raw) {
-      const fence = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
-      const candidate = fence ? fence[1].trim() : raw.trim();
-      const m = candidate.match(/\{[\s\S]*\}/);
-      if (!m) return { action: { type: "done", reason: `No JSON: ${raw.slice(0, 80)}` } };
-      try {
-        const obj = JSON.parse(m[0]);
-        if (typeof obj?.action === "object" && obj.action !== null) {
-          return {
-            action:     parseAction(JSON.stringify(obj.action)),
-            evaluation: typeof obj.evaluation === "string" ? obj.evaluation : undefined,
-            memory:     typeof obj.memory     === "string" ? obj.memory     : undefined,
-            nextGoal:   typeof obj.next_goal  === "string" ? obj.next_goal  : undefined,
-          };
-        }
-        return { action: parseAction(m[0]) };
-      } catch { return { action: { type: "done", reason: `Parse error: ${m[0].slice(0, 80)}` } }; }
-    }
-
-    // ── WebLLM bridge ──
-    async function planWithWebLLM(input) {
-      const { goal, history, lastError, memory, systemPrompt } = input;
-      const ctx = buildDemoContext();
-      const recent = history.slice(-4).join(" → ") || "none";
-      const errHint = lastError ? `\nLast action FAILED: "${lastError}". Try a different approach.` : "";
-      const memHint = memory ? `\nWorking memory: ${memory}` : "";
-
-      const defaultSystem =
-`You are a browser automation agent. You MUST output ONLY a single valid JSON object in this exact format:
-{"evaluation":"<what happened last step>","memory":"<key facts to remember>","next_goal":"<what you will do next>","action":<action object>}
-
-The action must be one of:
-- {"type":"type","selector":"#id","text":"value","clearFirst":true}
-- {"type":"click","selector":"#id"}
-- {"type":"done","reason":"goal complete"}
-- {"type":"chat","message":"<friendly reply>"}
-
-Use the "chat" action ONLY when the goal is a greeting, small talk, or a question that cannot be accomplished through DOM automation (e.g. "hi", "hello", "thanks", "what can you do?"). For everything else always choose a DOM action.
-
-No extra text. No markdown. Only the JSON object.`;
-
-      const resp = await llmEngine.chat.completions.create({
-        messages: [
-          { role: "system", content: systemPrompt || defaultSystem },
-          { role: "user", content:
-`Goal: "${goal}"
-Recent history: ${recent}${errHint}${memHint}
-
-Page elements:
-${ctx}
-
-EXAMPLES:
-Fill name → {"evaluation":"page loaded","memory":"name field is #name","next_goal":"fill name field","action":{"type":"type","selector":"#name","text":"Jane","clearFirst":true}}
-Click submit → {"evaluation":"fields filled","memory":"form ready","next_goal":"submit the form","action":{"type":"click","selector":"#submit-contact"}}
-Add task → {"evaluation":"ready","memory":"task input is #task-input","next_goal":"type task text","action":{"type":"type","selector":"#task-input","text":"Buy milk","clearFirst":true}}
-Hi → {"evaluation":"greeting received","memory":"","next_goal":"respond conversationally","action":{"type":"chat","message":"Hey! Give me a goal to automate — try filling a form, searching a contact, or adding a task."}}
-
-Now output JSON for: "${goal}"` }
-        ],
-        temperature: 0,
-        max_tokens: 200
-      });
-
-      const result = parsePlannerResult(resp.choices[0].message.content.trim());
-      let { action } = result;
-
-      // Guard: click on input → convert to type
-      if (action.type === "click" && action.selector) {
-        const el = document.querySelector(action.selector);
-        if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA")) {
-          const m = goal.match(/(?:with|to|called?|:)\s+"?([^"]+)"?\s*$/i);
-          if (m) action = { type: "type", selector: action.selector, text: m[1].trim(), clearFirst: true };
-        }
-      }
-      // Guard: field already correct → done
-      if (action.type === "type" && action.selector) {
-        const el = document.querySelector(action.selector);
-        if (el && el.value.trim() === action.text?.trim())
-          return { action: { type: "done", reason: `Already filled "${action.selector}"` } };
-      }
-      // Guard: repeated click → done
-      if (action.type === "click" && action.selector) {
-        const last = history[history.length - 1] ?? "";
-        if (last.includes(action.selector))
-          return { action: { type: "done", reason: `Already clicked ${action.selector}` } };
-      }
-
-      // Guard: chat action → display message and signal done
-      if (action.type === "chat") {
-        addMessage(action.message || "Hi! Give me a goal to automate.", "agent", "info");
-        return { action: { type: "done", reason: "__chat__" } };
-      }
-
-      return { ...result, action };
-    }
-
     // ── Run agent ──
     async function runAgent(goal) {
       if (currentAgent) currentAgent.stop();
@@ -719,7 +588,7 @@ Now output JSON for: "${goal}"` }
             approvalBanner.classList.add("visible");
             addMessage(`⏸ Approval needed for <strong>${action.type}</strong>`, "agent", "pending");
           },
-          onDone(result)        { hideTyping(); if (!result.message?.includes("__chat__")) addMessage(`🏁 ${result.message}`, "agent", "ok"); setRunning(false); approvalBanner.classList.remove("visible"); },
+          onDone(result)        { hideTyping(); addMessage(`🏁 ${result.message}`, "agent", "ok"); setRunning(false); approvalBanner.classList.remove("visible"); },
           onMaxStepsReached()   { hideTyping(); addMessage("⚠️ Reached max steps.", "agent", "info"); setRunning(false); },
           onError(err)          { hideTyping(); addMessage(`❌ ${String(err)}`, "agent", "error"); setRunning(false); }
         }
