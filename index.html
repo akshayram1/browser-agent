@@ -1037,6 +1037,7 @@ Never navigate away from the booking portal.`
 
       /* ── Navigation map ── */
       const NAV = [
+        { match: /all.?docs|show.?docs|docs.?section|documentation|all.?sections/i,  id: '#docs',         reply: 'Taking you to the <strong>Docs</strong> section overview.' },
         { match: /install|npm|package|get.?start|quick.?start|setup/i,            id: '#docs',         reply: 'Scrolling to <strong>Installation & Quick Start</strong>.' },
         { match: /what.?s.?new|release|v0\.|changelog|update|new.?feature/i,      id: '#whats-new',    reply: 'Here are the <strong>latest features</strong> — reflection loop, working memory, custom system prompts.' },
         { match: /architect|system|design|how.?it.?work|internals|engine|tick/i,  id: '#architecture', reply: 'Navigating to <strong>Architecture</strong> — agent tick loop, safety model, core modules.' },
@@ -1194,6 +1195,14 @@ Never navigate away from the booking portal.`
       ];
       let greetIdx = 0;
 
+      function withTimeout(promise, timeoutMs = 12000) {
+        let timeoutId;
+        const timeoutPromise = new Promise((_, reject) => {
+          timeoutId = setTimeout(() => reject(new Error('planner_timeout')), timeoutMs);
+        });
+        return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timeoutId));
+      }
+
       /* ── Route query ── */
       async function handleQuery(q) {
         sendBtn.disabled = true;
@@ -1209,27 +1218,11 @@ Never navigate away from the booking portal.`
           return;
         }
 
-        /* 2. Keyword match — instant nav, no model needed even when loaded */
-        const kwMatch = NAV.find(n => n.match.test(q));
-        if (kwMatch) {
-          addBotMsg(kwMatch.reply);
-          if (kwMatch.href) {
-            setTimeout(() => window.open(kwMatch.href, '_blank', 'noopener'), 400);
-          } else {
-            const target = document.querySelector(kwMatch.id);
-            if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
-          }
-          sendBtn.disabled = false;
-          inputEl.disabled = false;
-          inputEl.focus();
-          return;
-        }
-
-        /* 3. No keyword match — use AI model if loaded, otherwise fallback reply */
+        /* 2. AI-first routing — when model is loaded, always route via LLM */
         if (loadedEngine && window.__browserAgentWebLLM) {
           const typingEl = addTyping();
           try {
-            const result = await window.__browserAgentWebLLM.plan({ goal: q });
+            const result = await withTimeout(window.__browserAgentWebLLM.plan({ goal: q }));
             typingEl.remove();
             const replyText = result._reply || (result.reason ?? 'Done.');
             addBotMsg(replyText);
@@ -1240,11 +1233,33 @@ Never navigate away from the booking portal.`
             }
           } catch {
             typingEl.remove();
-            addBotMsg('Something went wrong with the model. Try a keyword like "install" or "architecture".');
+            const kwFallback = NAV.find(n => n.match.test(q));
+            if (kwFallback) {
+              addBotMsg(kwFallback.reply);
+              if (kwFallback.href) {
+                setTimeout(() => window.open(kwFallback.href, '_blank', 'noopener'), 400);
+              } else {
+                const target = document.querySelector(kwFallback.id);
+                if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
+              }
+            } else {
+              addBotMsg('The AI model took too long to respond. Try again, or use a direct query like <strong>install</strong>, <strong>architecture</strong>, <strong>embedding</strong>, or <strong>docs</strong>.');
+            }
           }
         } else {
-          addBotMsg(FALLBACK_REPLIES[fallbackIdx % FALLBACK_REPLIES.length]);
-          fallbackIdx++;
+          const kwMatch = NAV.find(n => n.match.test(q));
+          if (kwMatch) {
+            addBotMsg(kwMatch.reply);
+            if (kwMatch.href) {
+              setTimeout(() => window.open(kwMatch.href, '_blank', 'noopener'), 400);
+            } else {
+              const target = document.querySelector(kwMatch.id);
+              if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
+            }
+          } else {
+            addBotMsg(FALLBACK_REPLIES[fallbackIdx % FALLBACK_REPLIES.length]);
+            fallbackIdx++;
+          }
         }
 
         sendBtn.disabled = false;
