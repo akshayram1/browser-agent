@@ -6,7 +6,6 @@
   "redirects": [
     { "source": "/simple-site", "destination": "/examples/simple-site", "permanent": true },
     { "source": "/chatbot",     "destination": "/examples/chatbot",     "permanent": true },
-    { "source": "/doc-viewer",  "destination": "/examples/doc-viewer",  "permanent": true },
-    { "source": "/examples",    "destination": "/examples/index.html",  "permanent": false }
+    { "source": "/doc-viewer",  "destination": "/examples/doc-viewer",  "permanent": true }
   ]
 }
