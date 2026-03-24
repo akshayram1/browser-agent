@@ -708,25 +708,38 @@ window.__browserAgentWebLLM = {
     // ── JSON helpers ──
     const VALID_TYPES = new Set(["click","type","navigate","extract","scroll","focus","wait","done"]);
 
+    // Extract the first complete JSON object using bracket counting (avoids greedy regex issues
+    // when the model outputs multiple JSON objects in one response).
+    function extractFirstJson(text) {
+      const start = text.indexOf("{");
+      if (start === -1) return null;
+      let depth = 0;
+      for (let i = start; i < text.length; i++) {
+        if (text[i] === "{") depth++;
+        else if (text[i] === "}") { depth--; if (depth === 0) return text.slice(start, i + 1); }
+      }
+      return null;
+    }
+
     function parseAction(raw) {
       const fence = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
       const candidate = fence ? fence[1].trim() : raw.trim();
-      const m = candidate.match(/\{[\s\S]*\}/);
-      if (!m) return { type: "done", reason: `No JSON: ${raw.slice(0, 80)}` };
+      const json = extractFirstJson(candidate);
+      if (!json) return { type: "done", reason: `No JSON: ${raw.slice(0, 80)}` };
       try {
-        const obj = JSON.parse(m[0]);
+        const obj = JSON.parse(json);
         if (typeof obj?.type === "string" && VALID_TYPES.has(obj.type)) return obj;
         return { type: "done", reason: `Unknown type: ${obj?.type}` };
-      } catch { return { type: "done", reason: `Parse error: ${m[0].slice(0, 80)}` }; }
+      } catch { return { type: "done", reason: `Parse error: ${json.slice(0, 80)}` }; }
     }
 
     function parsePlannerResult(raw) {
       const fence = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
       const candidate = fence ? fence[1].trim() : raw.trim();
-      const m = candidate.match(/\{[\s\S]*\}/);
-      if (!m) return { action: { type: "done", reason: `No JSON: ${raw.slice(0, 80)}` } };
+      const json = extractFirstJson(candidate);
+      if (!json) return { action: { type: "done", reason: `No JSON: ${raw.slice(0, 80)}` } };
       try {
-        const obj = JSON.parse(m[0]);
+        const obj = JSON.parse(json);
         if (typeof obj?.action === "object" && obj.action !== null) {
           return {
             action:     parseAction(JSON.stringify(obj.action)),
@@ -735,8 +748,8 @@ window.__browserAgentWebLLM = {
             nextGoal:   typeof obj.next_goal  === "string" ? obj.next_goal  : undefined,
           };
         }
-        return { action: parseAction(m[0]) };
-      } catch { return { action: { type: "done", reason: `Parse error: ${m[0].slice(0, 80)}` } }; }
+        return { action: parseAction(json) };
+      } catch { return { action: { type: "done", reason: `Parse error: ${json.slice(0, 80)}` } }; }
     }
 
     // ── WebLLM bridge ──
