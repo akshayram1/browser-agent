@@ -1,4 +1,4 @@
-import { createBrowserAgent } from "https://unpkg.com/@akshayram1/omnibrowser-agent/dist/lib.js";
+import { createBrowserAgent, createWebLLMBridge } from "../../dist/lib.js";
 
 const goalEl = document.getElementById("goal");
 const modeEl = document.getElementById("mode");
@@ -25,7 +25,6 @@ const modelStatusTextEl = document.getElementById("model-status-text");
 let agent = null;
 let loadedEngine = null;
 const AGENT_SCOPE_SELECTOR = "#crm-root";
-const PLANNER_TIMEOUT_MS = 7000;
 let isStarting = false;
 let lastOpenedProfileName = "";
 
@@ -33,6 +32,7 @@ async function loadModel() {
   if (!navigator.gpu) {
     webgpuWarnEl.classList.add("visible");
     modelStatusTextEl.textContent = "WebGPU unavailable — using heuristic planner";
+    installPlannerBridge();
     return;
   }
 
@@ -61,6 +61,7 @@ async function loadModel() {
     modelEl.disabled = false;
     setStatus("WebLLM model loaded");
     log("WebLLM ready", { modelId });
+    installPlannerBridge();
   } catch (error) {
     loadedEngine = null;
     progressWrapEl.classList.remove("visible");
@@ -70,41 +71,11 @@ async function loadModel() {
     modelEl.disabled = false;
     setStatus("WebLLM load failed");
     log("WebLLM load error", { message: String(error) });
+    installPlannerBridge();
   }
 }
 
 loadModelBtn.addEventListener("click", loadModel);
-
-function parseActionFromModel(content) {
-  if (typeof content !== "string" || content.trim().length === 0) {
-    throw new Error("WebLLM response was empty");
-  }
-
-  const direct = content.trim();
-  if (direct.startsWith("{") && direct.endsWith("}")) {
-    return JSON.parse(direct);
-  }
-
-  const start = content.indexOf("{");
-  if (start === -1) {
-    throw new Error("WebLLM response did not include JSON action");
-  }
-
-  let depth = 0;
-  for (let index = start; index < content.length; index += 1) {
-    const char = content[index];
-    if (char === "{") {
-      depth += 1;
-    } else if (char === "}") {
-      depth -= 1;
-      if (depth === 0) {
-        return JSON.parse(content.slice(start, index + 1));
-      }
-    }
-  }
-
-  throw new Error("WebLLM returned incomplete JSON object");
-}
 
 function isUrlAllowed(url) {
   try {
@@ -207,104 +178,36 @@ function ruleBasedFallbackAction(input) {
   return { type: "done", reason: "No deterministic fallback action matched goal" };
 }
 
-async function createPlannerResponse(engine, messages, useJsonMode) {
-  const payload = {
-    temperature: 0,
-    messages,
-    max_tokens: 64
+function makeFallbackBridge() {
+  return {
+    async plan(input) {
+      const action = normalizeAction(ruleBasedFallbackAction(input));
+      return { action };
+    }
   };
-
-  if (useJsonMode) {
-    payload.response_format = { type: "json_object" };
-  }
-
-  return engine.chat.completions.create(payload);
 }
 
-function withTimeout(promise, ms, label) {
-  let timerId = null;
-
-  const timeoutPromise = new Promise((_, reject) => {
-    timerId = setTimeout(() => reject(new Error(`${label} after ${ms}ms`)), ms);
-  });
-
-  return Promise.race([promise, timeoutPromise]).finally(() => {
-    if (timerId) {
-      clearTimeout(timerId);
+function createScopedWebLLMBridge(engine) {
+  const baseBridge = createWebLLMBridge(engine);
+  return {
+    async plan(input, modelId) {
+      const result = await baseBridge.plan(input, modelId);
+      return { ...result, action: normalizeAction(result.action) };
+    },
+    async retryInvalidJson(input, badOutput, modelId) {
+      const result = await baseBridge.retryInvalidJson(input, badOutput, modelId);
+      return { ...result, action: normalizeAction(result.action) };
     }
-  });
+  };
 }
 
-window.__browserAgentWebLLM = {
-  async plan(input) {
-    const engine = loadedEngine;
+function installPlannerBridge() {
+  window.__browserAgentWebLLM = loadedEngine
+    ? createScopedWebLLMBridge(loadedEngine)
+    : makeFallbackBridge();
+}
 
-    const scopedCandidates = (input.snapshot.candidates || [])
-      .filter((candidate) => isSelectorInScope(candidate.selector))
-      .slice(0, 12)
-      .map((candidate) => ({
-        selector: candidate.selector,
-        role: candidate.role,
-        text: candidate.text
-      }));
-
-    const compactText = (input.snapshot.textPreview || "").slice(0, 260);
-    const compactHistory = (input.history || []).slice(-2);
-
-    const prompt = [
-      "Return exactly one JSON action.",
-      "Allowed action types: click, type, navigate, extract, wait, done.",
-      "Use this exact schema: click{type,selector}, type{type,selector,text,clearFirst?}, navigate{type,url}, extract{type,selector,label}, wait{type,ms}, done{type,reason}.",
-      "If type is navigate you must include a valid http/https url in url field.",
-      "Only use selectors that are inside #crm-root.",
-      "Do not output markdown.",
-      "IMPORTANT: For type actions, the text field must be the exact value specified in the goal — never use placeholder text from the page.",
-      "EXAMPLES:",
-      'Goal: put notes as employee → {"type":"type","selector":"#notes","text":"employee","clearFirst":true}',
-      'Goal: fill name as John Smith → {"type":"type","selector":"#name","text":"John Smith","clearFirst":true}',
-      'Goal: type company as Acme → {"type":"type","selector":"#company","text":"Acme","clearFirst":true}',
-      'Goal: click submit → {"type":"click","selector":"#submit-contact"}',
-      "END EXAMPLES.",
-      "Goal:",
-      input.goal,
-      "Page:",
-      `${input.snapshot.title} | ${input.snapshot.url}`,
-      "Text preview:",
-      compactText,
-      "Candidates:",
-      JSON.stringify(scopedCandidates),
-      "History:",
-      JSON.stringify(compactHistory)
-    ].join("\n");
-
-    const messages = [
-      {
-        role: "system",
-        content:
-          "You are a browser planner. Choose one safe next step toward the goal. Return exactly one JSON object and nothing else."
-      },
-      { role: "user", content: prompt }
-    ];
-
-    try {
-      const response = await withTimeout(
-        createPlannerResponse(engine, messages, true),
-        PLANNER_TIMEOUT_MS,
-        "WebLLM planner timeout"
-      );
-      const content = response.choices?.[0]?.message?.content ?? "";
-      const action = normalizeAction(parseActionFromModel(content));
-      log("WebLLM planned action", { action });
-      return action;
-    } catch (error) {
-      log("WebLLM planning failed", { message: String(error) });
-    }
-
-    const fallback = normalizeAction(ruleBasedFallbackAction(input));
-    log("Using deterministic fallback action", fallback);
-    return fallback;
-  }
-};
+installPlannerBridge();
 
 function log(message, payload) {
   const line = payload ? `${message} ${JSON.stringify(payload)}` : message;

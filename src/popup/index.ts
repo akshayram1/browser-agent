@@ -1,8 +1,10 @@
-import type { AgentMode, PlannerKind } from "../shared/contracts";
+import type { AgentMode, PlannerConfig, PlannerKind } from "../shared/contracts";
 
 const goal = document.getElementById("goal") as HTMLTextAreaElement;
 const mode = document.getElementById("mode") as HTMLSelectElement;
 const planner = document.getElementById("planner") as HTMLSelectElement;
+const modelRow = document.getElementById("model-row") as HTMLDivElement;
+const modelId = document.getElementById("modelId") as HTMLInputElement;
 const status = document.getElementById("status") as HTMLDivElement;
 
 const start = document.getElementById("start") as HTMLButtonElement;
@@ -17,16 +19,36 @@ async function withActiveTab<T>(fn: (tabId: number) => Promise<T>) {
   return fn(tab.id);
 }
 
+function syncModelInputVisibility() {
+  const isWebLLM = planner.value === "webllm";
+  modelRow.classList.toggle("hidden", !isWebLLM);
+}
+
+planner.addEventListener("change", syncModelInputVisibility);
+syncModelInputVisibility();
+
 start.addEventListener("click", async () => {
   try {
     status.textContent = "Starting...";
+    const plannerKind = planner.value as PlannerKind;
+    const plannerConfig: PlannerConfig = {
+      kind: plannerKind
+    };
+
+    if (plannerKind === "webllm") {
+      const trimmedModelId = modelId.value.trim();
+      if (trimmedModelId) {
+        plannerConfig.modelId = trimmedModelId;
+      }
+    }
+
     await withActiveTab((tabId) =>
       chrome.runtime.sendMessage({
         type: "START_AGENT",
         tabId,
         goal: goal.value.trim(),
         mode: mode.value as AgentMode,
-        planner: planner.value as PlannerKind
+        planner: plannerConfig
       })
     );
     status.textContent = "Agent started";

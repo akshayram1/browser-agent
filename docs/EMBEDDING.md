@@ -53,22 +53,11 @@ To use planner mode `webllm`, load the WebLLM engine and wire the bridge before 
 
 ```ts
 import * as webllm from "@mlc-ai/web-llm";
+import { createBrowserAgent, createWebLLMBridge } from "@akshayram1/omnibrowser-agent";
 
 const engine = await webllm.CreateMLCEngine("Llama-3.2-1B-Instruct-q4f16_1-MLC");
 
-window.__browserAgentWebLLM = {
-  async plan(input, modelId) {
-    const resp = await engine.chat.completions.create({
-      messages: [
-        { role: "system", content: "Output only a JSON AgentAction object." },
-        { role: "user",   content: `Goal: ${input.goal}\nHistory: ${input.history.join(", ")}` }
-      ],
-      temperature: 0,
-      max_tokens: 100
-    });
-    return JSON.parse(resp.choices[0].message.content);
-  }
-};
+window.__browserAgentWebLLM = createWebLLMBridge(engine);
 
 const agent = createBrowserAgent({
   goal: "Fill the contact form",
@@ -82,4 +71,4 @@ await agent.start();
 
 - For production, mount this inside an authenticated app shell and add your own permission checks.
 - `human-approved` mode is recommended for CRM/finance/admin actions.
-- The WebLLM bridge is not bundled — bring your own engine instance and wire it to `window.__browserAgentWebLLM`.
+- Bring your own WebLLM engine instance, then wire `createWebLLMBridge(engine)` to `window.__browserAgentWebLLM`.

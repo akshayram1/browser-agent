@@ -42,7 +42,8 @@ export function parseAction(raw: string): AgentAction {
  * Parse a full PlannerResult from raw LLM output.
  *
  * Accepts the reflection+action format:
- *   { "evaluation": "...", "memory": "...", "next_goal": "...", "action": { ... } }
+ *   { "evaluation": "...", "memory": "...", "nextGoal": "...", "action": { ... } }
+ * Also supports legacy `next_goal` key for backward compatibility.
  *
  * Also accepts a bare AgentAction for backward compatibility with simple bridges.
  */
@@ -68,14 +69,19 @@ export function parsePlannerResult(raw: string): PlannerResult {
 
   const obj = parsed as Record<string, unknown>;
 
-  // Full reflection format: { evaluation, memory, next_goal, action }
+  // Full reflection format: { evaluation, memory, nextGoal, action }
   if (typeof obj.action === "object" && obj.action !== null) {
     const action = parseAction(JSON.stringify(obj.action));
     return {
       action,
       evaluation: typeof obj.evaluation === "string" ? obj.evaluation : undefined,
       memory:     typeof obj.memory     === "string" ? obj.memory     : undefined,
-      nextGoal:   typeof obj.next_goal  === "string" ? obj.next_goal  : undefined,
+      nextGoal:
+        typeof obj.nextGoal === "string"
+          ? obj.nextGoal
+          : typeof obj.next_goal === "string"
+            ? obj.next_goal
+            : undefined,
     };
   }
 

@@ -1,16 +1,34 @@
-import type { AgentMode, AgentSession, PlannerKind } from "../shared/contracts";
+import type { AgentMode, AgentSession, PlannerConfig } from "../shared/contracts";
 
 const sessions = new Map<number, AgentSession>();
 
-function makeSession(tabId: number, goal: string, mode: AgentMode, plannerKind: PlannerKind): AgentSession {
+function normalizePlannerConfig(rawPlanner: unknown): PlannerConfig {
+  if (typeof rawPlanner === "string" && (rawPlanner === "heuristic" || rawPlanner === "webllm")) {
+    return { kind: rawPlanner };
+  }
+
+  if (typeof rawPlanner === "object" && rawPlanner !== null) {
+    const record = rawPlanner as Record<string, unknown>;
+    const kind = record.kind;
+    if (kind === "heuristic" || kind === "webllm") {
+      return {
+        kind,
+        modelId: typeof record.modelId === "string" && record.modelId.trim() ? record.modelId : undefined,
+        systemPrompt: typeof record.systemPrompt === "string" && record.systemPrompt.trim() ? record.systemPrompt : undefined
+      };
+    }
+  }
+
+  return { kind: "heuristic" };
+}
+
+function makeSession(tabId: number, goal: string, mode: AgentMode, planner: PlannerConfig): AgentSession {
   return {
     id: crypto.randomUUID(),
     tabId: tabId,
     goal,
     mode,
-    planner: {
-      kind: plannerKind
-    },
+    planner,
     history: [],
     isRunning: true
   };
@@ -28,6 +46,10 @@ async function tick(tabId: number) {
   });
 
   session.history.push(result.message);
+  if (result.reflection?.memory !== undefined) {
+    session.memory = result.reflection.memory;
+  }
+  session.lastError = result.status === "error" ? result.message : undefined;
 
   if (result.status === "needs_approval") {
     session.pendingAction = result.action;
@@ -47,7 +69,7 @@ async function tick(tabId: number) {
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === "START_AGENT") {
-    const session = makeSession(message.tabId, message.goal, message.mode, message.planner);
+    const session = makeSession(message.tabId, message.goal, message.mode, normalizePlannerConfig(message.planner));
     sessions.set(message.tabId, session);
     tick(message.tabId).catch((error) => {
       const failed = sessions.get(message.tabId);

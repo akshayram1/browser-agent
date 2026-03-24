@@ -379,7 +379,7 @@
   </div>
 
   <script type="module">
-    import { createBrowserAgent } from "https://unpkg.com/@akshayram1/omnibrowser-agent/dist/lib.js";
+    import { createBrowserAgent, createWebLLMBridge } from "../../dist/lib.js";
     import * as webllm from "https://esm.run/@mlc-ai/web-llm";
 
     // ── Task state ──
@@ -466,6 +466,14 @@
     const modelSelect  = document.getElementById("model-select");
 
     let llmEngine = null, currentAgent = null;
+    const CHATBOT_WEBLLM_SYSTEM_PROMPT = [
+      "You are controlling the chatbot demo app UI.",
+      "Use selectors from candidates only.",
+      "Prefer these CRM selectors when relevant: #search-input, #search-btn, #name, #email, #phone, #company, #notes, #submit-contact.",
+      "Prefer these task selectors when relevant: #task-input, #add-task-btn, #clear-completed-btn, #task-list.",
+      "Use small, reversible actions and return done when the user goal is complete.",
+      "If the user asks for casual chat (hi/hello/thanks), return done with a brief reason."
+    ].join(" ");
 
     // ── Flash element when agent acts ──
     function flash(selector) {
@@ -525,7 +533,7 @@
             progressText.textContent = text || `${Math.round(progress * 100)}%`;
           }
         });
-        window.__browserAgentWebLLM = { async plan(input) { return planWithWebLLM(input); } };
+        window.__browserAgentWebLLM = createWebLLMBridge(llmEngine);
         progressWrap.classList.remove("visible");
         sdot.className = "sdot ready"; aiPill.className = "ai-pill ready";
         modelStatusText.textContent = modelSelect.options[modelSelect.selectedIndex].text.split("—")[0].trim();
@@ -684,7 +692,15 @@ Now output JSON for: "${goal}"` }
       showTyping();
 
       currentAgent = createBrowserAgent(
-        { goal, mode: document.getElementById("mode-select").value, planner: llmEngine ? { kind: "webllm" } : { kind: "heuristic" }, maxSteps: 12, stepDelayMs: 800 },
+        {
+          goal,
+          mode: document.getElementById("mode-select").value,
+          planner: llmEngine
+            ? { kind: "webllm", modelId: modelSelect.value, systemPrompt: CHATBOT_WEBLLM_SYSTEM_PROMPT }
+            : { kind: "heuristic" },
+          maxSteps: 12,
+          stepDelayMs: 800
+        },
         {
           onStep(result) {
             hideTyping();

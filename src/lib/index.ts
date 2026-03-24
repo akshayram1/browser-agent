@@ -217,7 +217,9 @@ export function createBrowserAgent(config: LibraryAgentConfig, events?: LibraryA
   return new BrowserAgent(config, events);
 }
 
+export { createWebLLMBridge } from "../core/webllm-bridge";
 export { parseAction, parsePlannerResult } from "../shared/parse-action";
+export type { BrowserAgentWebLLMBridge, WebLLMEngineLike } from "../core/webllm-bridge";
 
 export type {
   AgentAction,

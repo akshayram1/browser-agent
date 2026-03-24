@@ -34,8 +34,12 @@ async function runTick(session: AgentSession): Promise<ContentResult> {
     return { status: "done", action, message: action.reason, reflection };
   }
 
-  const message = await executeAction(action);
-  return { status: "executed", action, message, reflection };
+  try {
+    const message = await executeAction(action);
+    return { status: "executed", action, message, reflection };
+  } catch (error) {
+    return { status: "error", action, message: String(error), reflection };
+  }
 }
 
 async function executePendingAction(session: AgentSession): Promise<ContentResult> {

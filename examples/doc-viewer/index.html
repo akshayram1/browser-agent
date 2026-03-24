@@ -559,7 +559,7 @@ window.__browserAgentWebLLM = {
   </div>
 
   <script type="module">
-    import { createBrowserAgent } from "https://unpkg.com/@akshayram1/omnibrowser-agent/dist/lib.js";
+    import { createBrowserAgent, createWebLLMBridge } from "../../dist/lib.js";
     import * as webllm from "https://esm.run/@mlc-ai/web-llm";
 
     // ── Section registry for mapping keywords → tab + section ──
@@ -669,6 +669,13 @@ window.__browserAgentWebLLM = {
     const modelSelect   = document.getElementById("model-select");
 
     let llmEngine = null, currentAgent = null;
+    const DOC_VIEWER_WEBLLM_SYSTEM_PROMPT = [
+      "You are a docs navigation assistant for this page.",
+      "Primary objective: navigate to the requested documentation section.",
+      "Prefer sidebar nav selectors like #nav-installation, #nav-quickstart, #nav-actions, #nav-webllm, #nav-security.",
+      "If Advanced/FAQ links are hidden, click #more-btn first, then click the target nav link.",
+      "Use click actions for navigation and return done once the relevant section is visible."
+    ].join(" ");
 
     // ── Flash ──
     function flash(selector) {
@@ -873,7 +880,7 @@ Now output JSON for: "${goal}"` }
             progressText.textContent = text || `${Math.round(progress * 100)}%`;
           }
         });
-        window.__browserAgentWebLLM = { async plan(input) { return planWithWebLLM(input); } };
+        window.__browserAgentWebLLM = createWebLLMBridge(llmEngine);
         progressWrap.classList.remove("visible");
         sdot.className = "sdot ready"; aiPill.className = "ai-pill ready";
         modelStatusText.textContent = modelSelect.options[modelSelect.selectedIndex].text.split("—")[0].trim();
@@ -942,7 +949,7 @@ Now output JSON for: "${goal}"` }
         {
           goal,
           mode: document.getElementById("mode-select").value,
-          planner: { kind: "webllm" },
+          planner: { kind: "webllm", modelId: modelSelect.value, systemPrompt: DOC_VIEWER_WEBLLM_SYSTEM_PROMPT },
           maxSteps: 6,
           stepDelayMs: 600,
           scopeSelector: "#doc-sidebar"

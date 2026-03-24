@@ -1092,6 +1092,37 @@ Never navigate away from the booking portal.`
         return 30000;
       }
 
+      function contentToText(content) {
+        if (typeof content === 'string') {
+          return content;
+        }
+        if (Array.isArray(content)) {
+          return content
+            .map(part => {
+              if (typeof part === 'string') return part;
+              if (part && typeof part === 'object' && typeof part.text === 'string') return part.text;
+              return '';
+            })
+            .join('\n');
+        }
+        return '';
+      }
+
+      function extractFirstJsonObject(text) {
+        const start = text.indexOf('{');
+        if (start === -1) return null;
+        let depth = 0;
+        for (let i = start; i < text.length; i += 1) {
+          const ch = text[i];
+          if (ch === '{') depth += 1;
+          if (ch === '}') {
+            depth -= 1;
+            if (depth === 0) return text.slice(start, i + 1);
+          }
+        }
+        return null;
+      }
+
       async function loadModel() {
         if (!navigator.gpu) {
           webgpuWarn.classList.add('visible');
@@ -1135,13 +1166,21 @@ Never navigate away from the booking portal.`
               ].join('\n');
 
               const resp = await loadedEngine.chat.completions.create({
-                messages: [{ role: 'user', content: prompt }],
-                temperature: 0, max_tokens: 120,
-                response_format: { type: 'json_object' }
+                messages: [
+                  { role: 'system', content: 'Return only one JSON object. No markdown or extra prose.' },
+                  { role: 'user', content: prompt }
+                ],
+                temperature: 0,
+                max_tokens: 160
               });
 
               try {
-                const parsed = JSON.parse(resp.choices[0].message.content);
+                const raw = contentToText(resp.choices?.[0]?.message?.content ?? '').trim();
+                const jsonText = extractFirstJsonObject(raw);
+                if (!jsonText) {
+                  return { type: 'done', reason: 'Could not parse model response.' };
+                }
+                const parsed = JSON.parse(jsonText);
                 if (parsed.section) {
                   return {
                     type: 'scroll',

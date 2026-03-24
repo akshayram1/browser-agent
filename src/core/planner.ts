@@ -1,8 +1,10 @@
 import type { AgentAction, CandidateElement, PlannerConfig, PlannerInput, PlannerResult } from "../shared/contracts";
 
 type WebLLMBridge = {
-  // Bridge may return either PlannerResult (new, with reflection) or AgentAction (legacy)
-  plan(input: PlannerInput, modelId?: string): Promise<PlannerResult | AgentAction>;
+  // Bridge may return PlannerResult (new), AgentAction (legacy), or raw LLM text.
+  plan(input: PlannerInput, modelId?: string): Promise<PlannerResult | AgentAction | string>;
+  // Optional retry hook that keeps chat history and asks for corrected JSON.
+  retryInvalidJson?(input: PlannerInput, badOutput: string, modelId?: string): Promise<PlannerResult | AgentAction | string>;
 };
 
 const URL_PATTERN = /(?:go to|navigate to|open)\s+(https?:\/\/\S+)/i;
@@ -90,6 +92,24 @@ function toPlannerResult(raw: PlannerResult | AgentAction): PlannerResult {
   return { action: raw as AgentAction };
 }
 
+async function parsePlannerText(raw: string): Promise<PlannerResult> {
+  const parser = await import("../shared/parse-action");
+  return parser.parsePlannerResult(raw);
+}
+
+async function normalizeBridgeResponse(
+  raw: PlannerResult | AgentAction | string
+): Promise<{ result: PlannerResult; parseFailed: boolean; rawText?: string }> {
+  if (typeof raw === "string") {
+    const parsed = await parsePlannerText(raw);
+    const parseFailed = parsed.action.type === "done" &&
+      /(No JSON|JSON parse error|Parsed value is not an object|Unknown or missing action type)/.test(parsed.action.reason);
+    return { result: parsed, parseFailed, rawText: raw };
+  }
+
+  return { result: toPlannerResult(raw), parseFailed: false };
+}
+
 export async function planNextAction(config: PlannerConfig, input: PlannerInput): Promise<PlannerResult> {
   if (config.kind === "heuristic") {
     return { action: heuristicPlan(input) };
@@ -105,6 +125,27 @@ export async function planNextAction(config: PlannerConfig, input: PlannerInput)
     };
   }
 
-  const raw = await bridge.plan({ ...input, systemPrompt: config.systemPrompt }, config.modelId);
-  return toPlannerResult(raw);
+  const plannerInput = { ...input, systemPrompt: config.systemPrompt };
+  const firstAttempt = await normalizeBridgeResponse(await bridge.plan(plannerInput, config.modelId));
+
+  if (!firstAttempt.parseFailed) {
+    return firstAttempt.result;
+  }
+
+  if (bridge.retryInvalidJson && firstAttempt.rawText) {
+    const retryAttempt = await normalizeBridgeResponse(
+      await bridge.retryInvalidJson(plannerInput, firstAttempt.rawText, config.modelId)
+    );
+
+    if (!retryAttempt.parseFailed) {
+      return retryAttempt.result;
+    }
+  }
+
+  return {
+    action: {
+      type: "done",
+      reason: "WebLLM output could not be parsed after retry."
+    }
+  };
 }
