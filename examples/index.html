@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OmniBrowser Agent — Live Examples</title>
+  <style>
+    :root {
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+      --blue:   #3b82f6;
+      --blue-d: #1d4ed8;
+      --blue-l: #dbeafe;
+      --s0: #f8fafc; --s1: #f1f5f9; --s2: #e2e8f0;
+      --s4: #94a3b8; --s5: #64748b; --s7: #334155; --s9: #0f172a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { min-height: 100vh; background: var(--s1); color: var(--s9); }
+
+    header {
+      height: 54px;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--s2);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 32px; position: sticky; top: 0; z-index: 100;
+    }
+    .brand { font-weight: 800; font-size: 14px; color: var(--s9); text-decoration: none; display: flex; align-items: center; gap: 8px; }
+    .brand-icon { width: 26px; height: 26px; background: linear-gradient(135deg, var(--blue), var(--blue-d)); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #fff; }
+    .back { font-size: 13px; color: var(--s5); text-decoration: none; font-weight: 500; padding: 5px 12px; border-radius: 8px; border: 1px solid var(--s2); transition: all .15s; }
+    .back:hover { background: #fff; color: var(--s7); }
+
+    .hero {
+      text-align: center;
+      padding: 56px 24px 40px;
+    }
+    .eyebrow {
+      font-size: 12px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .1em; color: var(--blue); margin-bottom: 12px;
+    }
+    h1 { font-size: 32px; font-weight: 800; color: var(--s9); margin-bottom: 12px; line-height: 1.2; }
+    .sub { font-size: 16px; color: var(--s5); max-width: 520px; margin: 0 auto 32px; line-height: 1.6; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 0 24px 64px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid var(--s2);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(15,23,42,.06);
+      transition: box-shadow .2s, transform .2s;
+      display: flex;
+      flex-direction: column;
+    }
+    .card:hover { box-shadow: 0 8px 32px rgba(15,23,42,.12); transform: translateY(-2px); }
+
+    .card-preview {
+      height: 160px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 56px;
+      border-bottom: 1px solid var(--s2);
+    }
+    .card-preview.blue   { background: linear-gradient(135deg, #eff6ff, #dbeafe); }
+    .card-preview.purple { background: linear-gradient(135deg, #faf5ff, #ede9fe); }
+    .card-preview.green  { background: linear-gradient(135deg, #f0fdf4, #dcfce7); }
+
+    .card-body { padding: 22px 24px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 17px; font-weight: 800; color: var(--s9); }
+    .card-desc  { font-size: 13.5px; color: var(--s5); line-height: 1.6; flex: 1; }
+
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tag {
+      font-size: 11px; font-weight: 600; padding: 3px 10px;
+      border-radius: 999px; border: 1px solid var(--s2);
+      background: var(--s0); color: var(--s5);
+    }
+    .tag.blue   { background: #eff6ff; border-color: var(--blue-l); color: var(--blue-d); }
+    .tag.green  { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+    .tag.purple { background: #faf5ff; border-color: #e9d5ff; color: #7c3aed; }
+
+    .card-footer { padding: 16px 24px; border-top: 1px solid var(--s2); }
+    .open-btn {
+      display: block; width: 100%; text-align: center;
+      padding: 11px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--blue), var(--blue-d));
+      color: #fff; font-size: 14px; font-weight: 700;
+      text-decoration: none; transition: opacity .15s, transform .1s;
+      box-shadow: 0 2px 8px rgba(59,130,246,.25);
+    }
+    .open-btn:hover { opacity: .9; transform: translateY(-1px); }
+
+    footer {
+      text-align: center; padding: 24px;
+      font-size: 13px; color: var(--s4);
+      border-top: 1px solid var(--s2);
+    }
+    footer a { color: var(--s5); text-decoration: none; }
+    footer a:hover { color: var(--s7); }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="brand" href="../"><div class="brand-icon">🌐</div>OmniBrowser Agent</a>
+    <a class="back" href="../">← Back to Docs</a>
+  </header>
+
+  <div class="hero">
+    <p class="eyebrow">Live Examples</p>
+    <h1>See the agent in action</h1>
+    <p class="sub">Three interactive demos — each showing a different way to embed OmniBrowser Agent into a real UI.</p>
+  </div>
+
+  <div class="grid">
+
+    <!-- Chatbot -->
+    <div class="card">
+      <div class="card-preview blue">🤖</div>
+      <div class="card-body">
+        <div class="card-title">Chatbot Demo</div>
+        <div class="card-desc">A chat-style interface where you type a goal and watch the agent plan and execute actions on a live CRM and task manager. Supports WebLLM AI planning and heuristic fallback.</div>
+        <div class="tags">
+          <span class="tag blue">WebLLM</span>
+          <span class="tag green">Heuristic</span>
+          <span class="tag">CRM</span>
+          <span class="tag">Task Manager</span>
+          <span class="tag">Reflection loop</span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <a class="open-btn" href="./chatbot/">Open Chatbot Demo →</a>
+      </div>
+    </div>
+
+    <!-- Simple Site -->
+    <div class="card">
+      <div class="card-preview purple">📋</div>
+      <div class="card-body">
+        <div class="card-title">Simple Site Demo</div>
+        <div class="card-desc">A minimal embedded example showing how to drop the agent directly into your own page with a few lines of code. Includes form filling, contact search, and profile lookup.</div>
+        <div class="tags">
+          <span class="tag blue">WebLLM</span>
+          <span class="tag green">Heuristic</span>
+          <span class="tag">Form filling</span>
+          <span class="tag">Embedded API</span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <a class="open-btn" href="./simple-site/">Open Simple Site Demo →</a>
+      </div>
+    </div>
+
+    <!-- Doc Viewer -->
+    <div class="card">
+      <div class="card-preview green">📚</div>
+      <div class="card-body">
+        <div class="card-title">Doc Viewer Demo</div>
+        <div class="card-desc">A documentation viewer with hidden tabs and a side chat panel. Ask about any section by name and the agent navigates to it — switching tabs and scrolling automatically.</div>
+        <div class="tags">
+          <span class="tag blue">WebLLM</span>
+          <span class="tag green">Heuristic</span>
+          <span class="tag">Navigation</span>
+          <span class="tag">Hidden tabs</span>
+          <span class="tag purple">New</span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <a class="open-btn" href="./doc-viewer/">Open Doc Viewer Demo →</a>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    <p>Built with <a href="https://www.npmjs.com/package/@akshayram1/omnibrowser-agent" target="_blank" rel="noreferrer">@akshayram1/omnibrowser-agent</a> · <a href="https://github.com/akshayram1/omnibrowser-agent" target="_blank" rel="noreferrer">GitHub</a></p>
+  </footer>
+</body>
+</html>
