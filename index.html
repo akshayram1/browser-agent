@@ -1184,21 +1184,59 @@ Never navigate away from the booking portal.`
         handleQuery(q);
       }
 
+      /* ── Greetings — answer instantly, no model needed ── */
+      const GREETINGS = /^(hi|hey|hello|sup|yo|hiya|howdy|what's up|whats up|greetings)[!?.]*$/i;
+      const GREETING_REPLIES = [
+        'Hey! Ask me about any section — <strong>install</strong>, <strong>architecture</strong>, <strong>embedding</strong>, <strong>examples</strong>…',
+        'Hi there! What part of the docs can I take you to?',
+        'Hello! I can navigate to any section. What are you looking for?',
+      ];
+      let greetIdx = 0;
+
       /* ── Route query ── */
       async function handleQuery(q) {
         sendBtn.disabled = true;
         inputEl.disabled = true;
 
-        /* If AI model is loaded, use it */
+        /* 1. Instant greeting reply — never hits the model */
+        if (GREETINGS.test(q.trim())) {
+          addBotMsg(GREETING_REPLIES[greetIdx % GREETING_REPLIES.length]);
+          greetIdx++;
+          sendBtn.disabled = false;
+          inputEl.disabled = false;
+          inputEl.focus();
+          return;
+        }
+
+        /* 2. Keyword match — instant nav, no model needed even when loaded */
+        const kwMatch = NAV.find(n => n.match.test(q));
+        if (kwMatch) {
+          addBotMsg(kwMatch.reply);
+          if (kwMatch.href) {
+            setTimeout(() => window.open(kwMatch.href, '_blank', 'noopener'), 400);
+          } else {
+            const agent = createBrowserAgent(
+              { goal: `Scroll to the section with id "${kwMatch.id.replace('#', '')}"`, mode: 'autonomous', planner: { kind: 'heuristic' }, maxSteps: 3, stepDelayMs: 80 },
+              { onDone: () => {}, onError: () => {} }
+            );
+            agent.start().catch(() => {});
+            const target = document.querySelector(kwMatch.id);
+            if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
+          }
+          sendBtn.disabled = false;
+          inputEl.disabled = false;
+          inputEl.focus();
+          return;
+        }
+
+        /* 3. No keyword match — use AI model if loaded, otherwise fallback reply */
         if (loadedEngine && window.__browserAgentWebLLM) {
           const typingEl = addTyping();
           try {
             const result = await window.__browserAgentWebLLM.plan({ goal: q });
             typingEl.remove();
-
             const replyText = result._reply || (result.reason ?? 'Done.');
             addBotMsg(replyText);
-
             const targetId = result.selector || null;
             if (targetId) {
               const agent = createBrowserAgent(
@@ -1211,35 +1249,16 @@ Never navigate away from the booking portal.`
             }
           } catch {
             typingEl.remove();
-            addBotMsg('Something went wrong with the model. Falling back to keyword matching.');
-            keywordNav(q);
+            addBotMsg('Something went wrong with the model. Try a keyword like "install" or "architecture".');
           }
         } else {
-          /* Heuristic keyword navigation */
-          keywordNav(q);
+          addBotMsg(FALLBACK_REPLIES[fallbackIdx % FALLBACK_REPLIES.length]);
+          fallbackIdx++;
         }
 
         sendBtn.disabled = false;
         inputEl.disabled = false;
         inputEl.focus();
-      }
-
-      function keywordNav(q) {
-        const match = NAV.find(n => n.match.test(q));
-        if (!match) {
-          addBotMsg(FALLBACK_REPLIES[fallbackIdx % FALLBACK_REPLIES.length]);
-          fallbackIdx++;
-          return;
-        }
-        addBotMsg(match.reply);
-        if (match.href) { setTimeout(() => window.open(match.href, '_blank', 'noopener'), 400); return; }
-        const agent = createBrowserAgent(
-          { goal: `Scroll to the section with id "${match.id.replace('#', '')}"`, mode: 'autonomous', planner: { kind: 'heuristic' }, maxSteps: 3, stepDelayMs: 80 },
-          { onDone: () => {}, onError: () => {} }
-        );
-        agent.start().catch(() => {});
-        const target = document.querySelector(match.id);
-        if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
       }
 
       /* ── Helpers ── */
