@@ -931,6 +931,11 @@ Never navigate away from the booking portal.`
       .cb-msg.user { flex-direction: row-reverse; }
       .cb-bubble { max-width: 82%; padding: 8px 12px; font-size: 12.5px; line-height: 1.55; border-radius: 14px; }
       .cb-msg.bot  .cb-bubble { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 4px 14px 14px 14px; }
+      .cb-msg.bot.thought .cb-bubble {
+        max-width: 88%; padding: 7px 10px; font-size: 11px;
+        color: var(--muted); background: rgba(0,229,160,0.06);
+        border: 1px solid rgba(0,229,160,0.16);
+      }
       .cb-msg.user .cb-bubble { background: rgba(0,229,160,0.12); border: 1px solid rgba(0,229,160,0.22); color: var(--text); border-radius: 14px 14px 4px 14px; }
       .cb-msg.bot .cb-bubble a { color: var(--accent); text-decoration: none; }
       .cb-msg.bot .cb-bubble a:hover { text-decoration: underline; }
@@ -1079,6 +1084,14 @@ Never navigate away from the booking portal.`
       /* ── Model loader ── */
       loadBtn.addEventListener('click', loadModel);
 
+      function getPlannerTimeoutMs() {
+        const modelId = modelSelect.value;
+        if (/1B/i.test(modelId)) return 18000;
+        if (/3B|Phi-3\.5-mini/i.test(modelId)) return 30000;
+        if (/7B|8B/i.test(modelId)) return 45000;
+        return 30000;
+      }
+
       async function loadModel() {
         if (!navigator.gpu) {
           webgpuWarn.classList.add('visible');
@@ -1102,6 +1115,13 @@ Never navigate away from the booking portal.`
             }
           });
 
+          progressText.textContent = 'Warming up first response…';
+          await loadedEngine.chat.completions.create({
+            messages: [{ role: 'user', content: 'Reply with exactly: ready' }],
+            temperature: 0,
+            max_tokens: 4
+          });
+
           /* Install WebLLM bridge for the library */
           window.__browserAgentWebLLM = {
             async plan(input) {
@@ -1109,8 +1129,8 @@ Never navigate away from the booking portal.`
               const prompt = [
                 'You are a docs navigation assistant. Given the user query, decide which page section to navigate to.',
                 `Available sections: ${sections}`,
-                'Reply with ONLY a JSON object: {"section": "#section-id", "reply": "one sentence reply"}',
-                'If no section matches, use {"section": null, "reply": "helpful response"}',
+                'Reply with ONLY a JSON object containing: "section", "reply", and "reasoning". Use a "#section-id" string for "section", or null if nothing matches.',
+                'The "reasoning" field must be a concise user-visible summary, not hidden chain-of-thought.',
                 `User query: ${input.goal}`
               ].join('\n');
 
@@ -1123,9 +1143,18 @@ Never navigate away from the booking portal.`
               try {
                 const parsed = JSON.parse(resp.choices[0].message.content);
                 if (parsed.section) {
-                  return { type: 'scroll', selector: parsed.section, _reply: parsed.reply };
+                  return {
+                    type: 'scroll',
+                    selector: parsed.section,
+                    _reply: parsed.reply,
+                    _reasoning: typeof parsed.reasoning === 'string' ? parsed.reasoning : ''
+                  };
                 }
-                return { type: 'done', reason: parsed.reply || 'No matching section.' };
+                return {
+                  type: 'done',
+                  reason: parsed.reply || 'No matching section.',
+                  _reasoning: typeof parsed.reasoning === 'string' ? parsed.reasoning : ''
+                };
               } catch {
                 return { type: 'done', reason: 'Could not parse model response.' };
               }
@@ -1138,7 +1167,7 @@ Never navigate away from the booking portal.`
           loadBtn.disabled = false;
           modelSelect.disabled = false;
           setStatus('ready', 'AI ready');
-          addBotMsg('✅ Model loaded! I can now answer questions about the docs with <strong>AI reasoning</strong>.');
+          addBotMsg('✅ Model loaded! I can now answer questions about the docs and show a brief <strong>reasoning summary</strong>.');
         } catch (err) {
           loadedEngine = null;
           progressWrap.classList.remove('visible');
@@ -1195,7 +1224,7 @@ Never navigate away from the booking portal.`
       ];
       let greetIdx = 0;
 
-      function withTimeout(promise, timeoutMs = 12000) {
+      function withTimeout(promise, timeoutMs = 30000) {
         let timeoutId;
         const timeoutPromise = new Promise((_, reject) => {
           timeoutId = setTimeout(() => reject(new Error('planner_timeout')), timeoutMs);
@@ -1220,10 +1249,12 @@ Never navigate away from the booking portal.`
 
         /* 2. AI-first routing — when model is loaded, always route via LLM */
         if (loadedEngine && window.__browserAgentWebLLM) {
+          setStatus('loading', 'AI thinking');
           const typingEl = addTyping();
           try {
-            const result = await withTimeout(window.__browserAgentWebLLM.plan({ goal: q }));
+            const result = await withTimeout(window.__browserAgentWebLLM.plan({ goal: q }), getPlannerTimeoutMs());
             typingEl.remove();
+            if (result._reasoning) addBotThought(result._reasoning);
             const replyText = result._reply || (result.reason ?? 'Done.');
             addBotMsg(replyText);
             const targetId = result.selector || null;
@@ -1231,10 +1262,11 @@ Never navigate away from the booking portal.`
               const target = document.querySelector(targetId);
               if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
             }
-          } catch {
+          } catch (err) {
             typingEl.remove();
             const kwFallback = NAV.find(n => n.match.test(q));
             if (kwFallback) {
+              addBotThought('Using the keyword fallback because the model was slow.');
               addBotMsg(kwFallback.reply);
               if (kwFallback.href) {
                 setTimeout(() => window.open(kwFallback.href, '_blank', 'noopener'), 400);
@@ -1243,8 +1275,15 @@ Never navigate away from the booking portal.`
                 if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
               }
             } else {
-              addBotMsg('The AI model took too long to respond. Try again, or use a direct query like <strong>install</strong>, <strong>architecture</strong>, <strong>embedding</strong>, or <strong>docs</strong>.');
+              const isTimeout = err instanceof Error && err.message === 'planner_timeout';
+              addBotMsg(
+                isTimeout
+                  ? 'The AI model is still thinking and hit the current wait limit. Try a more direct query, switch to <strong>Llama 3.2 1B</strong> for speed, or retry after the first prompt warm-up.'
+                  : 'The AI model failed to answer this request. Try again, or use a direct query like <strong>install</strong>, <strong>architecture</strong>, <strong>embedding</strong>, or <strong>docs</strong>.'
+              );
             }
+          } finally {
+            setStatus('ready', 'AI ready');
           }
         } else {
           const kwMatch = NAV.find(n => n.match.test(q));
@@ -1272,6 +1311,14 @@ Never navigate away from the booking portal.`
         const msg = document.createElement('div');
         msg.className = 'cb-msg bot';
         msg.innerHTML = `<div class="cb-bubble">${html}</div>`;
+        messagesEl.appendChild(msg);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+
+      function addBotThought(text) {
+        const msg = document.createElement('div');
+        msg.className = 'cb-msg bot thought';
+        msg.innerHTML = `<div class="cb-bubble">💭 ${text}</div>`;
         messagesEl.appendChild(msg);
         messagesEl.scrollTop = messagesEl.scrollHeight;
       }
