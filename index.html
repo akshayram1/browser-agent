@@ -6,7 +6,7 @@
     <title>OmniBrowser Agent — Local-first Browser AI</title>
     <meta name="description" content="OmniBrowser Agent — local-first browser AI operator. No API keys. No cloud. Runs entirely in the browser via WebLLM + WebGPU." />
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Quantico:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -818,6 +818,456 @@ Never navigate away from the booking portal.`
         <p>© 2026 OmniBrowser Agent · MIT License · <a href="https://github.com/akshayram1/omnibrowser-agent" target="_blank" rel="noreferrer">GitHub</a> · <a href="https://www.npmjs.com/package/@akshayram1/omnibrowser-agent" target="_blank" rel="noreferrer">npm</a></p>
       </div>
     </footer>
+
+    <!-- ── DOCS NAVIGATION CHATBOT WIDGET ── -->
+    <style>
+      #chatbot-toggle {
+        position: fixed; bottom: 28px; right: 28px; z-index: 9000;
+        width: 52px; height: 52px; border-radius: 50%;
+        background: var(--accent); border: none; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 4px 24px rgba(0,229,160,0.35);
+        transition: transform .2s, box-shadow .2s; font-size: 22px;
+      }
+      #chatbot-toggle:hover { transform: scale(1.1); box-shadow: 0 6px 30px rgba(0,229,160,0.45); }
+      #chatbot-toggle.open  { background: var(--surface2); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+
+      #chatbot-panel {
+        position: fixed; bottom: 92px; right: 28px; z-index: 9000;
+        width: 350px; max-height: 560px;
+        background: var(--surface); border: 1px solid var(--border-bright);
+        border-radius: 20px; display: flex; flex-direction: column;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(0,229,160,0.06);
+        transform: translateY(12px) scale(0.97);
+        opacity: 0; pointer-events: none;
+        transition: transform .22s cubic-bezier(.34,1.56,.64,1), opacity .18s ease;
+        overflow: hidden;
+      }
+      #chatbot-panel.visible { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+
+      /* Header */
+      .cb-header {
+        padding: 13px 16px 11px; border-bottom: 1px solid var(--border);
+        display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+      }
+      .cb-icon {
+        width: 30px; height: 30px; border-radius: 9px;
+        background: rgba(0,229,160,0.12); border: 1px solid rgba(0,229,160,0.2);
+        display: flex; align-items: center; justify-content: center; font-size: 14px;
+      }
+      .cb-title { font-family: var(--sans); font-size: 13px; font-weight: 600; color: var(--text); }
+      .cb-subtitle { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.04em; }
+      .cb-status-pill {
+        margin-left: auto; font-family: var(--mono); font-size: 10px;
+        border-radius: 999px; padding: 2px 8px; letter-spacing: 0.04em;
+        white-space: nowrap; display: flex; align-items: center; gap: 5px;
+        border: 1px solid var(--border); color: var(--muted); background: transparent;
+        transition: all .2s;
+      }
+      .cb-status-pill.ready  { color: var(--accent); border-color: rgba(0,229,160,0.28); background: rgba(0,229,160,0.07); }
+      .cb-status-pill.loading{ color: var(--amber);  border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.07); }
+      .cb-sdot {
+        width: 5px; height: 5px; border-radius: 50%; background: var(--muted); flex-shrink: 0;
+      }
+      .cb-sdot.ready   { background: var(--accent); }
+      .cb-sdot.loading { background: var(--amber); animation: cbPulse 1s ease-in-out infinite; }
+      @keyframes cbPulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+      /* Model loader bar */
+      .cb-model-bar {
+        padding: 9px 14px; border-bottom: 1px solid var(--border);
+        flex-shrink: 0; display: flex; flex-direction: column; gap: 7px;
+      }
+      .cb-model-row { display: flex; gap: 7px; align-items: center; }
+      .cb-model-select {
+        flex: 1; background: var(--surface2); border: 1px solid var(--border);
+        border-radius: 8px; padding: 5px 8px; color: var(--text);
+        font-family: var(--mono); font-size: 10.5px; outline: none; cursor: pointer;
+        transition: border-color .15s;
+      }
+      .cb-model-select:focus { border-color: rgba(0,229,160,0.35); }
+      .cb-model-select option { background: #0d1117; }
+      .cb-load-btn {
+        padding: 5px 13px; border-radius: 8px; border: none; cursor: pointer;
+        background: var(--accent); color: #000; font-family: var(--mono);
+        font-size: 10.5px; font-weight: 700; white-space: nowrap;
+        transition: opacity .15s, transform .1s;
+      }
+      .cb-load-btn:hover:not(:disabled) { opacity: .88; transform: translateY(-1px); }
+      .cb-load-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+      .cb-load-btn.loaded {
+        background: transparent; border: 1px solid rgba(0,229,160,0.28);
+        color: var(--accent);
+      }
+
+      .cb-progress-wrap { display: none; }
+      .cb-progress-wrap.visible { display: flex; flex-direction: column; gap: 3px; }
+      .cb-progress-track {
+        height: 2px; background: var(--border); border-radius: 999px; overflow: hidden;
+      }
+      .cb-progress-fill {
+        height: 100%; background: linear-gradient(90deg, var(--accent), #00ffc2);
+        border-radius: 999px; width: 0%; transition: width .4s ease;
+      }
+      .cb-progress-text { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+      .cb-webgpu-warn {
+        font-family: var(--mono); font-size: 10px; color: var(--amber);
+        background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.2);
+        border-radius: 6px; padding: 5px 8px; display: none; line-height: 1.5;
+      }
+      .cb-webgpu-warn.visible { display: block; }
+
+      /* Messages */
+      .cb-messages {
+        flex: 1; overflow-y: auto; padding: 12px 14px;
+        display: flex; flex-direction: column; gap: 8px; scroll-behavior: smooth;
+        scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+        min-height: 0;
+      }
+      .cb-messages::-webkit-scrollbar { width: 4px; }
+      .cb-messages::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 4px; }
+
+      .cb-msg { display: flex; gap: 8px; align-items: flex-end; animation: cbMsgIn .18s ease; }
+      @keyframes cbMsgIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+      .cb-msg.user { flex-direction: row-reverse; }
+      .cb-bubble { max-width: 82%; padding: 8px 12px; font-size: 12.5px; line-height: 1.55; border-radius: 14px; }
+      .cb-msg.bot  .cb-bubble { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 4px 14px 14px 14px; }
+      .cb-msg.user .cb-bubble { background: rgba(0,229,160,0.12); border: 1px solid rgba(0,229,160,0.22); color: var(--text); border-radius: 14px 14px 4px 14px; }
+      .cb-msg.bot .cb-bubble a { color: var(--accent); text-decoration: none; }
+      .cb-msg.bot .cb-bubble a:hover { text-decoration: underline; }
+
+      /* Typing indicator */
+      .cb-typing { display: flex; gap: 8px; align-items: flex-end; animation: cbMsgIn .18s ease; }
+      .cb-typing-dots {
+        background: var(--surface2); border: 1px solid var(--border);
+        border-radius: 4px 14px 14px 14px; padding: 10px 14px;
+        display: flex; gap: 4px; align-items: center;
+      }
+      .cb-tdot { width: 5px; height: 5px; border-radius: 50%; background: var(--muted); animation: cbTdot 1.2s ease-in-out infinite; }
+      .cb-tdot:nth-child(2) { animation-delay: .15s; }
+      .cb-tdot:nth-child(3) { animation-delay: .3s; }
+      @keyframes cbTdot { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-4px)} }
+
+      /* Suggestions */
+      .cb-suggestions { padding: 8px 14px 0; display: flex; flex-wrap: wrap; gap: 6px; flex-shrink: 0; }
+      .cb-chip {
+        font-family: var(--mono); font-size: 10px; color: var(--muted);
+        background: var(--surface2); border: 1px solid var(--border);
+        border-radius: 999px; padding: 3px 10px; cursor: pointer;
+        transition: all .15s; white-space: nowrap; letter-spacing: 0.02em;
+      }
+      .cb-chip:hover { color: var(--accent); border-color: rgba(0,229,160,0.3); }
+
+      /* Input */
+      .cb-input-area {
+        padding: 11px 14px; border-top: 1px solid var(--border);
+        display: flex; gap: 8px; flex-shrink: 0;
+      }
+      .cb-input {
+        flex: 1; background: var(--surface2); border: 1px solid var(--border);
+        border-radius: 10px; padding: 8px 12px; color: var(--text);
+        font-size: 12.5px; font-family: var(--sans); outline: none; transition: border-color .15s;
+      }
+      .cb-input::placeholder { color: var(--muted); }
+      .cb-input:focus { border-color: rgba(0,229,160,0.35); }
+      .cb-send {
+        width: 34px; height: 34px; border-radius: 9px;
+        background: var(--accent); border: none; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 14px; flex-shrink: 0; transition: opacity .15s, transform .1s;
+      }
+      .cb-send:hover { opacity: .85; transform: scale(1.05); }
+      .cb-send:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+    </style>
+
+    <button id="chatbot-toggle" title="Ask about the docs" aria-label="Open docs assistant">💬</button>
+
+    <div id="chatbot-panel" role="dialog" aria-label="Docs navigation assistant">
+
+      <div class="cb-header">
+        <div class="cb-icon">🤖</div>
+        <div>
+          <div class="cb-title">Docs Assistant</div>
+          <div class="cb-subtitle">powered by omnibrowser-agent</div>
+        </div>
+        <div class="cb-status-pill" id="cb-status-pill">
+          <span class="cb-sdot" id="cb-sdot"></span>
+          <span id="cb-status-text">heuristic</span>
+        </div>
+      </div>
+
+      <!-- Model loader -->
+      <div class="cb-model-bar">
+        <div class="cb-model-row">
+          <select class="cb-model-select" id="cb-model-select">
+            <option value="Llama-3.2-1B-Instruct-q4f16_1-MLC">Llama 3.2 1B — fast (~600 MB)</option>
+            <option value="Llama-3.2-3B-Instruct-q4f16_1-MLC">Llama 3.2 3B — balanced (~1.5 GB)</option>
+            <option value="Phi-3.5-mini-instruct-q4f16_1-MLC">Phi-3.5 Mini — quality (~2 GB)</option>
+          </select>
+          <button class="cb-load-btn" id="cb-load-btn">Load AI</button>
+        </div>
+        <div class="cb-progress-wrap" id="cb-progress-wrap">
+          <div class="cb-progress-track"><div class="cb-progress-fill" id="cb-progress-fill"></div></div>
+          <div class="cb-progress-text" id="cb-progress-text">Initialising…</div>
+        </div>
+        <div class="cb-webgpu-warn" id="cb-webgpu-warn">
+          ⚠️ WebGPU unavailable — try Chrome 113+. Running in heuristic mode.
+        </div>
+      </div>
+
+      <div class="cb-messages" id="cb-messages"></div>
+
+      <div class="cb-suggestions" id="cb-suggestions">
+        <button class="cb-chip" data-q="How do I install?">install</button>
+        <button class="cb-chip" data-q="Show me the examples">examples</button>
+        <button class="cb-chip" data-q="How does the architecture work?">architecture</button>
+        <button class="cb-chip" data-q="What's new in v0.2?">what's new</button>
+        <button class="cb-chip" data-q="Embedding guide">embedding</button>
+      </div>
+
+      <div class="cb-input-area">
+        <input class="cb-input" id="cb-input" type="text" placeholder="Ask me anything about the docs…" autocomplete="off" />
+        <button class="cb-send" id="cb-send" aria-label="Send">↑</button>
+      </div>
+    </div>
+
+    <script type="module">
+      import { createBrowserAgent } from 'https://unpkg.com/@akshayram1/omnibrowser-agent/dist/lib.js';
+
+      /* ── Navigation map ── */
+      const NAV = [
+        { match: /install|npm|package|get.?start|quick.?start|setup/i,            id: '#docs',         reply: 'Scrolling to <strong>Installation & Quick Start</strong>.' },
+        { match: /what.?s.?new|release|v0\.|changelog|update|new.?feature/i,      id: '#whats-new',    reply: 'Here are the <strong>latest features</strong> — reflection loop, working memory, custom system prompts.' },
+        { match: /architect|system|design|how.?it.?work|internals|engine|tick/i,  id: '#architecture', reply: 'Navigating to <strong>Architecture</strong> — agent tick loop, safety model, core modules.' },
+        { match: /embed|integrat|api|librar|wire|drop.?in|snippet/i,              id: '#embedding',    reply: 'Taking you to the <strong>Embedding Guide</strong> with heuristic & WebLLM code snippets.' },
+        { match: /roadmap|future|plan|coming|v1|next/i,                           id: '#roadmap',      reply: 'Here\'s the <strong>Roadmap</strong> — v0.3 through v1.0.' },
+        { match: /contact|author|maintainer|who|person/i,                         id: '#contact',      reply: 'Navigating to <strong>Contact</strong> info.' },
+        { match: /home|top|start|begin|back/i,                                    id: '#home',         reply: 'Back to the <strong>top</strong>.' },
+        { match: /example|demo|live|chatbot|simple|doc.?viewer/i,  href: './examples/',                                                      reply: 'Opening the <strong>Live Examples</strong> page.' },
+        { match: /github|source|repo|code/i,                       href: 'https://github.com/akshayram1/omnibrowser-agent',                  reply: 'Opening the <strong>GitHub repository</strong>.' },
+      ];
+
+      const FALLBACK_REPLIES = [
+        'Try asking about <strong>installation</strong>, <strong>architecture</strong>, <strong>embedding</strong>, or <strong>examples</strong>.',
+        'I can navigate to any section — e.g. "show me docs" or "how does the architecture work?"',
+        'I know about: Install, What\'s New, Architecture, Embedding, Roadmap, Contact, and Examples.',
+      ];
+      let fallbackIdx = 0;
+
+      /* ── DOM refs ── */
+      const toggleBtn    = document.getElementById('chatbot-toggle');
+      const panel        = document.getElementById('chatbot-panel');
+      const messagesEl   = document.getElementById('cb-messages');
+      const inputEl      = document.getElementById('cb-input');
+      const sendBtn      = document.getElementById('cb-send');
+      const suggsEl      = document.getElementById('cb-suggestions');
+      const modelSelect  = document.getElementById('cb-model-select');
+      const loadBtn      = document.getElementById('cb-load-btn');
+      const progressWrap = document.getElementById('cb-progress-wrap');
+      const progressFill = document.getElementById('cb-progress-fill');
+      const progressText = document.getElementById('cb-progress-text');
+      const webgpuWarn   = document.getElementById('cb-webgpu-warn');
+      const statusPill   = document.getElementById('cb-status-pill');
+      const statusDot    = document.getElementById('cb-sdot');
+      const statusText   = document.getElementById('cb-status-text');
+
+      let isOpen = false;
+      let loadedEngine = null;  // WebLLM engine when loaded
+
+      /* ── Model loader ── */
+      loadBtn.addEventListener('click', loadModel);
+
+      async function loadModel() {
+        if (!navigator.gpu) {
+          webgpuWarn.classList.add('visible');
+          setStatus('heuristic', 'idle');
+          return;
+        }
+
+        const modelId = modelSelect.value;
+        loadBtn.disabled = true;
+        modelSelect.disabled = true;
+        progressWrap.classList.add('visible');
+        setStatus('loading', 'loading');
+        addBotMsg(`Loading <strong>${modelSelect.options[modelSelect.selectedIndex].text.split('—')[0].trim()}</strong>… this may take a moment on first run.`);
+
+        try {
+          const webllm = await import('https://esm.run/@mlc-ai/web-llm');
+          loadedEngine = await webllm.CreateMLCEngine(modelId, {
+            initProgressCallback({ progress, text }) {
+              progressFill.style.width = `${Math.round(progress * 100)}%`;
+              progressText.textContent = text || `${Math.round(progress * 100)}%`;
+            }
+          });
+
+          /* Install WebLLM bridge for the library */
+          window.__browserAgentWebLLM = {
+            async plan(input) {
+              const sections = NAV.filter(n => n.id).map(n => `${n.id}`).join(', ');
+              const prompt = [
+                'You are a docs navigation assistant. Given the user query, decide which page section to navigate to.',
+                `Available sections: ${sections}`,
+                'Reply with ONLY a JSON object: {"section": "#section-id", "reply": "one sentence reply"}',
+                'If no section matches, use {"section": null, "reply": "helpful response"}',
+                `User query: ${input.goal}`
+              ].join('\n');
+
+              const resp = await loadedEngine.chat.completions.create({
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0, max_tokens: 120,
+                response_format: { type: 'json_object' }
+              });
+
+              try {
+                const parsed = JSON.parse(resp.choices[0].message.content);
+                if (parsed.section) {
+                  return { type: 'scroll', selector: parsed.section, _reply: parsed.reply };
+                }
+                return { type: 'done', reason: parsed.reply || 'No matching section.' };
+              } catch {
+                return { type: 'done', reason: 'Could not parse model response.' };
+              }
+            }
+          };
+
+          progressWrap.classList.remove('visible');
+          loadBtn.textContent = 'Reload';
+          loadBtn.classList.add('loaded');
+          loadBtn.disabled = false;
+          modelSelect.disabled = false;
+          setStatus('ready', 'AI ready');
+          addBotMsg('✅ Model loaded! I can now answer questions about the docs with <strong>AI reasoning</strong>.');
+        } catch (err) {
+          loadedEngine = null;
+          progressWrap.classList.remove('visible');
+          loadBtn.disabled = false;
+          modelSelect.disabled = false;
+          setStatus('idle', 'heuristic');
+          addBotMsg('⚠️ Model failed to load — falling back to heuristic mode. Check WebGPU support.');
+        }
+      }
+
+      function setStatus(dotClass, label) {
+        statusDot.className = `cb-sdot${dotClass === 'idle' ? '' : ' ' + dotClass}`;
+        statusText.textContent = label;
+        statusPill.className = `cb-status-pill${dotClass === 'ready' ? ' ready' : dotClass === 'loading' ? ' loading' : ''}`;
+      }
+
+      /* ── Toggle ── */
+      toggleBtn.addEventListener('click', () => {
+        isOpen = !isOpen;
+        panel.classList.toggle('visible', isOpen);
+        toggleBtn.classList.toggle('open', isOpen);
+        toggleBtn.textContent = isOpen ? '✕' : '💬';
+        if (isOpen) {
+          if (messagesEl.children.length === 0) {
+            addBotMsg('Hi! I\'m your <strong>docs assistant</strong>. Load an AI model above for smarter answers, or ask me about any section right now.');
+          }
+          inputEl.focus();
+        }
+      });
+
+      /* ── Suggestions ── */
+      suggsEl.querySelectorAll('.cb-chip').forEach(chip => {
+        chip.addEventListener('click', () => handleQuery(chip.dataset.q));
+      });
+
+      /* ── Send ── */
+      sendBtn.addEventListener('click', send);
+      inputEl.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
+
+      function send() {
+        const q = inputEl.value.trim();
+        if (!q) return;
+        addUserMsg(q);
+        inputEl.value = '';
+        handleQuery(q);
+      }
+
+      /* ── Route query ── */
+      async function handleQuery(q) {
+        sendBtn.disabled = true;
+        inputEl.disabled = true;
+
+        /* If AI model is loaded, use it */
+        if (loadedEngine && window.__browserAgentWebLLM) {
+          const typingEl = addTyping();
+          try {
+            const result = await window.__browserAgentWebLLM.plan({ goal: q });
+            typingEl.remove();
+
+            const replyText = result._reply || (result.reason ?? 'Done.');
+            addBotMsg(replyText);
+
+            const targetId = result.selector || null;
+            if (targetId) {
+              const agent = createBrowserAgent(
+                { goal: `Scroll to ${targetId}`, mode: 'autonomous', planner: { kind: 'webllm', modelId: modelSelect.value }, maxSteps: 2, stepDelayMs: 80 },
+                { onDone: () => {}, onError: () => {} }
+              );
+              agent.start().catch(() => {});
+              const target = document.querySelector(targetId);
+              if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
+            }
+          } catch {
+            typingEl.remove();
+            addBotMsg('Something went wrong with the model. Falling back to keyword matching.');
+            keywordNav(q);
+          }
+        } else {
+          /* Heuristic keyword navigation */
+          keywordNav(q);
+        }
+
+        sendBtn.disabled = false;
+        inputEl.disabled = false;
+        inputEl.focus();
+      }
+
+      function keywordNav(q) {
+        const match = NAV.find(n => n.match.test(q));
+        if (!match) {
+          addBotMsg(FALLBACK_REPLIES[fallbackIdx % FALLBACK_REPLIES.length]);
+          fallbackIdx++;
+          return;
+        }
+        addBotMsg(match.reply);
+        if (match.href) { setTimeout(() => window.open(match.href, '_blank', 'noopener'), 400); return; }
+        const agent = createBrowserAgent(
+          { goal: `Scroll to the section with id "${match.id.replace('#', '')}"`, mode: 'autonomous', planner: { kind: 'heuristic' }, maxSteps: 3, stepDelayMs: 80 },
+          { onDone: () => {}, onError: () => {} }
+        );
+        agent.start().catch(() => {});
+        const target = document.querySelector(match.id);
+        if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
+      }
+
+      /* ── Helpers ── */
+      function addBotMsg(html) {
+        const msg = document.createElement('div');
+        msg.className = 'cb-msg bot';
+        msg.innerHTML = `<div class="cb-bubble">${html}</div>`;
+        messagesEl.appendChild(msg);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+
+      function addUserMsg(text) {
+        const msg = document.createElement('div');
+        msg.className = 'cb-msg user';
+        msg.innerHTML = `<div class="cb-bubble">${text}</div>`;
+        messagesEl.appendChild(msg);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+
+      function addTyping() {
+        const el = document.createElement('div');
+        el.className = 'cb-typing';
+        el.innerHTML = `<div class="cb-typing-dots"><div class="cb-tdot"></div><div class="cb-tdot"></div><div class="cb-tdot"></div></div>`;
+        messagesEl.appendChild(el);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+        return el;
+      }
+    </script>
 
     <script>
       function switchSnippet(id) {

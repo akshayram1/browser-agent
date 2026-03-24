@@ -4,124 +4,216 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OmniBrowser Agent — Live Examples</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Quantico:wght@400;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      font-family: Inter, system-ui, -apple-system, sans-serif;
-      --blue:   #3b82f6;
-      --blue-d: #1d4ed8;
-      --blue-l: #dbeafe;
-      --s0: #f8fafc; --s1: #f1f5f9; --s2: #e2e8f0;
-      --s4: #94a3b8; --s5: #64748b; --s7: #334155; --s9: #0f172a;
+      --bg:      #080a0f;
+      --surface: #0d1117;
+      --surface2:#161b24;
+      --border:  rgba(255,255,255,0.07);
+      --border-b:rgba(255,255,255,0.14);
+      --text:    #e8eaf0;
+      --muted:   #6b7280;
+      --accent:  #00e5a0;
+      --accent2: #7c6dff;
+      --accent3: #f59e0b;
+      --mono: 'Space Mono', monospace;
+      --sans: 'Quantico', sans-serif;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { min-height: 100vh; background: var(--s1); color: var(--s9); }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
 
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.013) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.013) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .orb {
+      position: fixed; border-radius: 50%; filter: blur(120px);
+      pointer-events: none; z-index: 0; animation: orb-drift 20s ease-in-out infinite;
+    }
+    .orb-1 { width: 500px; height: 500px; background: rgba(0,229,160,0.05);  top: -150px; right: -80px;  animation-delay: 0s; }
+    .orb-2 { width: 400px; height: 400px; background: rgba(124,109,255,0.06); bottom: -100px; left: -80px; animation-delay: -7s; }
+    @keyframes orb-drift {
+      0%,100% { transform: translate(0,0) scale(1); }
+      33%  { transform: translate(25px,-15px) scale(1.04); }
+      66%  { transform: translate(-15px,25px) scale(0.97); }
+    }
+
+    /* ── Header ── */
     header {
-      height: 54px;
-      background: rgba(255,255,255,0.92);
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(8,10,15,0.88);
       backdrop-filter: blur(16px);
-      border-bottom: 1px solid var(--s2);
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 32px; position: sticky; top: 0; z-index: 100;
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
     }
-    .brand { font-weight: 800; font-size: 14px; color: var(--s9); text-decoration: none; display: flex; align-items: center; gap: 8px; }
-    .brand-icon { width: 26px; height: 26px; background: linear-gradient(135deg, var(--blue), var(--blue-d)); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #fff; }
-    .back { font-size: 13px; color: var(--s5); text-decoration: none; font-weight: 500; padding: 5px 12px; border-radius: 8px; border: 1px solid var(--s2); transition: all .15s; }
-    .back:hover { background: #fff; color: var(--s7); }
+    .header-row {
+      position: relative; z-index: 1;
+      height: 58px; max-width: 1100px; margin: 0 auto; padding: 0 28px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .brand {
+      font-family: var(--mono); font-weight: 700; font-size: 13px;
+      color: var(--accent); text-decoration: none; letter-spacing: 0.05em;
+    }
+    .back {
+      font-family: var(--mono); font-size: 11px; color: var(--muted);
+      text-decoration: none; padding: 6px 14px; border-radius: 8px;
+      border: 1px solid var(--border-b); transition: all .15s; letter-spacing: 0.03em;
+    }
+    .back:hover { color: var(--text); border-color: var(--accent2); }
 
+    /* ── Hero ── */
     .hero {
-      text-align: center;
-      padding: 56px 24px 40px;
+      position: relative; z-index: 1;
+      text-align: center; padding: 64px 24px 48px;
     }
     .eyebrow {
-      font-size: 12px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .1em; color: var(--blue); margin-bottom: 12px;
+      font-family: var(--mono); font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.15em;
+      color: var(--accent); margin-bottom: 16px;
+      display: inline-flex; align-items: center; gap: 8px;
     }
-    h1 { font-size: 32px; font-weight: 800; color: var(--s9); margin-bottom: 12px; line-height: 1.2; }
-    .sub { font-size: 16px; color: var(--s5); max-width: 520px; margin: 0 auto 32px; line-height: 1.6; }
+    .eyebrow::before {
+      content: ''; width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent); animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.4)} }
 
+    .hero h1 {
+      font-family: var(--sans); font-size: clamp(28px, 4vw, 46px);
+      font-weight: 600; line-height: 1.18; letter-spacing: -0.02em;
+      color: var(--text); margin-bottom: 14px;
+    }
+    .hero-sub {
+      font-size: 15px; color: var(--muted); max-width: 480px;
+      margin: 0 auto 0; line-height: 1.65;
+    }
+
+    /* ── Grid ── */
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 20px;
+      gap: 18px;
       max-width: 1040px;
-      margin: 0 auto;
-      padding: 0 24px 64px;
+      margin: 40px auto 0;
+      padding: 0 24px 72px;
+      position: relative; z-index: 1;
     }
 
+    /* ── Cards ── */
     .card {
-      background: #fff;
-      border: 1px solid var(--s2);
+      background: var(--surface);
+      border: 1px solid var(--border);
       border-radius: 18px;
       overflow: hidden;
-      box-shadow: 0 2px 12px rgba(15,23,42,.06);
-      transition: box-shadow .2s, transform .2s;
-      display: flex;
-      flex-direction: column;
+      display: flex; flex-direction: column;
+      transition: border-color .25s, transform .25s, box-shadow .25s;
+      position: relative;
     }
-    .card:hover { box-shadow: 0 8px 32px rgba(15,23,42,.12); transform: translateY(-2px); }
+    .card::before {
+      content: ''; position: absolute; inset: 0; border-radius: inherit;
+      opacity: 0; transition: opacity .3s; pointer-events: none;
+    }
+    .card.blue::before   { background: radial-gradient(ellipse at top left, rgba(124,109,255,0.08), transparent 60%); }
+    .card.green::before  { background: radial-gradient(ellipse at top left, rgba(0,229,160,0.07), transparent 60%); }
+    .card.amber::before  { background: radial-gradient(ellipse at top left, rgba(245,158,11,0.07), transparent 60%); }
+    .card:hover { border-color: var(--border-b); transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,0.35); }
+    .card:hover::before { opacity: 1; }
 
     .card-preview {
-      height: 160px;
+      height: 150px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 56px;
-      border-bottom: 1px solid var(--s2);
+      font-size: 52px;
+      border-bottom: 1px solid var(--border);
+      position: relative; overflow: hidden;
     }
-    .card-preview.blue   { background: linear-gradient(135deg, #eff6ff, #dbeafe); }
-    .card-preview.purple { background: linear-gradient(135deg, #faf5ff, #ede9fe); }
-    .card-preview.green  { background: linear-gradient(135deg, #f0fdf4, #dcfce7); }
+    .card.blue  .card-preview { background: linear-gradient(135deg, rgba(124,109,255,0.12), rgba(124,109,255,0.05)); }
+    .card.green .card-preview { background: linear-gradient(135deg, rgba(0,229,160,0.1),   rgba(0,229,160,0.04)); }
+    .card.amber .card-preview { background: linear-gradient(135deg, rgba(245,158,11,0.1),  rgba(245,158,11,0.04)); }
 
-    .card-body { padding: 22px 24px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
-    .card-title { font-size: 17px; font-weight: 800; color: var(--s9); }
-    .card-desc  { font-size: 13.5px; color: var(--s5); line-height: 1.6; flex: 1; }
+    .card-body { padding: 22px 22px 0; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-family: var(--sans); font-size: 16px; font-weight: 600; color: var(--text); }
+    .card-desc  { font-size: 13px; color: var(--muted); line-height: 1.65; flex: 1; }
 
     .tags { display: flex; flex-wrap: wrap; gap: 6px; }
     .tag {
-      font-size: 11px; font-weight: 600; padding: 3px 10px;
-      border-radius: 999px; border: 1px solid var(--s2);
-      background: var(--s0); color: var(--s5);
+      font-family: var(--mono); font-size: 10px; font-weight: 700;
+      padding: 3px 9px; border-radius: 999px;
+      border: 1px solid var(--border-b);
+      background: var(--surface2); color: var(--muted);
+      letter-spacing: 0.03em;
     }
-    .tag.blue   { background: #eff6ff; border-color: var(--blue-l); color: var(--blue-d); }
-    .tag.green  { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
-    .tag.purple { background: #faf5ff; border-color: #e9d5ff; color: #7c3aed; }
+    .tag.blue   { background: rgba(124,109,255,0.1); border-color: rgba(124,109,255,0.25); color: #a89fff; }
+    .tag.green  { background: rgba(0,229,160,0.08);  border-color: rgba(0,229,160,0.22);   color: var(--accent); }
+    .tag.amber  { background: rgba(245,158,11,0.09); border-color: rgba(245,158,11,0.22);  color: var(--accent3); }
 
-    .card-footer { padding: 16px 24px; border-top: 1px solid var(--s2); }
+    .card-footer { padding: 18px 22px 22px; }
     .open-btn {
       display: block; width: 100%; text-align: center;
       padding: 11px; border-radius: 12px;
-      background: linear-gradient(135deg, var(--blue), var(--blue-d));
-      color: #fff; font-size: 14px; font-weight: 700;
-      text-decoration: none; transition: opacity .15s, transform .1s;
-      box-shadow: 0 2px 8px rgba(59,130,246,.25);
+      font-family: var(--mono); font-size: 12px; font-weight: 700;
+      text-decoration: none; transition: all .2s;
+      letter-spacing: 0.04em;
     }
-    .open-btn:hover { opacity: .9; transform: translateY(-1px); }
+    .card.blue  .open-btn { background: rgba(124,109,255,0.15); border: 1px solid rgba(124,109,255,0.35); color: #a89fff; }
+    .card.green .open-btn { background: rgba(0,229,160,0.12);   border: 1px solid rgba(0,229,160,0.3);   color: var(--accent); }
+    .card.amber .open-btn { background: rgba(245,158,11,0.1);   border: 1px solid rgba(245,158,11,0.28); color: var(--accent3); }
+    .card.blue  .open-btn:hover { background: rgba(124,109,255,0.25); box-shadow: 0 0 20px rgba(124,109,255,0.2); }
+    .card.green .open-btn:hover { background: rgba(0,229,160,0.2);   box-shadow: 0 0 20px rgba(0,229,160,0.2); }
+    .card.amber .open-btn:hover { background: rgba(245,158,11,0.18);  box-shadow: 0 0 20px rgba(245,158,11,0.18); }
 
+    /* ── Footer ── */
     footer {
+      position: relative; z-index: 1;
       text-align: center; padding: 24px;
-      font-size: 13px; color: var(--s4);
-      border-top: 1px solid var(--s2);
+      font-family: var(--mono); font-size: 11px; color: var(--muted);
+      border-top: 1px solid var(--border);
+      letter-spacing: 0.03em;
     }
-    footer a { color: var(--s5); text-decoration: none; }
-    footer a:hover { color: var(--s7); }
+    footer a { color: var(--muted); text-decoration: none; transition: color .15s; }
+    footer a:hover { color: var(--accent); }
   </style>
 </head>
 <body>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
   <header>
-    <a class="brand" href="../"><div class="brand-icon">🌐</div>OmniBrowser Agent</a>
-    <a class="back" href="../">← Back to Docs</a>
+    <div class="header-row">
+      <a class="brand" href="../">omnibrowser-agent</a>
+      <a class="back" href="../">← Back to Docs</a>
+    </div>
   </header>
 
   <div class="hero">
     <p class="eyebrow">Live Examples</p>
     <h1>See the agent in action</h1>
-    <p class="sub">Three interactive demos — each showing a different way to embed OmniBrowser Agent into a real UI.</p>
+    <p class="hero-sub">Three interactive demos — each showing a different way to embed OmniBrowser Agent into a real UI.</p>
   </div>
 
   <div class="grid">
 
     <!-- Chatbot -->
-    <div class="card">
-      <div class="card-preview blue">🤖</div>
+    <div class="card blue">
+      <div class="card-preview">🤖</div>
       <div class="card-body">
         <div class="card-title">Chatbot Demo</div>
         <div class="card-desc">A chat-style interface where you type a goal and watch the agent plan and execute actions on a live CRM and task manager. Supports WebLLM AI planning and heuristic fallback.</div>
@@ -139,8 +231,8 @@
     </div>
 
     <!-- Simple Site -->
-    <div class="card">
-      <div class="card-preview purple">📋</div>
+    <div class="card green">
+      <div class="card-preview">📋</div>
       <div class="card-body">
         <div class="card-title">Simple Site Demo</div>
         <div class="card-desc">A minimal embedded example showing how to drop the agent directly into your own page with a few lines of code. Includes form filling, contact search, and profile lookup.</div>
@@ -157,8 +249,8 @@
     </div>
 
     <!-- Doc Viewer -->
-    <div class="card">
-      <div class="card-preview green">📚</div>
+    <div class="card amber">
+      <div class="card-preview">📚</div>
       <div class="card-body">
         <div class="card-title">Doc Viewer Demo</div>
         <div class="card-desc">A documentation viewer with hidden tabs and a side chat panel. Ask about any section by name and the agent navigates to it — switching tabs and scrolling automatically.</div>
@@ -167,7 +259,7 @@
           <span class="tag green">Heuristic</span>
           <span class="tag">Navigation</span>
           <span class="tag">Hidden tabs</span>
-          <span class="tag purple">New</span>
+          <span class="tag amber">New</span>
         </div>
       </div>
       <div class="card-footer">

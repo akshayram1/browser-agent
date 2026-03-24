@@ -15,23 +15,26 @@
       --red:     #ef4444;
       --s0: #f8fafc; --s1: #f1f5f9; --s2: #e2e8f0;
       --s4: #94a3b8; --s5: #64748b; --s7: #334155; --s9: #0f172a;
+      --dk-bg: #080a0f; --dk-surface: #0d1117; --dk-border: rgba(255,255,255,0.08);
+      --dk-accent: #00e5a0; --dk-mono: 'Space Mono', monospace;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { min-height: 100vh; background: var(--s1); color: var(--s9); }
 
     /* ── Header ── */
     header {
-      height: 54px;
-      background: rgba(255,255,255,0.92);
+      height: 56px;
+      background: rgba(8,10,15,0.92);
       backdrop-filter: blur(16px);
-      border-bottom: 1px solid var(--s2);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--dk-border);
       display: flex; align-items: center; justify-content: space-between;
       padding: 0 24px; position: sticky; top: 0; z-index: 100;
     }
-    .brand { font-weight: 800; font-size: 14px; color: var(--s9); text-decoration: none; display: flex; align-items: center; gap: 8px; }
-    .brand-icon { width: 26px; height: 26px; background: linear-gradient(135deg, var(--blue), var(--blue-d)); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #fff; }
-    a.back { font-size: 13px; color: var(--s5); text-decoration: none; font-weight: 500; padding: 5px 12px; border-radius: 8px; border: 1px solid var(--s2); transition: all .15s; }
-    a.back:hover { background: #fff; color: var(--s7); }
+    .brand { font-family: var(--dk-mono); font-weight: 700; font-size: 13px; color: var(--dk-accent); text-decoration: none; letter-spacing: 0.05em; }
+    .brand-icon { display: none; }
+    a.back { font-family: var(--dk-mono); font-size: 11px; color: rgba(255,255,255,0.45); text-decoration: none; padding: 5px 14px; border-radius: 8px; border: 1px solid var(--dk-border); transition: all .15s; letter-spacing: 0.03em; }
+    a.back:hover { color: #fff; border-color: rgba(255,255,255,0.2); }
 
     /* ── Layout ── */
     .layout { display: grid; grid-template-columns: 440px 1fr; height: calc(100vh - 54px); }
