@@ -154,6 +154,17 @@ const agent = createBrowserAgent({
 
 See [docs/EMBEDDING.md](docs/EMBEDDING.md) for the full WebLLM bridge wiring guide.
 
+### Recommended WebLLM models
+
+- `Llama-3.2-1B-Instruct-q4f16_1-MLC` — fast, ~600 MB
+- `Llama-3.2-3B-Instruct-q4f16_1-MLC` — better quality, ~1.5 GB
+- `Phi-3.5-mini-instruct-q4f16_1-MLC` — strong quality, ~2 GB
+- `Mistral-7B-Instruct-v0.3-q4f16_1-MLC` — balanced quality, ~4.1 GB
+- `Qwen2.5-7B-Instruct-q4f16_1-MLC` — strongest quality, ~4.3 GB
+- `Llama-3.1-8B-Instruct-q4f16_1-MLC` — strong reasoning, ~4.8 GB
+
+Model availability can vary by WebLLM release/build; if one fails to load, use a smaller fallback like `Llama-3.2-1B-Instruct-q4f16_1-MLC`.
+
 ---
 
 ## Agent modes
