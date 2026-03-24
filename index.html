@@ -5,12 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>OmniBrowser Agent — Local-first Browser AI</title>
     <meta name="description" content="OmniBrowser Agent — local-first browser AI operator. No API keys. No cloud. Runs entirely in the browser via WebLLM + WebGPU." />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
+
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
     <header class="header">
       <div class="wrap header-row">
-        <a class="brand" href="#home">OmniBrowser Agent</a>
+        <a class="brand" href="#home">omnibrowser-agent</a>
         <nav class="nav">
           <a href="#home">Home</a>
           <a href="#whats-new">What's New</a>
@@ -24,16 +31,17 @@
     </header>
 
     <main>
-      <!-- HOME -->
+
+      <!-- ── HOME ── -->
       <section id="home" class="section hero">
         <div class="wrap">
-          <p class="eyebrow">Open-source browser automation SDK · v0.2.6</p>
-          <h1>Local-first browser AI automation library</h1>
-          <p>
+          <div class="badge-pill fade-up">omnibrowser-agent v0.2.8</div>
+          <h1 class="fade-up delay-1">Local-first browser AI automation library</h1>
+          <p class="fade-up delay-2">
             OmniBrowser Agent plans and executes DOM actions entirely in the browser — no API keys, no cloud costs, no data leaving your machine.
             Wire in a WebLLM model and it reasons, remembers, and acts on any webpage.
           </p>
-          <div class="chips">
+          <div class="chips fade-up delay-2">
             <span>Privacy-first</span>
             <span>WebLLM + WebGPU</span>
             <span>Reflection loop</span>
@@ -41,18 +49,18 @@
             <span>Custom system prompt</span>
             <span>Embeddable API</span>
           </div>
-          <div class="actions">
+          <div class="actions fade-up delay-3">
             <a class="btn primary" href="./examples/">🚀 Live Demo</a>
             <a class="btn" href="https://www.npmjs.com/package/@akshayram1/omnibrowser-agent" target="_blank" rel="noreferrer">NPM Package</a>
             <a class="btn" href="https://github.com/akshayram1/omnibrowser-agent" target="_blank" rel="noreferrer">GitHub</a>
           </div>
-          <div class="stats" aria-label="project stats">
+          <div class="stats fade-up delay-3" aria-label="project stats">
             <div class="stat"><strong>2</strong><span>Agent Modes</span></div>
             <div class="stat"><strong>2</strong><span>Planner Modes</span></div>
             <div class="stat"><strong>8</strong><span>Action Types</span></div>
             <div class="stat"><strong>MIT</strong><span>License</span></div>
           </div>
-          <div class="home-grid">
+          <div class="home-grid fade-up delay-4">
             <article class="card">
               <h3>Use Cases</h3>
               <ul>
@@ -76,18 +84,19 @@
               <ul>
                 <li><a href="https://www.npmjs.com/package/@akshayram1/omnibrowser-agent" target="_blank" rel="noreferrer">NPM package</a></li>
                 <li><a href="https://github.com/akshayram1/omnibrowser-agent" target="_blank" rel="noreferrer">GitHub repository</a></li>
-                <li><a href="./examples/" target="_blank">Live Examples</a></li>
+                <li><a href="./examples/">Live Examples</a></li>
               </ul>
             </article>
           </div>
         </div>
       </section>
 
-      <!-- WHAT'S NEW -->
+      <!-- ── WHAT'S NEW ── -->
       <section id="whats-new" class="section">
         <div class="wrap">
-          <div class="surface">
-            <h2>What's New in v0.2.6</h2>
+          <div class="section-label fade-up">what's new</div>
+          <div class="surface fade-up delay-1">
+            <h2>What's New in v0.2.8</h2>
             <p>This release implements the <strong>reflection-before-action pattern</strong> — the same loop used by leading browser agents — plus a new <code>systemPrompt</code> option so you can shape agent behaviour without rewriting the bridge.</p>
 
             <h3>Reflection Loop <span class="badge new">New</span></h3>
@@ -142,10 +151,10 @@
             <pre><code>import { parsePlannerResult } from "@akshayram1/omnibrowser-agent";
 
 const result = parsePlannerResult(llmRawOutput);
-// result.action    → AgentAction
-// result.evaluation → string | undefined
-// result.memory    → string | undefined
-// result.nextGoal  → string | undefined</code></pre>
+// result.action      → AgentAction
+// result.evaluation  → string | undefined
+// result.memory      → string | undefined
+// result.nextGoal    → string | undefined</code></pre>
 
             <h3>Backward Compatible</h3>
             <p>Existing bridges that return a bare <code>AgentAction</code> object still work without any changes. The library normalises both formats automatically.</p>
@@ -153,10 +162,11 @@ const result = parsePlannerResult(llmRawOutput);
         </div>
       </section>
 
-      <!-- DOCS / QUICK START -->
+      <!-- ── DOCS ── -->
       <section id="docs" class="section">
         <div class="wrap">
-          <div class="surface">
+          <div class="section-label fade-up">docs</div>
+          <div class="surface fade-up delay-1">
             <h2>Docs</h2>
             <p>Everything you need to install, initialise, and run your first browser agent.</p>
 
@@ -262,42 +272,177 @@ controller.abort(); // cancel from outside</code></pre>
         </div>
       </section>
 
-      <!-- ARCHITECTURE -->
+      <!-- ── ARCHITECTURE ── -->
       <section id="architecture" class="section">
         <div class="wrap">
-          <div class="surface">
-            <h2>Architecture</h2>
-            <p>OmniBrowser Agent is split into two delivery modes that share the same underlying engine. See the full breakdown in <a href="https://github.com/akshayram1/omnibrowser-agent/blob/main/docs/arch.md" target="_blank" rel="noreferrer">docs/arch.md</a>.</p>
+          <div class="section-label fade-up">architecture</div>
 
-            <h3>Delivery Layer</h3>
-            <div class="docs-grid">
-              <article class="doc-card">
-                <h4>🧩 Chrome Extension</h4>
-                <p>Popup UI + background service worker. Manages sessions per tab and drives the tick loop via <code>chrome.tabs.sendMessage</code>.</p>
-              </article>
-              <article class="doc-card">
-                <h4>📦 npm Library</h4>
-                <p><code>createBrowserAgent()</code> — runs the same tick loop in-process inside your web app. No extension required.</p>
-              </article>
+          <div class="section-label fade-up delay-1">01 — delivery</div>
+          <div class="delivery-grid fade-up delay-1">
+            <div class="card card-ext">
+              <span class="card-icon">🧩</span>
+              <div class="card-title">Chrome Extension</div>
+              <div class="card-sub">popup + background worker</div>
+              <div class="card-desc">Load the <code>dist/</code> folder as an unpacked extension. Enter a goal in the popup, pick a mode, and hit Start. The background service worker drives the tick loop across tabs.</div>
+              <span class="tag tag-purple">MV3</span>
+              <span class="tag tag-purple">background worker</span>
+            </div>
+            <div class="card card-lib">
+              <span class="card-icon">📦</span>
+              <div class="card-title">npm Library</div>
+              <div class="card-sub">createBrowserAgent()</div>
+              <div class="card-desc">Embed the agent directly into any web app. Import, configure, and wire up event callbacks. The same core engine powers both — zero duplication.</div>
+              <span class="tag tag-green">@akshayram1/omnibrowser-agent</span>
+            </div>
+          </div>
+
+          <div class="connector fade-up delay-2">
+            <div class="connector-line"></div>
+            <span class="connector-label">both share the same core engine</span>
+          </div>
+
+          <div class="section-label fade-up delay-2">02 — agent tick loop</div>
+          <div class="flow-section fade-up delay-2">
+            <div class="flow-header">
+              <div class="flow-header-dot"></div>
+              <div class="flow-header-title">one tick = observe → plan → assess risk → execute</div>
+            </div>
+            <div class="flow-steps">
+              <div class="step">
+                <div class="step-num step-num-1">01</div>
+                <div class="step-title">Observe</div>
+                <div class="step-file">observer.ts</div>
+                <div class="step-desc">Scans the live DOM. Filters invisible elements. Prioritises in-viewport candidates. Resolves ARIA labels. Returns a PageSnapshot.</div>
+              </div>
+              <div class="step">
+                <div class="step-num step-num-2">02</div>
+                <div class="step-title">Plan</div>
+                <div class="step-file">planner.ts</div>
+                <div class="step-desc">Takes the goal, snapshot, and history. Returns the next AgentAction — plus optional reflection (evaluation, memory, nextGoal).</div>
+              </div>
+              <div class="step">
+                <div class="step-num step-num-3">03</div>
+                <div class="step-title">Assess risk</div>
+                <div class="step-file">safety.ts</div>
+                <div class="step-desc">Every action gets a risk level: safe, review, or blocked. Risky actions pause for human approval in human-approved mode.</div>
+              </div>
+              <div class="step">
+                <div class="step-num step-num-4">04</div>
+                <div class="step-title">Execute</div>
+                <div class="step-file">executor.ts</div>
+                <div class="step-desc">Performs the DOM action. Dispatches proper InputEvents for framework compat. Verifies success. Feeds errors back to the planner.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="connector fade-up delay-3">
+            <div class="connector-line"></div>
+          </div>
+
+          <div class="section-label fade-up delay-3">03 — core modules (src/core/)</div>
+          <div class="core-grid fade-up delay-3">
+            <div class="module-card mc-blue">
+              <div class="module-name">planner.ts</div>
+              <div class="module-fn">planNextAction(config, input)</div>
+              <ul class="module-items">
+                <li>URL, fill, search, click regex patterns</li>
+                <li>Fallback: first input → first button → done</li>
+                <li>WebLLM bridge via window.__browserAgentWebLLM</li>
+                <li>Returns PlannerResult with reflection fields</li>
+                <li>lastError fed back on retry</li>
+              </ul>
+            </div>
+            <div class="module-card mc-green">
+              <div class="module-name">observer.ts</div>
+              <div class="module-fn">collectSnapshot()</div>
+              <ul class="module-items">
+                <li>Queries a, button, input, textarea, select…</li>
+                <li>Filters hidden &amp; zero-dimension elements</li>
+                <li>In-viewport elements listed first</li>
+                <li>Resolves label via aria-labelledby, for/id, aria-label</li>
+                <li>Max 60 candidates, 1500-char text preview</li>
+              </ul>
+            </div>
+            <div class="module-card mc-amber">
+              <div class="module-name">executor.ts</div>
+              <div class="module-fn">executeAction(action)</div>
+              <ul class="module-items">
+                <li>click — disabled-check before firing</li>
+                <li>type — InputEvent + change dispatch (React/Vue safe)</li>
+                <li>navigate — sets window.location.href</li>
+                <li>extract — verifies non-empty text</li>
+                <li>scroll, focus, wait actions</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="section-label fade-up delay-4">04 — safety &amp; planner modes</div>
+          <div class="shared-grid fade-up delay-4">
+            <div class="risk-panel">
+              <div class="risk-title">// safety.ts — assessRisk()</div>
+              <div class="risk-row">
+                <div class="risk-dot" style="background:var(--accent)"></div>
+                <div class="risk-label" style="color:var(--accent)">safe</div>
+                <div class="risk-bar-wrap"><div class="risk-bar" style="width:90%;background:var(--accent)"></div></div>
+              </div>
+              <div class="risk-note" style="margin-bottom:12px;padding-left:18px">navigate (http/s), click, scroll, wait, focus, done</div>
+              <div class="risk-row">
+                <div class="risk-dot" style="background:var(--amber)"></div>
+                <div class="risk-label" style="color:var(--amber)">review</div>
+                <div class="risk-bar-wrap"><div class="risk-bar" style="width:55%;background:var(--amber)"></div></div>
+              </div>
+              <div class="risk-note" style="margin-bottom:12px;padding-left:18px">extract, click/type on delete · pay · submit · transfer</div>
+              <div class="risk-row">
+                <div class="risk-dot" style="background:var(--accent3)"></div>
+                <div class="risk-label" style="color:var(--accent3)">blocked</div>
+                <div class="risk-bar-wrap"><div class="risk-bar" style="width:20%;background:var(--accent3)"></div></div>
+              </div>
+              <div class="risk-note" style="padding-left:18px">javascript: · file: · malformed URLs</div>
             </div>
 
-            <h3>Core Modules <code>src/core/</code></h3>
-            <div class="docs-grid">
-              <article class="doc-card">
-                <h4>observer.ts</h4>
-                <p>Queries all interactive elements, filters invisible ones, resolves accessible labels (<code>aria-label</code>, <code>for/id</code>, wrapping <code>&lt;label&gt;</code>), caps at 60 candidates. Returns <code>PageSnapshot</code>.</p>
-              </article>
-              <article class="doc-card">
-                <h4>planner.ts</h4>
-                <p>Calls heuristic regex or the <code>window.__browserAgentWebLLM</code> bridge. Returns <code>PlannerResult</code> — action plus optional <code>evaluation</code>, <code>memory</code>, <code>nextGoal</code>.</p>
-              </article>
-              <article class="doc-card">
-                <h4>executor.ts</h4>
-                <p>Performs DOM actions. Uses <code>InputEvent</code> with <code>bubbles: true</code> for React/Vue compat. Verifies element exists, is not disabled, and value updated. Throws on failure so the retry loop feeds <code>lastError</code> back.</p>
-              </article>
+            <div class="planner-panel">
+              <div class="risk-title" style="margin-bottom:14px">// planner modes</div>
+              <div class="planner-tabs">
+                <button class="ptab active-h" onclick="switchPlanner('h')">heuristic</button>
+                <button class="ptab" onclick="switchPlanner('w')">webllm</button>
+              </div>
+              <div class="pmode active" id="pm-h">
+                <div class="pmode-title">Heuristic — zero deps, works offline</div>
+                <div class="pmode-desc">Pure regex matching against your goal string. Handles navigate, fill, search, and click patterns. Falls back to the first visible input or button.</div>
+                <code class="code-chip"><span class="kw">const</span> agent = createBrowserAgent({<br>&nbsp;&nbsp;goal: <span class="str">"search for John Smith"</span>,<br>&nbsp;&nbsp;planner: { kind: <span class="str">"heuristic"</span> }<br>});</code>
+              </div>
+              <div class="pmode" id="pm-w">
+                <div class="pmode-title">WebLLM — on-device via WebGPU</div>
+                <div class="pmode-desc">Delegates to <code>window.__browserAgentWebLLM</code>. Fully private — no API calls, runs local inference via WebGPU. Wire in your own bridge implementation.</div>
+                <code class="code-chip"><span class="kw">const</span> agent = createBrowserAgent({<br>&nbsp;&nbsp;goal: <span class="str">"open CRM and find customer"</span>,<br>&nbsp;&nbsp;planner: { kind: <span class="str">"webllm"</span>, modelId: <span class="str">"Llama-3"</span> }<br>}); <span class="cm">// needs bridge on window</span></code>
+              </div>
             </div>
+          </div>
 
-            <h3>Data Flow — One Tick</h3>
+          <div class="section-label fade-up delay-5">05 — action outcomes</div>
+          <div class="outcomes-grid fade-up delay-5">
+            <div class="outcome-card oc-safe">
+              <span class="outcome-icon">✅</span>
+              <div class="outcome-title" style="color:var(--accent)">Executed</div>
+              <div class="outcome-desc">Action is safe. Runs immediately. Result message appended to session history. Next tick begins.</div>
+              <span class="tag tag-green">status: "executed"</span>
+            </div>
+            <div class="outcome-card oc-review">
+              <span class="outcome-icon">⏸</span>
+              <div class="outcome-title" style="color:var(--amber)">Needs approval</div>
+              <div class="outcome-desc">Risk level is "review" in human-approved mode. Agent pauses, fires onApprovalRequired. Resume with agent.resume().</div>
+              <span class="tag tag-amber">status: "needs_approval"</span>
+            </div>
+            <div class="outcome-card oc-block">
+              <span class="outcome-icon">🚫</span>
+              <div class="outcome-title" style="color:var(--accent3)">Blocked</div>
+              <div class="outcome-desc">Dangerous protocol or malformed URL. Action is rejected entirely. Session stops without executing anything.</div>
+              <span class="tag tag-red">status: "blocked"</span>
+            </div>
+          </div>
+
+          <div class="surface fade-up delay-5">
+            <h3 style="margin-top:0">Data Flow — One Tick</h3>
             <pre><code>goal + history + memory
         │
         ▼
@@ -348,18 +493,153 @@ blocked                  review (human-approved mode)
               <li>No selector healing or fallback strategy yet</li>
             </ul>
           </div>
+
         </div>
       </section>
 
-      <!-- EMBEDDING -->
+      <!-- ── EMBEDDING ── -->
       <section id="embedding" class="section">
         <div class="wrap">
-          <div class="surface">
+          <div class="section-label fade-up">embedding guide</div>
+
+          <div class="section-label fade-up delay-1">06 — get started</div>
+
+          <div class="install-strip fade-up delay-1">
+            <div class="install-left">
+              <div class="install-pkg">
+                <span class="install-scope">@akshayram1/</span><span class="install-name">omnibrowser-agent</span>
+              </div>
+              <div class="install-meta">
+                <span class="tag tag-green" style="margin:0">v0.2.8</span>
+                <span class="tag tag-purple" style="margin:0">MIT</span>
+                <span class="tag tag-amber" style="margin:0">TypeScript</span>
+              </div>
+            </div>
+            <div class="install-cmd-wrap">
+              <span class="install-prompt">$</span>
+              <span class="install-cmd" id="install-cmd-text">npm install @akshayram1/omnibrowser-agent</span>
+              <button class="copy-btn" onclick="copyInstall()" title="Copy">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                <span id="copy-label">copy</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="snippet-panel fade-up delay-2">
+            <div class="snippet-tabs">
+              <button class="stab stab-active" onclick="switchSnippet('basic')">basic usage</button>
+              <button class="stab" onclick="switchSnippet('approved')">human-approved</button>
+              <button class="stab" onclick="switchSnippet('events')">event callbacks</button>
+              <button class="stab" onclick="switchSnippet('abort')">abort signal</button>
+              <button class="stab" onclick="switchSnippet('webllm')">webllm bridge</button>
+            </div>
+            <div class="snippet-body">
+              <div class="snippet active" id="sn-basic">
+                <div class="snippet-comment">// Minimal setup — heuristic planner, autonomous mode</div>
+                <div class="snippet-line"><span class="kw">import</span> { createBrowserAgent } <span class="kw">from</span> <span class="str">'@akshayram1/omnibrowser-agent'</span>;</div>
+                <div class="snippet-line">&nbsp;</div>
+                <div class="snippet-line"><span class="kw">const</span> agent = createBrowserAgent({</div>
+                <div class="snippet-line">&nbsp;&nbsp;goal: <span class="str">"search for contact John Smith in CRM"</span>,</div>
+                <div class="snippet-line">&nbsp;&nbsp;mode: <span class="str">"autonomous"</span>,</div>
+                <div class="snippet-line">&nbsp;&nbsp;planner: { kind: <span class="str">"heuristic"</span> }</div>
+                <div class="snippet-line">});</div>
+                <div class="snippet-line">&nbsp;</div>
+                <div class="snippet-line"><span class="kw">await</span> agent.start();</div>
+              </div>
+              <div class="snippet" id="sn-approved">
+                <div class="snippet-comment">// Human-approved mode — agent pauses on risky actions</div>
+                <div class="snippet-line"><span class="kw">import</span> { createBrowserAgent } <span class="kw">from</span> <span class="str">'@akshayram1/omnibrowser-agent'</span>;</div>
+                <div class="snippet-line">&nbsp;</div>
+                <div class="snippet-line"><span class="kw">const</span> agent = createBrowserAgent({</div>
+                <div class="snippet-line">&nbsp;&nbsp;goal: <span class="str">"fill out the payment form"</span>,</div>
+                <div class="snippet-line">&nbsp;&nbsp;mode: <span class="str">"human-approved"</span>,  <span class="cm">// pauses on delete / submit / pay</span></div>
+                <div class="snippet-line">&nbsp;&nbsp;planner: { kind: <span class="str">"heuristic"</span> },</div>
+                <div class="snippet-line">&nbsp;&nbsp;maxSteps: <span class="num">20</span>,</div>
+                <div class="snippet-line">&nbsp;&nbsp;stepDelayMs: <span class="num">500</span></div>
+                <div class="snippet-line">});</div>
+                <div class="snippet-line">&nbsp;</div>
+                <div class="snippet-line"><span class="kw">await</span> agent.start();</div>
+                <div class="snippet-line">&nbsp;</div>
+                <div class="snippet-comment">// Later — after user reviews the pending action:</div>
+                <div class="snippet-line"><span class="kw">await</span> agent.resume();</div>
+              </div>
+              <div class="snippet" id="sn-events">
+                <div class="snippet-comment">// Full event callback API</div>
+                <div class="snippet-line"><span class="kw">import</span> { createBrowserAgent } <span class="kw">from</span> <span class="str">'@akshayram1/omnibrowser-agent'</span>;</div>
+                <div class="snippet-line">&nbsp;</div>
+                <div class="snippet-line"><span class="kw">const</span> agent = createBrowserAgent(</div>
+                <div class="snippet-line">&nbsp;&nbsp;{ goal: <span class="str">"open CRM and find customer"</span>, mode: <span class="str">"human-approved"</span> },</div>
+                <div class="snippet-line">&nbsp;&nbsp;{</div>
+                <div class="snippet-line">&nbsp;&nbsp;&nbsp;&nbsp;onStart:            (session) =&gt; console.log(<span class="str">'started'</span>, session.id),</div>
+                <div class="snippet-line">&nbsp;&nbsp;&nbsp;&nbsp;onStep:             (result, session) =&gt; console.log(result.message),</div>
+                <div class="snippet-line">&nbsp;&nbsp;&nbsp;&nbsp;onApprovalRequired: (action, session) =&gt; {</div>
+                <div class="snippet-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;console.log(<span class="str">'Review:'</span>, action);</div>
+                <div class="snippet-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm">// call agent.resume() after user confirms</span></div>
+                <div class="snippet-line">&nbsp;&nbsp;&nbsp;&nbsp;},</div>
+                <div class="snippet-line">&nbsp;&nbsp;&nbsp;&nbsp;onDone:            (result) =&gt; console.log(<span class="str">'Done:'</span>, result.message),</div>
+                <div class="snippet-line">&nbsp;&nbsp;&nbsp;&nbsp;onError:           (err) =&gt; console.error(err),</div>
+                <div class="snippet-line">&nbsp;&nbsp;&nbsp;&nbsp;onMaxStepsReached: (session) =&gt; console.warn(<span class="str">'max steps'</span>, session)</div>
+                <div class="snippet-line">&nbsp;&nbsp;}</div>
+                <div class="snippet-line">);</div>
+                <div class="snippet-line">&nbsp;</div>
+                <div class="snippet-line"><span class="kw">await</span> agent.start();</div>
+              </div>
+              <div class="snippet" id="sn-abort">
+                <div class="snippet-comment">// AbortSignal — cancel from outside at any time</div>
+                <div class="snippet-line"><span class="kw">import</span> { createBrowserAgent } <span class="kw">from</span> <span class="str">'@akshayram1/omnibrowser-agent'</span>;</div>
+                <div class="snippet-line">&nbsp;</div>
+                <div class="snippet-line"><span class="kw">const</span> controller = <span class="kw">new</span> AbortController();</div>
+                <div class="snippet-line">&nbsp;</div>
+                <div class="snippet-line"><span class="kw">const</span> agent = createBrowserAgent({</div>
+                <div class="snippet-line">&nbsp;&nbsp;goal: <span class="str">"extract all product prices"</span>,</div>
+                <div class="snippet-line">&nbsp;&nbsp;signal: controller.signal  <span class="cm">// wire in the abort signal</span></div>
+                <div class="snippet-line">});</div>
+                <div class="snippet-line">&nbsp;</div>
+                <div class="snippet-line">agent.start();</div>
+                <div class="snippet-line">&nbsp;</div>
+                <div class="snippet-comment">// Cancel externally (e.g. button click, timeout, unmount)</div>
+                <div class="snippet-line">setTimeout(() =&gt; controller.abort(), <span class="num">5000</span>);</div>
+                <div class="snippet-line">&nbsp;</div>
+                <div class="snippet-comment">// Or call stop() directly:</div>
+                <div class="snippet-line">agent.stop();</div>
+              </div>
+              <div class="snippet" id="sn-webllm">
+                <div class="snippet-comment">// WebLLM bridge with reflection loop</div>
+                <div class="snippet-line"><span class="kw">import</span> * <span class="kw">as</span> webllm <span class="kw">from</span> <span class="str">"@mlc-ai/web-llm"</span>;</div>
+                <div class="snippet-line"><span class="kw">import</span> { createBrowserAgent, parsePlannerResult } <span class="kw">from</span> <span class="str">"@akshayram1/omnibrowser-agent"</span>;</div>
+                <div class="snippet-line">&nbsp;</div>
+                <div class="snippet-line"><span class="kw">const</span> engine = <span class="kw">await</span> webllm.CreateMLCEngine(<span class="str">"Llama-3.2-3B-Instruct-q4f16_1-MLC"</span>);</div>
+                <div class="snippet-line">&nbsp;</div>
+                <div class="snippet-line">window.__browserAgentWebLLM = {</div>
+                <div class="snippet-line">&nbsp;&nbsp;<span class="kw">async</span> plan(input, modelId) {</div>
+                <div class="snippet-line">&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">const</span> resp = <span class="kw">await</span> engine.chat.completions.create({</div>
+                <div class="snippet-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;messages: [{ role: <span class="str">"user"</span>, content: `Goal: ${input.goal}` }],</div>
+                <div class="snippet-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;temperature: <span class="num">0</span>, max_tokens: <span class="num">200</span></div>
+                <div class="snippet-line">&nbsp;&nbsp;&nbsp;&nbsp;});</div>
+                <div class="snippet-line">&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> parsePlannerResult(resp.choices[<span class="num">0</span>].message.content);</div>
+                <div class="snippet-line">&nbsp;&nbsp;}</div>
+                <div class="snippet-line">};</div>
+              </div>
+            </div>
+            <div class="exports-row">
+              <div class="exports-label">exports</div>
+              <div class="exports-chips">
+                <span class="exp-chip exp-fn">createBrowserAgent()</span>
+                <span class="exp-chip exp-fn">parseAction()</span>
+                <span class="exp-chip exp-fn">parsePlannerResult()</span>
+                <span class="exp-chip exp-type">AgentAction</span>
+                <span class="exp-chip exp-type">AgentMode</span>
+                <span class="exp-chip exp-type">AgentSession</span>
+                <span class="exp-chip exp-type">PlannerConfig</span>
+                <span class="exp-chip exp-type">ContentResult</span>
+                <span class="exp-chip exp-type">RiskLevel</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="surface fade-up delay-3">
             <h2>Embedding Guide</h2>
             <p>Embed OmniBrowser Agent as a library in any web application. Full reference in <a href="https://github.com/akshayram1/omnibrowser-agent/blob/main/docs/EMBEDDING.md" target="_blank" rel="noreferrer">docs/EMBEDDING.md</a>.</p>
-
-            <h3>Install</h3>
-            <pre><code>npm install @akshayram1/omnibrowser-agent</code></pre>
 
             <h3>Heuristic Planner (zero setup)</h3>
             <pre><code>import { createBrowserAgent } from "@akshayram1/omnibrowser-agent";
@@ -451,10 +731,11 @@ Never navigate away from the booking portal.`
         </div>
       </section>
 
-      <!-- ROADMAP -->
+      <!-- ── ROADMAP ── -->
       <section id="roadmap" class="section">
         <div class="wrap">
-          <div class="surface">
+          <div class="section-label fade-up">roadmap</div>
+          <div class="surface fade-up delay-1">
             <h2>Roadmap</h2>
             <p>Full roadmap in <a href="https://github.com/akshayram1/omnibrowser-agent/blob/main/docs/ROADMAP.md" target="_blank" rel="noreferrer">docs/ROADMAP.md</a>.</p>
 
@@ -466,7 +747,7 @@ Never navigate away from the booking portal.`
               <li>Human-approved mode</li>
             </ul>
 
-            <h3>v0.2 <span class="badge">stable</span></h3>
+            <h3>v0.2 <span class="badge stable">stable</span></h3>
             <ul>
               <li>New actions: <code>scroll</code>, <code>focus</code></li>
               <li>Improved heuristic planner with regex goal patterns</li>
@@ -475,7 +756,7 @@ Never navigate away from the booking portal.`
               <li>CI pipeline with auto version bump on push to main</li>
             </ul>
 
-            <h3>v0.2.6 <span class="badge new">current</span></h3>
+            <h3>v0.2.8 <span class="badge new">current</span></h3>
             <ul>
               <li>Reflection-before-action pattern (<code>evaluation → memory → next_goal → act</code>)</li>
               <li>Working memory carried across ticks via <code>AgentSession.memory</code></li>
@@ -483,6 +764,8 @@ Never navigate away from the booking portal.`
               <li><code>systemPrompt</code> option in <code>PlannerConfig</code></li>
               <li>Thought bubble (💭) messages in live demo</li>
               <li>Chatbot UI redesign: tabs, typing indicator, right-aligned messages</li>
+              <li>Doc Viewer example with hidden tabs + side chat</li>
+              <li>Live Examples hub at <code>/examples</code></li>
             </ul>
 
             <h3>v0.3</h3>
@@ -505,10 +788,11 @@ Never navigate away from the booking portal.`
         </div>
       </section>
 
-      <!-- CONTACT -->
+      <!-- ── CONTACT ── -->
       <section id="contact" class="section">
         <div class="wrap">
-          <div class="surface">
+          <div class="section-label fade-up">contact</div>
+          <div class="surface fade-up delay-1">
             <h2>Contact</h2>
             <p>Maintainer: Akshay Chame</p>
             <ul>
@@ -518,14 +802,61 @@ Never navigate away from the booking portal.`
             </ul>
             <p class="contact-note">For feature requests or bugs, please open an issue on GitHub with reproduction steps.</p>
           </div>
+
+          <div class="cta-row fade-up delay-2">
+            <a href="https://github.com/akshayram1/omnibrowser-agent" class="btn primary">↗ View on GitHub</a>
+            <a href="https://www.npmjs.com/package/@akshayram1/omnibrowser-agent" class="btn">npm package</a>
+            <a href="./examples/" class="btn">live examples</a>
+          </div>
         </div>
       </section>
+
     </main>
 
     <footer class="footer">
       <div class="wrap">
-        <p>© 2026 OmniBrowser Agent · MIT License · <a href="https://github.com/akshayram1/omnibrowser-agent" target="_blank" rel="noreferrer">GitHub</a></p>
+        <p>© 2026 OmniBrowser Agent · MIT License · <a href="https://github.com/akshayram1/omnibrowser-agent" target="_blank" rel="noreferrer">GitHub</a> · <a href="https://www.npmjs.com/package/@akshayram1/omnibrowser-agent" target="_blank" rel="noreferrer">npm</a></p>
       </div>
     </footer>
+
+    <script>
+      function switchSnippet(id) {
+        document.querySelectorAll('.snippet').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.stab').forEach(t => t.classList.remove('stab-active'));
+        document.getElementById('sn-' + id).classList.add('active');
+        event.target.classList.add('stab-active');
+      }
+
+      function copyInstall() {
+        const txt = document.getElementById('install-cmd-text').textContent;
+        navigator.clipboard.writeText(txt).then(() => {
+          const lbl = document.getElementById('copy-label');
+          lbl.textContent = 'copied!';
+          setTimeout(() => lbl.textContent = 'copy', 1800);
+        });
+      }
+
+      function switchPlanner(mode) {
+        document.getElementById('pm-h').classList.toggle('active', mode === 'h');
+        document.getElementById('pm-w').classList.toggle('active', mode === 'w');
+        document.querySelectorAll('.ptab').forEach((t, i) => {
+          t.classList.remove('active-h', 'active-w');
+          if (i === 0 && mode === 'h') t.classList.add('active-h');
+          if (i === 1 && mode === 'w') t.classList.add('active-w');
+        });
+      }
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+          if (e.isIntersecting) e.target.style.animationPlayState = 'running';
+        });
+      }, { threshold: 0.08 });
+
+      document.querySelectorAll('.fade-up').forEach(el => {
+        el.style.animationPlayState = 'paused';
+        observer.observe(el);
+      });
+    </script>
+
   </body>
 </html>
