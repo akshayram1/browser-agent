@@ -770,19 +770,18 @@ Never navigate away from the booking portal.`
 
             <h3>v0.3</h3>
             <ul>
-              <li>Site profile and policy engine (allowlist, blocked domains)</li>
-              <li>Selector healing and fallback strategy</li>
-              <li>Session replay log</li>
+              <li>Expanded WebLLM model catalog (new 7B/8B options + compatibility matrix)</li>
+              <li>Improved model loading UX (recommended presets by speed/quality and device memory)</li>
+              <li>Enhanced default system prompts for safer, clearer multi-step planning</li>
+              <li>Prompt presets for common workflows (docs navigation, CRM form fill, task automation)</li>
             </ul>
 
             <h3>v1.0</h3>
             <ul>
-              <li>Long-term encrypted memory in IndexedDB</li>
-              <li>Goal decomposition planner (multi-step task graphs)</li>
-              <li>Multi-tab workflows</li>
-              <li>Stable plugin API for site skills</li>
-              <li>Validation/eval harness with benchmark tasks</li>
-              <li>Cross-browser packaging (Chromium + Firefox)</li>
+              <li>Advanced prompt orchestration (goal-aware system prompt routing and contextual guardrails)</li>
+              <li>Functionality expansion: richer action toolkit and stronger extraction/navigation reliability</li>
+              <li>Adaptive planner behaviour (model-aware retries, fallback strategies, and recovery flows)</li>
+              <li>Evaluation suite for prompt and model quality across benchmark browser tasks</li>
             </ul>
           </div>
         </div>
@@ -1035,7 +1034,6 @@ Never navigate away from the booking portal.`
     </div>
 
     <script type="module">
-      import { createBrowserAgent } from 'https://unpkg.com/@akshayram1/omnibrowser-agent/dist/lib.js';
 
       /* ── Navigation map ── */
       const NAV = [
@@ -1218,11 +1216,6 @@ Never navigate away from the booking portal.`
           if (kwMatch.href) {
             setTimeout(() => window.open(kwMatch.href, '_blank', 'noopener'), 400);
           } else {
-            const agent = createBrowserAgent(
-              { goal: `Scroll to the section with id "${kwMatch.id.replace('#', '')}"`, mode: 'autonomous', planner: { kind: 'heuristic' }, maxSteps: 3, stepDelayMs: 80 },
-              { onDone: () => {}, onError: () => {} }
-            );
-            agent.start().catch(() => {});
             const target = document.querySelector(kwMatch.id);
             if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
           }
@@ -1242,11 +1235,6 @@ Never navigate away from the booking portal.`
             addBotMsg(replyText);
             const targetId = result.selector || null;
             if (targetId) {
-              const agent = createBrowserAgent(
-                { goal: `Scroll to ${targetId}`, mode: 'autonomous', planner: { kind: 'webllm', modelId: modelSelect.value }, maxSteps: 2, stepDelayMs: 80 },
-                { onDone: () => {}, onError: () => {} }
-              );
-              agent.start().catch(() => {});
               const target = document.querySelector(targetId);
               if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
             }

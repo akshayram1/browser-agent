@@ -16,19 +16,14 @@
 
 ## v0.3
 
-- Site profile + policy engine (allowlist, blocked domains)
-- Selector healing and fallback strategy
-- Session memory and action replay log
-- Drupal CRM starter skills
-
-## v0.3
-
-- Long-term encrypted memory in IndexedDB
-- Goal decomposition planner (multi-step task graphs)
-- Multi-tab workflows
+- Expanded WebLLM model catalog (new 7B/8B options + compatibility matrix)
+- Improved model loading UX (recommended presets by speed/quality and device memory)
+- Enhanced default system prompts for safer, clearer multi-step planning
+- Prompt presets for common workflows (docs navigation, CRM form fill, task automation)
 
 ## v1.0
 
-- Stable plugin API for site skills
-- Validation/eval harness with benchmark tasks
-- Cross-browser packaging (Chromium + Firefox)
+- Advanced prompt orchestration (goal-aware system prompt routing and contextual guardrails)
+- Functionality expansion: richer action toolkit and stronger extraction/navigation reliability
+- Adaptive planner behaviour (model-aware retries, fallback strategies, and recovery flows)
+- Evaluation suite for prompt and model quality across benchmark browser tasks
