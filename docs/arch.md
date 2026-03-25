@@ -90,7 +90,7 @@ These three modules are **shared** between the extension content script and the 
 | `executor.ts` | Performs DOM actions and returns a result string |
 
 **`observer.ts` — `collectSnapshot()`**
-Queries all interactive elements (`a`, `button`, `input`, `textarea`, `select`, `[role=button]`, `[contenteditable]`), filters out invisible ones (hidden, `display:none`, zero dimensions), and prioritises in-viewport elements. Resolves accessible labels via `aria-labelledby`, `aria-label`, `for/id`, and wrapping `<label>`. Caps at 60 candidates. Returns `url`, `title`, `textPreview`, and `candidates[]`.
+Queries all interactive elements (`a`, `button`, `input`, `textarea`, `select`, `[role=button]`, `[contenteditable]`), filters out invisible ones (hidden, `display:none`, zero dimensions), and prioritises in-viewport elements. Resolves accessible labels via `aria-labelledby`, `aria-label`, `for/id`, and wrapping `<label>`. Generates stable CSS selectors preferring `name`, `placeholder`, and `aria-label` attributes over fragile `:nth-of-type()` indices. Caps at 60 candidates. Returns `url`, `title`, `textPreview`, and `candidates[]`.
 
 **`planner.ts` — `planNextAction()`**
 Two modes:
@@ -98,7 +98,7 @@ Two modes:
 - *WebLLM* — delegates to `window.__browserAgentWebLLM.plan()`. The bridge is external — you wire it in. Accepts both legacy `AgentAction` returns and the new `PlannerResult` (with `evaluation`, `memory`, `nextGoal` reflection fields).
 
 **`executor.ts` — `executeAction()`**
-Performs the action. Uses `InputEvent` with `bubbles: true` so React/Vue controlled inputs receive proper framework events. Verifies: element exists, is not disabled (for clicks), value updated (for type), extracted text is non-empty. Throws on failure so the retry loop can feed `lastError` back to the planner.
+Performs the action. Uses `InputEvent` with `bubbles: true` so React/Vue controlled inputs receive proper framework events. Verifies: element exists, is not disabled (for clicks), value updated (for type), extracted text is non-empty. Includes selector fallback: when a selector fails, tries to recover via tag+attribute matching or single-element shortcut before throwing. Throws on failure so the retry loop can feed `lastError` back to the planner.
 
 ---
 

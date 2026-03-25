@@ -2,10 +2,29 @@ import type { AgentAction } from "../shared/contracts";
 
 function mustFind(selector: string): HTMLElement {
   const node = document.querySelector(selector);
-  if (!(node instanceof HTMLElement)) {
-    throw new Error(`Selector not found: ${selector}`);
+  if (node instanceof HTMLElement) {
+    return node;
   }
-  return node;
+
+  // Fallback: if selector looks like a bare nth-of-type or is invalid,
+  // try to find the element by tag and common attributes extracted from the selector
+  const tagMatch = selector.match(/^(\w+)/);
+  if (tagMatch) {
+    const tag = tagMatch[1];
+    // Try matching by name, placeholder, or aria-label attributes in the selector
+    const attrMatch = selector.match(/\[(\w[\w-]*)=["']?([^\]"']+)["']?\]/);
+    if (attrMatch) {
+      const fallback = document.querySelector(`${tag}[${attrMatch[1]}="${attrMatch[2]}"]`);
+      if (fallback instanceof HTMLElement) return fallback;
+    }
+    // Last resort: if only one element of that tag exists, use it
+    const allOfTag = document.querySelectorAll(tag);
+    if (allOfTag.length === 1 && allOfTag[0] instanceof HTMLElement) {
+      return allOfTag[0];
+    }
+  }
+
+  throw new Error(`Selector not found: ${selector}`);
 }
 
 function dispatchInputEvents(el: HTMLInputElement | HTMLTextAreaElement): void {

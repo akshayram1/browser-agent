@@ -14,6 +14,39 @@ function cssPath(element: Element): string {
     return `#${CSS.escape(element.id)}`;
   }
 
+  // For form elements, prefer attribute-based selectors that are more stable
+  const tag = element.tagName.toLowerCase();
+  if (tag === "input" || tag === "textarea" || tag === "select") {
+    const name = element.getAttribute("name");
+    if (name && document.querySelectorAll(`${tag}[name=${CSS.escape(name)}]`).length === 1) {
+      return `${tag}[name=${CSS.escape(name)}]`;
+    }
+    const type = (element as HTMLInputElement).type;
+    const placeholder = element.getAttribute("placeholder");
+    if (placeholder && document.querySelectorAll(`${tag}[placeholder=${CSS.escape(placeholder)}]`).length === 1) {
+      return `${tag}[placeholder=${CSS.escape(placeholder)}]`;
+    }
+    const ariaLabel = element.getAttribute("aria-label");
+    if (ariaLabel && document.querySelectorAll(`${tag}[aria-label=${CSS.escape(ariaLabel)}]`).length === 1) {
+      return `${tag}[aria-label=${CSS.escape(ariaLabel)}]`;
+    }
+    // Combine name + type for uniqueness
+    if (name && type) {
+      const combo = `${tag}[name=${CSS.escape(name)}][type=${CSS.escape(type)}]`;
+      if (document.querySelectorAll(combo).length === 1) {
+        return combo;
+      }
+    }
+  }
+
+  // For buttons/links, prefer text-based or aria selectors
+  if (tag === "button" || tag === "a") {
+    const ariaLabel = element.getAttribute("aria-label");
+    if (ariaLabel && document.querySelectorAll(`${tag}[aria-label=${CSS.escape(ariaLabel)}]`).length === 1) {
+      return `${tag}[aria-label=${CSS.escape(ariaLabel)}]`;
+    }
+  }
+
   const parts: string[] = [];
   let current: HTMLElement | null = element;
   while (current && parts.length < 4) {

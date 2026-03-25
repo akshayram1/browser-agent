@@ -21,8 +21,9 @@ const DEFAULT_SYSTEM_PROMPT = [
   '- {"type":"wait","ms":number}',
   '- {"type":"done","reason":"<reason>"}',
   "",
-  "Use selectors from candidates when available. Prefer safe, minimal, reversible actions.",
-  "When previous step failed, recover by trying a better selector or fallback strategy."
+  "IMPORTANT: You MUST use selectors exactly as listed in the candidates. NEVER invent or guess selectors.",
+  "If you cannot find a matching candidate for a target element, use the closest match from the candidates list.",
+  "When previous step failed, recover by trying a different candidate selector or fallback strategy."
 ].join("\n");
 
 function formatCandidate(candidate: CandidateElement, index: number): string {

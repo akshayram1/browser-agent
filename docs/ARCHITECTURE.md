@@ -61,4 +61,4 @@ window.__browserAgentWebLLM = {
 - No persistent long-term memory yet
 - No task DSL/skills registry yet
 - Risk scoring is simple keyword heuristic
-- No robust selector healing yet
+- Selector healing is basic (attribute fallback + single-element shortcut)
