@@ -1156,12 +1156,22 @@ Never navigate away from the booking portal.`
           /* Install WebLLM bridge for the library */
           window.__browserAgentWebLLM = {
             async plan(input) {
-              const sections = NAV.filter(n => n.id).map(n => `${n.id}`).join(', ');
+              const sectionList = NAV.filter(n => n.id).map(n => {
+                const keywords = n.match.source.replace(/\\/g, '').replace(/\|/g, ', ');
+                return `${n.id} (matches: ${keywords})`;
+              }).join('\n');
               const prompt = [
-                'You are a docs navigation assistant. Given the user query, decide which page section to navigate to.',
-                `Available sections: ${sections}`,
-                'Reply with ONLY a JSON object containing: "section", "reply", and "reasoning". Use a "#section-id" string for "section", or null if nothing matches.',
-                'The "reasoning" field must be a concise user-visible summary, not hidden chain-of-thought.',
+                'You are a docs navigation assistant. Your ONLY job is to pick which section to scroll to.',
+                'Available sections:',
+                sectionList,
+                '',
+                'IMPORTANT RULES:',
+                '- You MUST always set "section" to one of the IDs above. NEVER set it to null.',
+                '- If the query mentions install, setup, getting started → use "#docs"',
+                '- If the query mentions home, top, start → use "#home"',
+                '- If unsure, pick the closest match. Do NOT tell the user to "visit" a section — you must navigate them there.',
+                '- Reply with ONLY a JSON object: {"section":"#id","reply":"short confirmation","reasoning":"brief reason"}',
+                '',
                 `User query: ${input.goal}`
               ].join('\n');
 
@@ -1187,6 +1197,17 @@ Never navigate away from the booking portal.`
                     selector: parsed.section,
                     _reply: parsed.reply,
                     _reasoning: typeof parsed.reasoning === 'string' ? parsed.reasoning : ''
+                  };
+                }
+                /* Model didn't return a section — try keyword fallback before giving up */
+                const kwFallback = NAV.find(n => n.match.test(input.goal));
+                if (kwFallback) {
+                  return {
+                    type: 'scroll',
+                    selector: kwFallback.id || null,
+                    _reply: kwFallback.reply,
+                    _href: kwFallback.href || null,
+                    _reasoning: typeof parsed.reasoning === 'string' ? parsed.reasoning : 'Matched via keyword fallback.'
                   };
                 }
                 return {
@@ -1296,10 +1317,14 @@ Never navigate away from the booking portal.`
             if (result._reasoning) addBotThought(result._reasoning);
             const replyText = result._reply || (result.reason ?? 'Done.');
             addBotMsg(replyText);
-            const targetId = result.selector || null;
-            if (targetId) {
-              const target = document.querySelector(targetId);
-              if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
+            if (result._href) {
+              setTimeout(() => window.open(result._href, '_blank', 'noopener'), 400);
+            } else {
+              const targetId = result.selector || null;
+              if (targetId) {
+                const target = document.querySelector(targetId);
+                if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
+              }
             }
           } catch (err) {
             typingEl.remove();
