@@ -5,6 +5,40 @@ const VALID_TYPES = new Set([
 ]);
 
 /**
+ * Extract the first complete JSON object from text using bracket counting.
+ * More robust than regex: handles prose before/after JSON, and repairs
+ * truncated output (e.g. when the model hits a token limit mid-JSON).
+ */
+function extractFirstJsonObject(text: string): string | null {
+  const start = text.indexOf("{");
+  if (start === -1) return null;
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i];
+    if (escaped) { escaped = false; continue; }
+    if (ch === "\\" && inString) { escaped = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (ch === "{") depth++;
+    else if (ch === "}") {
+      depth--;
+      if (depth === 0) return text.slice(start, i + 1);
+    }
+  }
+
+  // Truncated JSON (hit token limit mid-output) — close remaining open braces.
+  if (depth > 0) {
+    return text.slice(start) + "}".repeat(depth);
+  }
+
+  return null;
+}
+
+/**
  * Parse an AgentAction from raw LLM output.
  *
  * Handles bare JSON, markdown fences, and JSON embedded in prose.
@@ -14,16 +48,16 @@ export function parseAction(raw: string): AgentAction {
   const fenceMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
   const candidate = fenceMatch ? fenceMatch[1].trim() : raw.trim();
 
-  const objectMatch = candidate.match(/\{[\s\S]*\}/);
-  if (!objectMatch) {
+  const jsonStr = extractFirstJsonObject(candidate);
+  if (!jsonStr) {
     return { type: "done", reason: `No JSON object found in: ${raw.slice(0, 120)}` };
   }
 
   let parsed: unknown;
   try {
-    parsed = JSON.parse(objectMatch[0]);
+    parsed = JSON.parse(jsonStr);
   } catch {
-    return { type: "done", reason: `JSON parse error for: ${objectMatch[0].slice(0, 120)}` };
+    return { type: "done", reason: `JSON parse error for: ${jsonStr.slice(0, 120)}` };
   }
 
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
@@ -51,16 +85,16 @@ export function parsePlannerResult(raw: string): PlannerResult {
   const fenceMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
   const candidate = fenceMatch ? fenceMatch[1].trim() : raw.trim();
 
-  const objectMatch = candidate.match(/\{[\s\S]*\}/);
-  if (!objectMatch) {
+  const jsonStr = extractFirstJsonObject(candidate);
+  if (!jsonStr) {
     return { action: { type: "done", reason: `No JSON found in: ${raw.slice(0, 120)}` } };
   }
 
   let parsed: unknown;
   try {
-    parsed = JSON.parse(objectMatch[0]);
+    parsed = JSON.parse(jsonStr);
   } catch {
-    return { action: { type: "done", reason: `JSON parse error: ${objectMatch[0].slice(0, 120)}` } };
+    return { action: { type: "done", reason: `JSON parse error: ${jsonStr.slice(0, 120)}` } };
   }
 
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
@@ -86,5 +120,5 @@ export function parsePlannerResult(raw: string): PlannerResult {
   }
 
   // Fallback: bare AgentAction (no reflection fields)
-  return { action: parseAction(objectMatch[0]) };
+  return { action: parseAction(jsonStr) };
 }

@@ -2,7 +2,16 @@ import type { PlannerInput, PlannerResult } from "../shared/contracts";
 import { parsePlannerResult } from "../shared/parse-action";
 import { buildSystemPrompt, buildUserMessage } from "./prompt";
 
-export const INVALID_JSON_RETRY_MESSAGE = "Invalid JSON. Reply with only a valid JSON object.";
+export const INVALID_JSON_RETRY_MESSAGE = [
+  "Your reply was not valid JSON. Output ONLY a JSON object — no explanation, no markdown, no extra text.",
+  'Required format: {"evaluation":"...","memory":"...","nextGoal":"...","action":{"type":"click","selector":"EXACT_SELECTOR","label":"..."}}',
+].join("\n");
+
+const BARE_ACTION_RETRY_MESSAGE = [
+  "Still not valid JSON. Output ONLY the action object. No evaluation, memory, or nextGoal fields.",
+  'Example: {"type":"type","selector":"EXACT_SELECTOR_FROM_LIST","text":"value","clearFirst":true}',
+  'Example: {"type":"click","selector":"EXACT_SELECTOR_FROM_LIST","label":"button text"}',
+].join("\n");
 
 type ChatRole = "system" | "user" | "assistant";
 
@@ -72,15 +81,11 @@ function contentToText(content: unknown): string {
   return "";
 }
 
-function normalizeBridgeResult(raw: PlannerResult): PlannerResult {
-  if (!isParseFailure(raw)) {
-    return raw;
-  }
-
+function failureResult(attempts: number): PlannerResult {
   return {
     action: {
       type: "done",
-      reason: "WebLLM returned invalid JSON twice. Unable to continue."
+      reason: `WebLLM returned invalid JSON after ${attempts} attempt${attempts === 1 ? "" : "s"}. Unable to continue.`
     }
   };
 }
@@ -109,28 +114,43 @@ async function retryInvalidJsonWithHistory(
   badOutput: string,
   modelId?: string
 ): Promise<PlannerResult> {
-  const retryMessages: ChatMessage[] = [
+  // Attempt 2: improved message with format example
+  const attempt2Messages: ChatMessage[] = [
     ...baseMessages,
     { role: "assistant", content: badOutput },
     { role: "user", content: INVALID_JSON_RETRY_MESSAGE }
   ];
 
-  const retryRaw = await createCompletion(engine, retryMessages, modelId);
-  return normalizeBridgeResult(parsePlannerResult(retryRaw));
+  const raw2 = await createCompletion(engine, attempt2Messages, modelId);
+  const result2 = parsePlannerResult(raw2);
+  if (!isParseFailure(result2)) return result2;
+
+  // Attempt 3: ask for bare action only (simpler target for small models)
+  const attempt3Messages: ChatMessage[] = [
+    ...attempt2Messages,
+    { role: "assistant", content: raw2 },
+    { role: "user", content: BARE_ACTION_RETRY_MESSAGE }
+  ];
+
+  const raw3 = await createCompletion(engine, attempt3Messages, modelId);
+  const result3 = parsePlannerResult(raw3);
+  if (!isParseFailure(result3)) return result3;
+
+  return failureResult(3);
 }
 
 export function createWebLLMBridge(engine: WebLLMEngineLike): BrowserAgentWebLLMBridge {
   return {
     async plan(input: PlannerInput, modelId?: string): Promise<PlannerResult> {
       const baseMessages = buildBaseMessages(input);
-      const raw = await createCompletion(engine, baseMessages, modelId);
-      const parsed = parsePlannerResult(raw);
 
-      if (!isParseFailure(parsed)) {
-        return parsed;
-      }
+      // Attempt 1: normal
+      const raw1 = await createCompletion(engine, baseMessages, modelId);
+      const result1 = parsePlannerResult(raw1);
+      if (!isParseFailure(result1)) return result1;
 
-      return retryInvalidJsonWithHistory(engine, baseMessages, raw, modelId);
+      // Attempts 2 & 3 with progressively simpler asks
+      return retryInvalidJsonWithHistory(engine, baseMessages, raw1, modelId);
     },
 
     async retryInvalidJson(input: PlannerInput, badOutput: string, modelId?: string): Promise<PlannerResult> {
