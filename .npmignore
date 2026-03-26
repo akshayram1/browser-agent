@@ -7,3 +7,10 @@ tsconfig*.json
 public/
 README.npm.md
 README.github.md
+CLAUDE.md
+plan.md
+index.html
+styles.css
+vercel.json
+docs/
+.github/
