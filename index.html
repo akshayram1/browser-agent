@@ -720,6 +720,45 @@ Never navigate away from the booking portal.`
   }
 });</code></pre>
 
+            <h3>Custom WebLLM Model</h3>
+            <p>To use a model that isn't in WebLLM's built-in list, compile it with <a href="https://llm.mlc.ai/docs/install/mlc_llm.html" target="_blank" rel="noreferrer">MLC-LLM</a> and register it via <code>appConfig</code>:</p>
+            <pre><code>import * as webllm from "@mlc-ai/web-llm";
+
+// 1. Describe your compiled model
+const myModel = {
+  model:    "https://huggingface.co/your-org/your-model-MLC/resolve/main/",
+  model_id: "your-model-MLC",
+  // point to the compiled .wasm lib (same arch as a similar built-in model)
+  model_lib: webllm.modelLibURLPrefix + webllm.modelVersion
+           + "/Mistral-7B-Instruct-v0.3-q4f16_1-ctx4k_cs1k-webgpu.wasm",
+};
+
+// 2. Merge with the prebuilt catalog so existing models still work
+const engine = await webllm.CreateMLCEngine("your-model-MLC", {
+  appConfig: {
+    model_list: [
+      ...webllm.prebuiltAppConfig.model_list,
+      myModel,
+    ],
+  },
+  initProgressCallback({ progress, text }) {
+    console.log(Math.round(progress * 100) + "%", text);
+  },
+});
+
+// 3. Wire it up as usual
+window.__browserAgentWebLLM = {
+  async plan(input) {
+    const resp = await engine.chat.completions.create({
+      messages: [{ role: "user", content: `Goal: ${input.goal}` }],
+      temperature: 0,
+      max_tokens: 200,
+    });
+    return parsePlannerResult(resp.choices[0].message.content);
+  }
+};</code></pre>
+            <p>Steps to compile a custom model: <strong>(1)</strong> Install <code>mlc-llm</code> — <a href="https://llm.mlc.ai/docs/install/mlc_llm.html" target="_blank" rel="noreferrer">mlm.mlc.ai/docs/install/mlc_llm</a>. <strong>(2)</strong> Run <code>mlc_llm convert_weight</code> + <code>mlc_llm gen_config</code>. <strong>(3)</strong> Compile to WebGPU target with <code>mlc_llm compile</code>. <strong>(4)</strong> Upload weights + <code>mlc-chat-config.json</code> to a CORS-enabled host (e.g. HuggingFace). The compiled <code>.wasm</code> kernel can often be reused from a built-in model with the same architecture and quantization.</p>
+
             <h3>Notes</h3>
             <ul>
               <li>The WebLLM bridge is not bundled — bring your own engine and attach it to <code>window.__browserAgentWebLLM</code>.</li>
@@ -1004,12 +1043,22 @@ Never navigate away from the booking portal.`
       <div class="cb-model-bar">
         <div class="cb-model-row">
           <select class="cb-model-select" id="cb-model-select">
-            <option value="Phi-3.5-mini-instruct-q4f16_1-MLC" selected>Phi-3.5 Mini — quality (~2 GB)</option>
-            <option value="Llama-3.2-3B-Instruct-q4f16_1-MLC">Llama 3.2 3B — balanced (~1.5 GB)</option>
-            <option value="Llama-3.2-1B-Instruct-q4f16_1-MLC">Llama 3.2 1B — fast (~600 MB)</option>
-            <option value="Mistral-7B-Instruct-v0.3-q4f16_1-MLC">Mistral 7B v0.3 — balanced (~4.1 GB)</option>
-            <option value="Qwen2.5-7B-Instruct-q4f16_1-MLC">Qwen2.5 7B — strongest (~4.3 GB)</option>
-            <option value="Llama-3.1-8B-Instruct-q4f16_1-MLC">Llama 3.1 8B — strong (~4.8 GB)</option>
+            <optgroup label="── Small (≤2 GB) ──">
+              <option value="Llama-3.2-1B-Instruct-q4f16_1-MLC">Llama 3.2 1B — fastest (~600 MB)</option>
+              <option value="Llama-3.2-3B-Instruct-q4f16_1-MLC">Llama 3.2 3B — fast (~1.5 GB)</option>
+              <option value="Phi-3.5-mini-instruct-q4f16_1-MLC" selected>Phi-3.5 Mini — quality (~2 GB)</option>
+            </optgroup>
+            <optgroup label="── Medium (4–6 GB) ──">
+              <option value="Mistral-7B-Instruct-v0.3-q4f16_1-MLC">Mistral 7B v0.3 (~4.1 GB)</option>
+              <option value="Qwen2.5-7B-Instruct-q4f16_1-MLC">Qwen2.5 7B (~4.3 GB)</option>
+              <option value="Llama-3.1-8B-Instruct-q4f16_1-MLC">Llama 3.1 8B (~4.8 GB)</option>
+              <option value="Qwen3-8B-q4f16_1-MLC">Qwen3 8B — latest (~5 GB)</option>
+              <option value="gemma-2-9b-it-q4f16_1-MLC">Gemma 2 9B (~5.5 GB)</option>
+              <option value="DeepSeek-R1-Distill-Llama-8B-q4f16_1-MLC">DeepSeek R1 8B — reasoning (~5 GB)</option>
+            </optgroup>
+            <optgroup label="── Large (requires 24+ GB VRAM) ──">
+              <option value="Llama-3.1-70B-Instruct-q3f16_1-MLC">Llama 3.1 70B — powerful (~35 GB)</option>
+            </optgroup>
           </select>
           <button class="cb-load-btn" id="cb-load-btn">Load AI</button>
         </div>
@@ -1088,7 +1137,8 @@ Never navigate away from the booking portal.`
         const modelId = modelSelect.value;
         if (/1B/i.test(modelId)) return 18000;
         if (/3B|Phi-3\.5-mini/i.test(modelId)) return 30000;
-        if (/7B|8B/i.test(modelId)) return 45000;
+        if (/7B|8B|9B/i.test(modelId)) return 60000;
+        if (/70B/i.test(modelId)) return 120000;
         return 30000;
       }
 
@@ -1161,15 +1211,16 @@ Never navigate away from the booking portal.`
                 return `${n.id} (matches: ${keywords})`;
               }).join('\n');
               const prompt = [
-                'You are a docs navigation assistant. Your ONLY job is to pick which section to scroll to.',
+                'You are a docs navigation assistant for OmniBrowser Agent. Your ONLY job is to help users navigate these docs.',
                 'Available sections:',
                 sectionList,
                 '',
                 'IMPORTANT RULES:',
-                '- You MUST always set "section" to one of the IDs above. NEVER set it to null.',
-                '- If the query mentions install, setup, getting started → use "#docs"',
+                '- If the query is about these docs (install, architecture, embedding, examples, roadmap, contact, what\'s new) → pick the closest section.',
+                '- If the query is install, setup, getting started → use "#docs"',
                 '- If the query mentions home, top, start → use "#home"',
-                '- If unsure, pick the closest match. Do NOT tell the user to "visit" a section — you must navigate them there.',
+                '- Do NOT tell the user to "visit" a section — navigate them there directly.',
+                '- If the query is completely unrelated to these docs (general knowledge, current events, trivia, etc.) → reply with: {"out_of_scope":true,"reply":"I\'m a docs navigation assistant — I can only help with questions about OmniBrowser Agent. Try asking about install, architecture, embedding, or examples.","reasoning":"off-topic query"}',
                 '- Reply with ONLY a JSON object: {"section":"#id","reply":"short confirmation","reasoning":"brief reason"}',
                 '',
                 `User query: ${input.goal}`
@@ -1191,6 +1242,13 @@ Never navigate away from the booking portal.`
                   return { type: 'done', reason: 'Could not parse model response.' };
                 }
                 const parsed = JSON.parse(jsonText);
+                if (parsed.out_of_scope) {
+                  return {
+                    type: 'done',
+                    reason: parsed.reply || 'I can only help navigate these docs.',
+                    _reasoning: typeof parsed.reasoning === 'string' ? parsed.reasoning : 'off-topic'
+                  };
+                }
                 if (parsed.section) {
                   return {
                     type: 'scroll',
