@@ -1158,6 +1158,11 @@ window.__browserAgentWebLLM = {
         return '';
       }
 
+      function stripThinkTags(text) {
+        // DeepSeek R1 and similar reasoning models wrap output in <think>…</think> before JSON
+        return text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+      }
+
       function extractFirstJsonObject(text) {
         const start = text.indexOf('{');
         if (start === -1) return null;
@@ -1236,7 +1241,7 @@ window.__browserAgentWebLLM = {
               });
 
               try {
-                const raw = contentToText(resp.choices?.[0]?.message?.content ?? '').trim();
+                const raw = stripThinkTags(contentToText(resp.choices?.[0]?.message?.content ?? '').trim());
                 const jsonText = extractFirstJsonObject(raw);
                 if (!jsonText) {
                   return { type: 'done', reason: 'Could not parse model response.' };
