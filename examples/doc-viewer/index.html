@@ -213,11 +213,19 @@
     .run-btn:hover:not(:disabled) { opacity: .88; }
     .run-btn:disabled { opacity: .4; cursor: not-allowed; }
 
-    /* Mobile */
+    /* Tablet / small desktop */
     @media (max-width: 1100px) {
       .layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr 50vh; }
       .sidebar { flex-direction: row; overflow-x: auto; border-right: none; border-bottom: 1px solid var(--db); padding: 8px; }
       .chat-panel { border-left: none; border-top: 1px solid var(--db); }
+    }
+    /* Phone */
+    @media (max-width: 480px) {
+      .layout { grid-template-rows: auto 1fr 45vh; }
+      .doc-main { padding: 18px 16px; }
+      .sidebar { padding: 6px; }
+      .sidebar-label { display: none; }
+      .nav-link { padding: 6px 10px; font-size: 12px; }
     }
   </style>
 </head>
