@@ -4,3 +4,5 @@ dist/
 coverage/
 .nyc_output/
 plan.md
+CLAUDE.md
+README.github.md

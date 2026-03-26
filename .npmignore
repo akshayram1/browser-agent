@@ -5,3 +5,5 @@ examples/
 src/
 tsconfig*.json
 public/
+README.npm.md
+README.github.md
