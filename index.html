@@ -1231,10 +1231,11 @@ window.__browserAgentWebLLM = {
                 `User query: ${input.goal}`
               ].join('\n');
 
+              const isDeepSeek = /deepseek/i.test(modelSelect.value);
               const resp = await loadedEngine.chat.completions.create({
                 messages: [
                   { role: 'system', content: 'Return only one JSON object. No markdown or extra prose.' },
-                  { role: 'user', content: prompt }
+                  { role: 'user', content: isDeepSeek ? prompt + ' /no_think' : prompt }
                 ],
                 temperature: 0,
                 max_tokens: 160
