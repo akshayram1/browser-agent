@@ -1,4 +1,4 @@
-import type { AgentAction, RiskLevel } from "./contracts";
+import type { AgentAction, CandidateElement, RiskLevel } from "./contracts";
 
 const RISKY_KEYWORDS = /\b(delete|remove|pay|purchase|submit|confirm|checkout|transfer|withdraw|send)\b/i;
 
@@ -6,7 +6,12 @@ function elementTextRisky(text?: string): boolean {
   return text != null && RISKY_KEYWORDS.test(text);
 }
 
-export function assessRisk(action: AgentAction): RiskLevel {
+function candidateText(selector: string, candidates?: CandidateElement[]): string | undefined {
+  const match = candidates?.find((c) => c.selector === selector);
+  return match ? ([match.label, match.text, match.placeholder].filter(Boolean).join(" ") || undefined) : undefined;
+}
+
+export function assessRisk(action: AgentAction, candidates?: CandidateElement[]): RiskLevel {
   switch (action.type) {
     case "navigate": {
       try {
@@ -19,10 +24,14 @@ export function assessRisk(action: AgentAction): RiskLevel {
       }
       return "safe";
     }
-    case "click":
-      return elementTextRisky(action.label) ? "review" : "safe";
-    case "type":
-      return elementTextRisky(action.label) ? "review" : "safe";
+    case "click": {
+      const text = action.label ?? candidateText(action.selector, candidates) ?? action.selector;
+      return elementTextRisky(text) ? "review" : "safe";
+    }
+    case "type": {
+      const text = action.label ?? candidateText(action.selector, candidates) ?? action.selector;
+      return elementTextRisky(text) ? "review" : "safe";
+    }
     case "focus":
     case "scroll":
     case "wait":

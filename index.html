@@ -35,7 +35,7 @@
       <!-- ── HOME ── -->
       <section id="home" class="section hero">
         <div class="wrap">
-          <div class="badge-pill fade-up">omnibrowser-agent v0.2.8</div>
+          <div class="badge-pill fade-up">omnibrowser-agent v0.2.35</div>
           <h1 class="fade-up delay-1">Local-first browser AI automation library</h1>
           <p class="fade-up delay-2">
             OmniBrowser Agent plans and executes DOM actions entirely in the browser — no API keys, no cloud costs, no data leaving your machine.
@@ -96,7 +96,7 @@
         <div class="wrap">
           <div class="section-label fade-up">what's new</div>
           <div class="surface fade-up delay-1">
-            <h2>What's New in v0.2.8</h2>
+            <h2>What's New in v0.2.35</h2>
             <p>This release implements the <strong>reflection-before-action pattern</strong> — the same loop used by leading browser agents — plus a new <code>systemPrompt</code> option so you can shape agent behaviour without rewriting the bridge.</p>
 
             <h3>Reflection Loop <span class="badge new">New</span></h3>
@@ -510,7 +510,7 @@ blocked                  review (human-approved mode)
                 <span class="install-scope">@akshayram1/</span><span class="install-name">omnibrowser-agent</span>
               </div>
               <div class="install-meta">
-                <span class="tag tag-green" style="margin:0">v0.2.8</span>
+                <span class="tag tag-green" style="margin:0">v0.2.35</span>
                 <span class="tag tag-purple" style="margin:0">MIT</span>
                 <span class="tag tag-amber" style="margin:0">TypeScript</span>
               </div>
@@ -720,6 +720,15 @@ Never navigate away from the booking portal.`
   }
 });</code></pre>
 
+            <h3>Bring Your Own Model (Colab Notebook)</h3>
+            <p>Want a planner model tuned for OmniBrowser's DOM snapshots? Use the training + quantization assets in <a href="https://github.com/akshayram1/omnibrowser-agent/tree/main/notebook" target="_blank" rel="noreferrer">notebook/</a>:</p>
+            <ul>
+              <li><a href="https://github.com/akshayram1/omnibrowser-agent/blob/main/notebook/custom_quantized_llm_colab.ipynb" target="_blank" rel="noreferrer">custom_quantized_llm_colab.ipynb</a> — QLoRA fine-tune + MLC quantization</li>
+              <li><a href="https://github.com/akshayram1/omnibrowser-agent/blob/main/notebook/data/omnibrowser_planner_train.jsonl" target="_blank" rel="noreferrer">starter dataset JSONL</a> — matches prompt.ts + parse-action.ts contracts</li>
+              <li><a href="https://github.com/akshayram1/omnibrowser-agent/tree/main/notebook/scripts" target="_blank" rel="noreferrer">dataset scripts</a> — generation + validation tooling</li>
+            </ul>
+            <p>Flow: collect traces → fine-tune in Colab → run <code>mlc_llm convert_weight --quantization q4f16_1</code> + <code>gen_config</code> → upload to HuggingFace → load via custom <code>appConfig</code>.</p>
+
             <h3>Custom WebLLM Model</h3>
             <p>To use a model that isn't in WebLLM's built-in list, compile it with <a href="https://llm.mlc.ai/docs/install/mlc_llm.html" target="_blank" rel="noreferrer">MLC-LLM</a> and register it via <code>appConfig</code>:</p>
             <pre><code>import * as webllm from "@mlc-ai/web-llm";
@@ -757,7 +766,7 @@ window.__browserAgentWebLLM = {
     return parsePlannerResult(resp.choices[0].message.content);
   }
 };</code></pre>
-            <p>Steps to compile a custom model: <strong>(1)</strong> Install <code>mlc-llm</code> — <a href="https://llm.mlc.ai/docs/install/mlc_llm.html" target="_blank" rel="noreferrer">mlm.mlc.ai/docs/install/mlc_llm</a>. <strong>(2)</strong> Run <code>mlc_llm convert_weight</code> + <code>mlc_llm gen_config</code>. <strong>(3)</strong> Compile to WebGPU target with <code>mlc_llm compile</code>. <strong>(4)</strong> Upload weights + <code>mlc-chat-config.json</code> to a CORS-enabled host (e.g. HuggingFace). The compiled <code>.wasm</code> kernel can often be reused from a built-in model with the same architecture and quantization.</p>
+            <p>Steps to compile a custom model: <strong>(1)</strong> Install <code>mlc-llm</code> — <a href="https://llm.mlc.ai/docs/install/mlc_llm.html" target="_blank" rel="noreferrer">llm.mlc.ai/docs/install/mlc_llm</a>. <strong>(2)</strong> Run <code>mlc_llm convert_weight</code> + <code>mlc_llm gen_config</code>. <strong>(3)</strong> If your architecture has no compatible prebuilt kernel, compile with <code>mlc_llm compile</code>. <strong>(4)</strong> Upload weights + <code>mlc-chat-config.json</code> to a CORS-enabled host (e.g. HuggingFace).</p>
 
             <h3>Notes</h3>
             <ul>
@@ -795,7 +804,7 @@ window.__browserAgentWebLLM = {
               <li>CI pipeline with auto version bump on push to main</li>
             </ul>
 
-            <h3>v0.2.8 <span class="badge new">current</span></h3>
+            <h3>v0.2.35 <span class="badge new">current</span></h3>
             <ul>
               <li>Reflection-before-action pattern (<code>evaluation → memory → next_goal → act</code>)</li>
               <li>Working memory carried across ticks via <code>AgentSession.memory</code></li>

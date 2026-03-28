@@ -92,19 +92,20 @@ function toPlannerResult(raw: PlannerResult | AgentAction): PlannerResult {
   return { action: raw as AgentAction };
 }
 
-async function parsePlannerText(raw: string): Promise<PlannerResult> {
-  const parser = await import("../shared/parse-action");
-  return parser.parsePlannerResult(raw);
+async function parsePlannerText(raw: string): Promise<{ result: PlannerResult; parseFailed: boolean }> {
+  const { parsePlannerResult, PARSE_FAILURE_PATTERN } = await import("../shared/parse-action");
+  const result = parsePlannerResult(raw);
+  const parseFailed = result.action.type === "done" && PARSE_FAILURE_PATTERN.test(result.action.reason);
+  return { result, parseFailed };
 }
+
 
 async function normalizeBridgeResponse(
   raw: PlannerResult | AgentAction | string
 ): Promise<{ result: PlannerResult; parseFailed: boolean; rawText?: string }> {
   if (typeof raw === "string") {
-    const parsed = await parsePlannerText(raw);
-    const parseFailed = parsed.action.type === "done" &&
-      /(No JSON|JSON parse error|Parsed value is not an object|Unknown or missing action type)/.test(parsed.action.reason);
-    return { result: parsed, parseFailed, rawText: raw };
+    const { result, parseFailed } = await parsePlannerText(raw);
+    return { result, parseFailed, rawText: raw };
   }
 
   return { result: toPlannerResult(raw), parseFailed: false };

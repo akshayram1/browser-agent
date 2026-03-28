@@ -72,3 +72,33 @@ await agent.start();
 - For production, mount this inside an authenticated app shell and add your own permission checks.
 - `human-approved` mode is recommended for CRM/finance/admin actions.
 - Bring your own WebLLM engine instance, then wire `createWebLLMBridge(engine)` to `window.__browserAgentWebLLM`.
+
+## Bring Your Own Model (fine-tune + quantize)
+
+If you want a model specialized for OmniBrowser DOM planning, use the Colab workflow in:
+
+- `notebook/custom_quantized_llm_colab.ipynb`
+- `notebook/README.md`
+
+It trains a small instruct model with QLoRA and quantizes to MLC `q4f16_1`, then you can load it with custom `appConfig`:
+
+```ts
+import * as webllm from "@mlc-ai/web-llm";
+import { createWebLLMBridge } from "@akshayram1/omnibrowser-agent";
+
+const appConfig: webllm.AppConfig = {
+  model_list: [
+    {
+      model: "https://huggingface.co/your-account/omnibrowser-planner-q4f16_1-MLC",
+      model_id: "omnibrowser-planner-q4f16_1",
+      model_lib:
+        webllm.modelLibURLPrefix +
+        webllm.modelVersion +
+        "/Qwen2.5-1.5B-Instruct-q4f16_1-ctx4k_cs1k-webgpu.wasm"
+    }
+  ]
+};
+
+const engine = await webllm.CreateMLCEngine("omnibrowser-planner-q4f16_1", { appConfig });
+window.__browserAgentWebLLM = createWebLLMBridge(engine);
+```

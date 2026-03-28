@@ -3,6 +3,7 @@ import { collectSnapshot } from "../core/observer";
 import { planNextAction } from "../core/planner";
 import type {
   AgentSession,
+  CandidateElement,
   ContentResult,
   LibraryAgentConfig,
   LibraryAgentEvents,
@@ -179,19 +180,19 @@ export class BrowserAgent {
         this.session.memory = plannerResult.memory;
       }
 
-      return this.processAction(plannerResult);
+      return this.processAction(plannerResult, snapshot.candidates);
     } catch (error) {
       return { status: "error", message: String(error) };
     }
   }
 
-  private async processAction(plannerResult: PlannerResult): Promise<ContentResult> {
+  private async processAction(plannerResult: PlannerResult, candidates?: CandidateElement[]): Promise<ContentResult> {
     const { action } = plannerResult;
     const reflection = plannerResult.evaluation !== undefined || plannerResult.memory !== undefined || plannerResult.nextGoal !== undefined
       ? { evaluation: plannerResult.evaluation, memory: plannerResult.memory, nextGoal: plannerResult.nextGoal }
       : undefined;
 
-    const risk = assessRisk(action);
+    const risk = assessRisk(action, candidates);
     if (risk === "blocked") {
       return { status: "blocked", action, message: `Blocked action: ${JSON.stringify(action)}`, reflection };
     }

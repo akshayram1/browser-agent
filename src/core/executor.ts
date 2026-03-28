@@ -44,6 +44,9 @@ export async function executeAction(action: AgentAction): Promise<string> {
     }
     case "type": {
       const input = mustFind(action.selector) as HTMLInputElement | HTMLTextAreaElement;
+      if (input.value === action.text) {
+        return `Already contains correct value in ${action.selector}`;
+      }
       input.focus();
       if (action.clearFirst) {
         input.value = "";

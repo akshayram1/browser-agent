@@ -21,7 +21,7 @@ async function runTick(session: AgentSession): Promise<ContentResult> {
     ? { evaluation: plannerResult.evaluation, memory: plannerResult.memory, nextGoal: plannerResult.nextGoal }
     : undefined;
 
-  const risk = assessRisk(action);
+  const risk = assessRisk(action, snapshot.candidates);
   if (risk === "blocked") {
     return { status: "blocked", action, message: `Blocked action: ${JSON.stringify(action)}`, reflection };
   }

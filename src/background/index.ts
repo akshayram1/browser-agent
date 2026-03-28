@@ -64,7 +64,7 @@ async function tick(tabId: number) {
     return;
   }
 
-  setTimeout(() => tick(tabId), 600);
+  setTimeout(() => tick(tabId), 500);
 }
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {

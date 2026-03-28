@@ -1,5 +1,5 @@
 import type { PlannerInput, PlannerResult } from "../shared/contracts";
-import { parsePlannerResult } from "../shared/parse-action";
+import { parsePlannerResult, PARSE_FAILURE_PATTERN } from "../shared/parse-action";
 import { buildSystemPrompt, buildUserMessage } from "./prompt";
 
 export const INVALID_JSON_RETRY_MESSAGE = [
@@ -54,7 +54,7 @@ function isParseFailure(result: PlannerResult): boolean {
   }
 
   const reason = result.action.reason;
-  return /(No JSON|JSON parse error|Parsed value is not an object|Unknown or missing action type)/.test(reason);
+  return PARSE_FAILURE_PATTERN.test(reason);
 }
 
 function contentToText(content: unknown): string {

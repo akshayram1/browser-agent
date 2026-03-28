@@ -165,6 +165,43 @@ See [docs/EMBEDDING.md](docs/EMBEDDING.md) for the full WebLLM bridge wiring gui
 
 Model availability can vary by WebLLM release/build; if one fails to load, use a smaller fallback like `Llama-3.2-1B-Instruct-q4f16_1-MLC`.
 
+### Bring Your Own Model (Colab + MLC)
+
+Use the notebook workflow to fine-tune and quantize a planner model for OmniBrowser:
+
+- [Notebook assets](notebook/README.md)
+- [Google Colab notebook](notebook/custom_quantized_llm_colab.ipynb)
+- [Starter dataset JSONL](notebook/data/omnibrowser_planner_train.jsonl)
+
+The workflow:
+
+1. Generate/expand a dataset in OmniBrowser prompt format (`notebook/scripts/generate_dataset.mjs`).
+2. Validate selector + action correctness (`notebook/scripts/validate_dataset.mjs`).
+3. QLoRA fine-tune `Qwen/Qwen2.5-1.5B-Instruct` in Colab.
+4. Merge and quantize with `mlc_llm convert_weight --quantization q4f16_1`.
+5. Upload to Hugging Face and load in WebLLM via custom `appConfig`.
+
+```ts
+import * as webllm from "@mlc-ai/web-llm";
+import { createWebLLMBridge } from "@akshayram1/omnibrowser-agent";
+
+const appConfig: webllm.AppConfig = {
+  model_list: [
+    {
+      model: "https://huggingface.co/your-account/omnibrowser-planner-q4f16_1-MLC",
+      model_id: "omnibrowser-planner-q4f16_1",
+      model_lib:
+        webllm.modelLibURLPrefix +
+        webllm.modelVersion +
+        "/Qwen2.5-1.5B-Instruct-q4f16_1-ctx4k_cs1k-webgpu.wasm",
+    },
+  ],
+};
+
+const engine = await webllm.CreateMLCEngine("omnibrowser-planner-q4f16_1", { appConfig });
+window.__browserAgentWebLLM = createWebLLMBridge(engine);
+```
+
 ---
 
 ## Agent modes

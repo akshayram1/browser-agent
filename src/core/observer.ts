@@ -69,8 +69,8 @@ function cssPath(element: Element): string {
 }
 
 function isVisible(el: HTMLElement): boolean {
-  if (el.offsetParent === null && el.tagName !== "BODY") return false;
   const style = window.getComputedStyle(el);
+  if (el.offsetParent === null && el.tagName !== "BODY" && style.position !== "fixed") return false;
   if (style.display === "none" || style.visibility === "hidden" || style.opacity === "0") return false;
   // Zero-dimension elements are functionally hidden
   const rect = el.getBoundingClientRect();

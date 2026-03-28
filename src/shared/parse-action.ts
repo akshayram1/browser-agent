@@ -1,5 +1,7 @@
 import type { AgentAction, PlannerResult } from "./contracts";
 
+export const PARSE_FAILURE_PATTERN = /(No JSON|JSON parse error|Parsed value is not an object|Unknown or missing action type|Missing required field)/;
+
 const VALID_TYPES = new Set([
   "click", "type", "navigate", "extract", "scroll", "focus", "wait", "done",
 ]);
@@ -67,6 +69,29 @@ export function parseAction(raw: string): AgentAction {
   const obj = parsed as Record<string, unknown>;
   if (typeof obj.type !== "string" || !VALID_TYPES.has(obj.type)) {
     return { type: "done", reason: `Unknown or missing action type: ${String(obj.type)}` };
+  }
+
+  const t = obj.type;
+  if ((t === "click" || t === "type" || t === "extract" || t === "focus") && typeof obj.selector !== "string") {
+    return { type: "done", reason: `Missing required field 'selector' for action type: ${t}` };
+  }
+  if (t === "extract" && typeof obj.label !== "string") {
+    return { type: "done", reason: `Missing required field 'label' for action type: extract` };
+  }
+  if (t === "type" && typeof obj.text !== "string") {
+    return { type: "done", reason: `Missing required field 'text' for action type: type` };
+  }
+  if (t === "navigate" && typeof obj.url !== "string") {
+    return { type: "done", reason: `Missing required field 'url' for action type: navigate` };
+  }
+  if (t === "scroll" && typeof obj.deltaY !== "number") {
+    return { type: "done", reason: `Missing required field 'deltaY' for action type: scroll` };
+  }
+  if (t === "wait" && typeof obj.ms !== "number") {
+    return { type: "done", reason: `Missing required field 'ms' for action type: wait` };
+  }
+  if (t === "done" && typeof obj.reason !== "string") {
+    return { type: "done", reason: `Missing required field 'reason' for action type: done` };
   }
 
   return obj as unknown as AgentAction;

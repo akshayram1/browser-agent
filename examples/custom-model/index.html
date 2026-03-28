@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Custom WebLLM Model Demo</title>
+  <style>
+    :root {
+      --bg: #0b1018;
+      --panel: #131a24;
+      --panel-2: #1b2433;
+      --text: #ecf2ff;
+      --muted: #93a0b8;
+      --line: rgba(255, 255, 255, 0.12);
+      --ok: #11d39f;
+      --accent: #57a5ff;
+      --warn: #f7b955;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--sans);
+      color: var(--text);
+      background:
+        radial-gradient(1200px 500px at 0% 0%, rgba(87,165,255,0.12), transparent 60%),
+        radial-gradient(900px 500px at 100% 100%, rgba(17,211,159,0.08), transparent 60%),
+        var(--bg);
+      padding: 24px;
+    }
+    .wrap {
+      max-width: 1040px;
+      margin: 0 auto;
+      display: grid;
+      gap: 16px;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid var(--line);
+      background: rgba(19, 26, 36, 0.8);
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+    .brand {
+      font-family: var(--mono);
+      color: var(--ok);
+      font-size: 13px;
+      text-decoration: none;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+    .back {
+      text-decoration: none;
+      color: var(--muted);
+      font-size: 13px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 6px 12px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 16px;
+    }
+    .card {
+      border: 1px solid var(--line);
+      background: rgba(19, 26, 36, 0.88);
+      border-radius: 14px;
+      padding: 16px;
+    }
+    h1 { margin: 0 0 6px; font-size: 24px; }
+    h2 { margin: 0 0 10px; font-size: 16px; }
+    p { margin: 0; line-height: 1.6; color: var(--muted); }
+    .stack { display: grid; gap: 10px; margin-top: 14px; }
+    label {
+      font-size: 12px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 4px;
+      font-family: var(--mono);
+    }
+    input, select, button, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      color: var(--text);
+      border-radius: 9px;
+      padding: 10px 11px;
+      font: inherit;
+    }
+    button {
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .btn-primary {
+      background: rgba(17, 211, 159, 0.14);
+      border-color: rgba(17, 211, 159, 0.35);
+      color: var(--ok);
+    }
+    .btn-alt {
+      background: rgba(87, 165, 255, 0.14);
+      border-color: rgba(87, 165, 255, 0.35);
+      color: var(--accent);
+    }
+    .btn-warn {
+      background: rgba(247, 185, 85, 0.12);
+      border-color: rgba(247, 185, 85, 0.35);
+      color: var(--warn);
+    }
+    .row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .progress {
+      height: 6px;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress > div {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--ok));
+      transition: width 0.25s ease;
+    }
+    .status {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .demo {
+      border: 1px dashed rgba(87,165,255,0.4);
+      border-radius: 10px;
+      padding: 12px;
+      background: rgba(87,165,255,0.06);
+      display: grid;
+      gap: 8px;
+    }
+    .result {
+      min-height: 48px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 10px;
+      background: var(--panel-2);
+      color: var(--muted);
+    }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 380px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      background: #090d14;
+      color: #d4e2ff;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+      .row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <a href="../../" class="brand">omnibrowser-agent</a>
+      <a class="back" href="../">Back to examples</a>
+    </div>
+
+    <div class="card">
+      <h1>Custom Model + WebLLM Demo</h1>
+      <p>Load your quantized Hugging Face model with custom <code>appConfig</code>, wire it into <code>createWebLLMBridge</code>, and run OmniBrowser Agent on this page.</p>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>1) Load custom model</h2>
+        <div class="stack">
+          <div>
+            <label>Model repo URL</label>
+            <input id="repo" value="https://huggingface.co/your-account/omnibrowser-planner-q4f16_1-MLC" />
+          </div>
+          <div class="row">
+            <div>
+              <label>Model ID</label>
+              <input id="model-id" value="omnibrowser-planner-q4f16_1" />
+            </div>
+            <div>
+              <label>WASM filename</label>
+              <input id="wasm" value="Qwen2.5-1.5B-Instruct-q4f16_1-ctx4k_cs1k-webgpu.wasm" />
+            </div>
+          </div>
+          <button id="load-model" class="btn-primary">Load Custom Model</button>
+          <div class="progress"><div id="progress-fill"></div></div>
+          <div id="progress-text" class="status">Not started</div>
+          <div id="model-status" class="status">No model loaded</div>
+        </div>
+
+        <h2 style="margin-top:18px">2) Run agent</h2>
+        <div class="stack">
+          <div>
+            <label>Goal</label>
+            <input id="goal" value="Search for Jane Doe and open the profile result" />
+          </div>
+          <div>
+            <label>Mode</label>
+            <select id="mode">
+              <option value="autonomous" selected>autonomous</option>
+              <option value="human-approved">human-approved</option>
+            </select>
+          </div>
+          <div class="row">
+            <button id="run-agent" class="btn-alt">Run Agent</button>
+            <button id="approve-agent" class="btn-primary">Approve Pending</button>
+          </div>
+          <button id="stop-agent" class="btn-warn">Stop Agent</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>3) Demo target UI</h2>
+        <div class="demo" id="demo-root">
+          <label>Contact search</label>
+          <input id="demo-search" placeholder="Type contact name" />
+          <div class="row">
+            <button id="demo-search-btn">Search</button>
+            <button id="demo-open-first">Open First Result</button>
+          </div>
+          <div id="demo-results" class="result">No query entered yet.</div>
+        </div>
+
+        <h2 style="margin-top:18px">Agent log</h2>
+        <pre id="log"></pre>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

@@ -35,11 +35,18 @@ function dispatchInputEvents(el: HTMLInputElement | HTMLTextAreaElement): void {
 export async function executeAction(action: AgentAction): Promise<string> {
   switch (action.type) {
     case "click": {
-      mustFind(action.selector).click();
+      const el = mustFind(action.selector);
+      if ((el as HTMLButtonElement).disabled) {
+        throw new Error(`Element is disabled: ${action.selector}`);
+      }
+      el.click();
       return `Clicked ${action.selector}`;
     }
     case "type": {
       const input = mustFind(action.selector) as HTMLInputElement | HTMLTextAreaElement;
+      if (input.value === action.text) {
+        return `Already contains correct value in ${action.selector}`;
+      }
       input.focus();
       if (action.clearFirst) {
         input.value = "";
@@ -47,6 +54,9 @@ export async function executeAction(action: AgentAction): Promise<string> {
       }
       input.value = `${input.value}${action.text}`;
       dispatchInputEvents(input);
+      if (input.value.indexOf(action.text) === -1) {
+        throw new Error(`Type verification failed: value did not update for ${action.selector}`);
+      }
       return `Typed into ${action.selector}`;
     }
     case "navigate": {
@@ -55,6 +65,9 @@ export async function executeAction(action: AgentAction): Promise<string> {
     }
     case "extract": {
       const value = mustFind(action.selector).innerText.trim();
+      if (!value) {
+        throw new Error(`Extract returned empty text from ${action.selector}`);
+      }
       return `${action.label}: ${value}`;
     }
     case "scroll": {

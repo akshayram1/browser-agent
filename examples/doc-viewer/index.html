@@ -31,11 +31,11 @@
       background: rgba(8,10,15,0.92);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
-      border-bottom: 1px solid var(--dk-border);
+      border-bottom: 1px solid var(--db);
       display: flex; align-items: center; justify-content: space-between;
       padding: 0 24px; position: sticky; top: 0; z-index: 100;
     }
-    .brand { font-family: var(--dk-mono); font-weight: 700; font-size: 13px; color: var(--dk-accent); text-decoration: none; letter-spacing: 0.05em; }
+    .brand { font-family: var(--mono); font-weight: 700; font-size: 13px; color: var(--acc); text-decoration: none; letter-spacing: 0.05em; }
     .brand-icon { display: none; }
 
     /* ── Layout: sidebar + doc + chat ── */
@@ -786,61 +786,6 @@ window.__browserAgentWebLLM = {
         }
         return { action: parseAction(json) };
       } catch { return { action: { type: "done", reason: `Parse error: ${json.slice(0, 80)}` } }; }
-    }
-
-    // ── WebLLM bridge ──
-    async function planWithWebLLM(input) {
-      const { goal, history, lastError, memory } = input;
-      const ctx = buildDocContext();
-      const recent = history.slice(-4).join(" → ") || "none";
-      const errHint = lastError ? `\nLast action FAILED: "${lastError}". Try a different approach.` : "";
-      const memHint = memory ? `\nWorking memory: ${memory}` : "";
-
-      const systemPrompt =
-`You are a documentation navigation agent. Output ONLY one JSON action object, nothing else.
-Use exactly one of these formats:
-{"type":"click","selector":"#id"}
-{"type":"done","reason":"..."}
-
-RULES:
-- Click sidebar nav links (e.g. #nav-installation) to navigate to sections.
-- If the target is in Advanced or FAQ, click #more-btn first to reveal it.
-- After clicking a nav link, output done.
-- Only click. No type, scroll, or navigate actions.
-No markdown. No extra text. Only the JSON object.`;
-
-      const resp = await llmEngine.chat.completions.create({
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content:
-`Goal: "${goal}"
-Recent history: ${recent}${errHint}${memHint}
-
-${ctx}
-
-EXAMPLES:
-"show me Installation" → {"type":"click","selector":"#nav-installation"}
-"go to Security" (More not open) → {"type":"click","selector":"#more-btn"}
-"go to Security" (More open) → {"type":"click","selector":"#nav-security"}
-"already navigated" → {"type":"done","reason":"navigated"}
-
-Now output JSON for: "${goal}"` }
-        ],
-        temperature: 0,
-        max_tokens: 80
-      });
-
-      const result = parsePlannerResult(resp.choices[0].message.content.trim());
-      let { action } = result;
-
-      // Guard: repeated click → done
-      if (action.type === "click" && action.selector) {
-        const last = history[history.length - 1] ?? "";
-        if (last.includes(action.selector))
-          return { action: { type: "done", reason: `Already navigated to ${action.selector}` } };
-      }
-
-      return { ...result, action };
     }
 
     // ── Heuristic fallback: keyword match → click the right nav link ──
