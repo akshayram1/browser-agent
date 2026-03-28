@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "OmniBrowser Agent",
+  "version": "0.2.35",
+  "description": "Local-first AI browser operator — heuristic and WebLLM planners.",
+  "permissions": ["activeTab", "tabs", "scripting", "storage"],
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "OmniBrowser Agent",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
