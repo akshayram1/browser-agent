@@ -109,6 +109,16 @@
     </p>
   </div>
 
+  <!-- step 0: preflight -->
+  <div class="card">
+    <h2>Step 0 — Check model files</h2>
+    <p style="margin-bottom:14px">Verifies that the required MLC files exist and are publicly accessible on HuggingFace before attempting the full download.</p>
+    <div class="stack">
+      <button id="btn-check" class="btn-blue">Check Model Availability</button>
+      <div id="check-results" style="font-family:var(--mono);font-size:12px;color:var(--muted);display:grid;gap:6px">—</div>
+    </div>
+  </div>
+
   <!-- step 1: load model -->
   <div class="card">
     <h2>Step 1 — Load model</h2>
@@ -183,6 +193,8 @@ const MODEL_REPO   = "https://huggingface.co/Akshayram1/omnibrowser-planner-1p5b
 const MODEL_ID     = "omnibrowser-planner-1p5b-q4f16_1";
 // Qwen2.5-1.5B architecture → same WASM as the base model
 const MODEL_WASM   = "Qwen2.5-1.5B-Instruct-q4f16_1-ctx4k_cs1k-webgpu.wasm";
+// HuggingFace raw file base (WebLLM appends filenames here)
+const HF_RAW_BASE  = "https://huggingface.co/Akshayram1/omnibrowser-planner-1p5b-q4f16_1-MLC/resolve/main";
 
 const SYSTEM_PROMPT = `You are a browser automation agent. Given a user goal and page context, respond with exactly one JSON action object. No explanation, no markdown — only raw JSON.
 
@@ -196,6 +208,8 @@ Valid actions:
 {"type":"done","reason":"<message>"}`;
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
+const btnCheck    = document.getElementById("btn-check");
+const checkRes    = document.getElementById("check-results");
 const dot         = document.getElementById("dot");
 const statusText  = document.getElementById("status-text");
 const modelTag    = document.getElementById("model-tag");
@@ -222,6 +236,80 @@ function setModelTag(state) {
   modelTag.className = "tag " + (state === "ok" ? "tag-ok" : state === "fail" ? "tag-fail" : "tag-none");
   modelTag.textContent = state === "ok" ? "loaded ✓" : state === "fail" ? "error" : "not loaded";
 }
+
+// ── preflight check ───────────────────────────────────────────────────────────
+const PREFLIGHT_FILES = [
+  "mlc-chat-config.json",
+  "ndarray-cache.json",
+  "params_shard_0.bin",
+];
+
+async function checkFile(filename) {
+  const url = `${HF_RAW_BASE}/${filename}`;
+  try {
+    const res = await fetch(url, { method: "HEAD" });
+    return { filename, url, ok: res.ok, status: res.status };
+  } catch (err) {
+    return { filename, url, ok: false, status: "network error", err: String(err) };
+  }
+}
+
+btnCheck.addEventListener("click", async () => {
+  btnCheck.disabled = true;
+  checkRes.innerHTML = "<span style='color:var(--accent)'>Checking…</span>";
+
+  const results = await Promise.all(PREFLIGHT_FILES.map(checkFile));
+  checkRes.innerHTML = "";
+
+  let allOk = true;
+  for (const r of results) {
+    const row = document.createElement("div");
+    row.style.cssText = "display:flex;align-items:baseline;gap:8px";
+    if (r.ok) {
+      row.innerHTML = `<span style="color:var(--ok)">✓ ${r.status}</span> <span style="color:var(--muted)">${r.filename}</span>`;
+    } else {
+      allOk = false;
+      row.innerHTML = `<span style="color:var(--err)">✗ ${r.status}</span> <span style="color:var(--text)">${r.filename}</span>`;
+      if (r.status === 401 || r.status === 403) {
+        const hint = document.createElement("div");
+        hint.style.cssText = "color:var(--warn);margin-left:16px;font-size:11px";
+        hint.textContent = "→ Repo is private. Make it public on HuggingFace or add auth.";
+        checkRes.appendChild(row);
+        checkRes.appendChild(hint);
+        continue;
+      }
+      if (r.status === 404) {
+        const hint = document.createElement("div");
+        hint.style.cssText = "color:var(--warn);margin-left:16px;font-size:11px";
+        hint.textContent = r.filename === "mlc-chat-config.json"
+          ? "→ MLC quantization files not found. Run the notebook MLC quantize cell and push to HF."
+          : `→ File missing. Run mlc_llm convert_weight on the merged model.`;
+        checkRes.appendChild(row);
+        checkRes.appendChild(hint);
+        continue;
+      }
+      if (r.status === "network error") {
+        const hint = document.createElement("div");
+        hint.style.cssText = "color:var(--warn);margin-left:16px;font-size:11px";
+        hint.textContent = "→ CORS or network error — try opening in Chrome with no extensions.";
+        checkRes.appendChild(row);
+        checkRes.appendChild(hint);
+        continue;
+      }
+    }
+    checkRes.appendChild(row);
+  }
+
+  const summary = document.createElement("div");
+  summary.style.cssText = "margin-top:8px;font-weight:700";
+  if (allOk) {
+    summary.innerHTML = `<span style="color:var(--ok)">✓ All files accessible — safe to load the model.</span>`;
+  } else {
+    summary.innerHTML = `<span style="color:var(--err)">✗ Some files are missing or inaccessible. Fix the issues above before loading.</span>`;
+  }
+  checkRes.appendChild(summary);
+  btnCheck.disabled = false;
+});
 
 // ── load model ────────────────────────────────────────────────────────────────
 btnLoad.addEventListener("click", async () => {
