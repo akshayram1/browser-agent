@@ -4,9 +4,10 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "redirects": [
-    { "source": "/simple-site", "destination": "/examples/simple-site", "permanent": true },
-    { "source": "/chatbot",     "destination": "/examples/chatbot",     "permanent": true },
-    { "source": "/doc-viewer",  "destination": "/examples/doc-viewer",  "permanent": true },
-    { "source": "/model-test",  "destination": "/examples/model-test",  "permanent": true }
+    { "source": "/simple-site",   "destination": "/examples/simple-site",   "permanent": true },
+    { "source": "/chatbot",       "destination": "/examples/chatbot",       "permanent": true },
+    { "source": "/doc-viewer",    "destination": "/examples/doc-viewer",    "permanent": true },
+    { "source": "/model-test",    "destination": "/examples/model-test",    "permanent": true },
+    { "source": "/custom-model",  "destination": "/examples/custom-model",  "permanent": true }
   ]
 }
