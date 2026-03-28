@@ -6,3 +6,9 @@ coverage/
 plan.md
 CLAUDE.md
 README.github.md
+
+# Local environment secrets
+.env
+.env.*
+!.env.example
+notebook/.env
