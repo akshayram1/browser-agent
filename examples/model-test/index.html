@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OmniBrowser Planner Model Test</title>
+  <style>
+    :root {
+      --bg: #0b1018;
+      --panel: #131a24;
+      --panel-2: #1b2433;
+      --text: #ecf2ff;
+      --muted: #93a0b8;
+      --line: rgba(255,255,255,0.12);
+      --ok: #11d39f;
+      --accent: #57a5ff;
+      --warn: #f7b955;
+      --err: #ff6b6b;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --sans: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--sans);
+      background:
+        radial-gradient(1200px 500px at 0% 0%, rgba(87,165,255,0.1), transparent 60%),
+        radial-gradient(900px 500px at 100% 100%, rgba(17,211,159,0.08), transparent 60%),
+        var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .wrap { max-width: 860px; margin: 0 auto; display: grid; gap: 16px; }
+    .header {
+      display: flex; align-items: center; justify-content: space-between;
+      border: 1px solid var(--line); background: rgba(19,26,36,0.8);
+      border-radius: 14px; padding: 14px 16px;
+    }
+    .brand { font-family: var(--mono); color: var(--ok); font-size: 13px; text-decoration: none; font-weight: 700; }
+    .back { text-decoration: none; color: var(--muted); font-size: 13px; border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; }
+    .card { border: 1px solid var(--line); background: rgba(19,26,36,0.88); border-radius: 14px; padding: 20px; }
+    h1 { font-size: 22px; margin-bottom: 6px; }
+    h2 { font-size: 14px; color: var(--muted); font-weight: 600; margin-bottom: 14px; letter-spacing: 0.04em; text-transform: uppercase; }
+    p { color: var(--muted); line-height: 1.6; font-size: 14px; }
+    .stack { display: grid; gap: 12px; }
+    label { font-size: 11px; color: var(--muted); font-family: var(--mono); display: block; margin-bottom: 4px; }
+    input, select, textarea {
+      width: 100%; border: 1px solid var(--line); background: var(--panel-2);
+      color: var(--text); border-radius: 9px; padding: 9px 11px; font: inherit; font-size: 13px;
+    }
+    textarea { resize: vertical; min-height: 80px; font-family: var(--mono); }
+    button {
+      cursor: pointer; border-radius: 9px; padding: 10px 14px;
+      font: inherit; font-weight: 700; font-size: 13px; border: 1px solid;
+    }
+    .btn-green { background: rgba(17,211,159,0.14); border-color: rgba(17,211,159,0.35); color: var(--ok); }
+    .btn-blue  { background: rgba(87,165,255,0.14);  border-color: rgba(87,165,255,0.35);  color: var(--accent); }
+    .btn-warn  { background: rgba(247,185,85,0.12);  border-color: rgba(247,185,85,0.35);  color: var(--warn); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .model-info {
+      display: flex; align-items: center; gap: 10px;
+      font-family: var(--mono); font-size: 12px; color: var(--muted);
+      border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px;
+      background: rgba(11,16,24,0.6);
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+    .dot.ok   { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+    .dot.busy { background: var(--accent); box-shadow: 0 0 6px var(--accent); animation: pulse 1s infinite; }
+    .dot.err  { background: var(--err); }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    .progress { height: 5px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 999px; overflow: hidden; margin-top: 4px; }
+    .progress > div { width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--ok)); transition: width 0.3s; }
+    .progress-text { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 4px; }
+    pre {
+      font-family: var(--mono); font-size: 12px; line-height: 1.55;
+      background: #090d14; border: 1px solid var(--line); border-radius: 10px;
+      padding: 12px; max-height: 320px; overflow: auto; white-space: pre-wrap; word-break: break-word;
+    }
+    .tag {
+      display: inline-block; font-family: var(--mono); font-size: 11px;
+      padding: 2px 8px; border-radius: 5px; margin-left: 6px;
+    }
+    .tag-ok   { background: rgba(17,211,159,0.15); color: var(--ok); }
+    .tag-fail { background: rgba(255,107,107,0.15); color: var(--err); }
+    .tag-none { background: rgba(147,160,184,0.15); color: var(--muted); }
+    .check-row { display: flex; align-items: baseline; gap: 6px; font-size: 13px; }
+    .example-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+    .example-btns button { padding: 6px 12px; font-size: 12px; }
+    .divider { border: none; border-top: 1px solid var(--line); margin: 4px 0; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- header -->
+  <div class="header">
+    <a href="../../" class="brand">omnibrowser-agent</a>
+    <a class="back" href="../">← examples</a>
+  </div>
+
+  <!-- title -->
+  <div class="card">
+    <h1>Planner Model Test <span id="model-tag" class="tag tag-none">not loaded</span></h1>
+    <p style="margin-top:6px">
+      Tests <strong>Akshayram1/omnibrowser-planner-1p5b-q4f16_1-MLC</strong> — your fine-tuned Qwen2.5-1.5B quantized model —
+      by loading it via WebLLM and checking that it outputs valid <code>AgentAction</code> JSON.
+      Requires a browser with <strong>WebGPU</strong> (Chrome 113+ / Edge 113+).
+    </p>
+  </div>
+
+  <!-- step 1: load model -->
+  <div class="card">
+    <h2>Step 1 — Load model</h2>
+    <div class="stack">
+      <div class="model-info">
+        <div id="dot" class="dot"></div>
+        <div>
+          <div style="color:var(--text);margin-bottom:2px">Akshayram1/omnibrowser-planner-1p5b-q4f16_1-MLC</div>
+          <div id="status-text">Idle — click Load to begin</div>
+        </div>
+      </div>
+      <div class="progress"><div id="prog-fill"></div></div>
+      <div id="prog-text" class="progress-text"></div>
+      <div class="row">
+        <button id="btn-load" class="btn-green">Load Model (~800 MB)</button>
+        <button id="btn-clear" class="btn-warn">Clear Cache</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- step 2: generate test -->
+  <div class="card">
+    <h2>Step 2 — Test generation</h2>
+    <div class="stack">
+      <div>
+        <label>User goal (sent to the planner)</label>
+        <input id="goal" value="Search for Jane Doe and open her profile" />
+      </div>
+
+      <div>
+        <label>Quick goal examples</label>
+        <div class="example-btns">
+          <button class="btn-blue eg" data-goal="Click the login button">Click login</button>
+          <button class="btn-blue eg" data-goal="Type 'hello world' into the search box">Type text</button>
+          <button class="btn-blue eg" data-goal="Extract the page title">Extract</button>
+          <button class="btn-blue eg" data-goal="Navigate to https://example.com">Navigate</button>
+          <button class="btn-blue eg" data-goal="Scroll down to see more content">Scroll</button>
+        </div>
+      </div>
+
+      <button id="btn-generate" class="btn-blue" disabled>Generate Action</button>
+
+      <hr class="divider" />
+
+      <div>
+        <label>Raw model output</label>
+        <pre id="raw-output" style="color:var(--muted)">— load the model first —</pre>
+      </div>
+
+      <div>
+        <label>Parsed result</label>
+        <div id="parsed-result" style="font-family:var(--mono);font-size:12px;color:var(--muted)">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- step 3: batch selftest -->
+  <div class="card">
+    <h2>Step 3 — Self-test (5 prompts)</h2>
+    <p style="margin-bottom:14px">Runs five built-in planner prompts and checks each produces a valid AgentAction JSON.</p>
+    <div class="stack">
+      <button id="btn-selftest" class="btn-green" disabled>Run Self-Test</button>
+      <div id="selftest-results" style="font-size:13px;color:var(--muted)">—</div>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+// ── model config ─────────────────────────────────────────────────────────────
+const MODEL_REPO   = "https://huggingface.co/Akshayram1/omnibrowser-planner-1p5b-q4f16_1-MLC";
+const MODEL_ID     = "omnibrowser-planner-1p5b-q4f16_1";
+// Qwen2.5-1.5B architecture → same WASM as the base model
+const MODEL_WASM   = "Qwen2.5-1.5B-Instruct-q4f16_1-ctx4k_cs1k-webgpu.wasm";
+
+const SYSTEM_PROMPT = `You are a browser automation agent. Given a user goal and page context, respond with exactly one JSON action object. No explanation, no markdown — only raw JSON.
+
+Valid actions:
+{"type":"click","selector":"<css>","label":"<description>"}
+{"type":"type","selector":"<css>","text":"<value>"}
+{"type":"navigate","url":"<url>"}
+{"type":"extract","selector":"<css>","label":"<key>"}
+{"type":"scroll","deltaY":<number>}
+{"type":"wait","ms":<number>}
+{"type":"done","reason":"<message>"}`;
+
+// ── DOM refs ──────────────────────────────────────────────────────────────────
+const dot         = document.getElementById("dot");
+const statusText  = document.getElementById("status-text");
+const modelTag    = document.getElementById("model-tag");
+const progFill    = document.getElementById("prog-fill");
+const progText    = document.getElementById("prog-text");
+const btnLoad     = document.getElementById("btn-load");
+const btnClear    = document.getElementById("btn-clear");
+const goalInput   = document.getElementById("goal");
+const btnGen      = document.getElementById("btn-generate");
+const rawOut      = document.getElementById("raw-output");
+const parsedOut   = document.getElementById("parsed-result");
+const btnSelf     = document.getElementById("btn-selftest");
+const selfResults = document.getElementById("selftest-results");
+
+let engine = null;
+
+// ── status helpers ────────────────────────────────────────────────────────────
+function setStatus(state, msg) {
+  dot.className = "dot" + (state === "ok" ? " ok" : state === "busy" ? " busy" : state === "err" ? " err" : "");
+  statusText.textContent = msg;
+}
+
+function setModelTag(state) {
+  modelTag.className = "tag " + (state === "ok" ? "tag-ok" : state === "fail" ? "tag-fail" : "tag-none");
+  modelTag.textContent = state === "ok" ? "loaded ✓" : state === "fail" ? "error" : "not loaded";
+}
+
+// ── load model ────────────────────────────────────────────────────────────────
+btnLoad.addEventListener("click", async () => {
+  if (!navigator.gpu) {
+    setStatus("err", "WebGPU not available in this browser. Use Chrome 113+ or Edge 113+.");
+    setModelTag("fail");
+    return;
+  }
+
+  btnLoad.disabled = true;
+  btnClear.disabled = true;
+  setStatus("busy", "Importing WebLLM…");
+  progFill.style.width = "0%";
+  progText.textContent = "";
+
+  try {
+    const webllm = await import("https://esm.run/@mlc-ai/web-llm");
+
+    const modelEntry = {
+      model:     MODEL_REPO,
+      model_id:  MODEL_ID,
+      model_lib: webllm.modelLibURLPrefix + webllm.modelVersion + "/" + MODEL_WASM,
+    };
+
+    const appConfig = {
+      model_list: [...webllm.prebuiltAppConfig.model_list, modelEntry],
+    };
+
+    setStatus("busy", "Downloading & caching model weights…");
+
+    engine = await webllm.CreateMLCEngine(MODEL_ID, {
+      appConfig,
+      initProgressCallback({ progress, text }) {
+        const pct = Math.round(progress * 100);
+        progFill.style.width = pct + "%";
+        progText.textContent = text || pct + "%";
+        setStatus("busy", text || `Loading… ${pct}%`);
+      },
+    });
+
+    setStatus("ok", `Ready — ${MODEL_ID}`);
+    setModelTag("ok");
+    progText.textContent = "100% — model ready";
+    btnGen.disabled = false;
+    btnSelf.disabled = false;
+  } catch (err) {
+    setStatus("err", "Load failed: " + String(err));
+    setModelTag("fail");
+    engine = null;
+  } finally {
+    btnLoad.disabled = false;
+    btnClear.disabled = false;
+  }
+});
+
+// ── clear cache ───────────────────────────────────────────────────────────────
+btnClear.addEventListener("click", async () => {
+  try {
+    const keys = await caches.keys();
+    await Promise.all(keys.map(k => caches.delete(k)));
+    const dbs = await indexedDB.databases?.() ?? [];
+    dbs.forEach(db => db.name && indexedDB.deleteDatabase(db.name));
+    alert("Cache cleared. Reload the page and load the model again.");
+  } catch (e) {
+    alert("Could not clear cache: " + e);
+  }
+});
+
+// ── example buttons ───────────────────────────────────────────────────────────
+document.querySelectorAll(".eg").forEach(btn => {
+  btn.addEventListener("click", () => { goalInput.value = btn.dataset.goal; });
+});
+
+// ── generate one action ───────────────────────────────────────────────────────
+async function generate(goal) {
+  if (!engine) throw new Error("Model not loaded");
+
+  const messages = [
+    { role: "system",    content: SYSTEM_PROMPT },
+    { role: "user",      content: `Goal: ${goal}\nPage: (demo page, no real DOM)` },
+  ];
+
+  const reply = await engine.chat.completions.create({
+    messages,
+    temperature: 0.0,
+    max_tokens: 150,
+  });
+
+  return reply.choices[0].message.content ?? "";
+}
+
+function tryParseAction(raw) {
+  const match = raw.match(/\{[\s\S]*\}/);
+  if (!match) return null;
+  try { return JSON.parse(match[0]); } catch { return null; }
+}
+
+btnGen.addEventListener("click", async () => {
+  const goal = goalInput.value.trim();
+  if (!goal) return;
+
+  btnGen.disabled = true;
+  rawOut.style.color = "var(--muted)";
+  rawOut.textContent = "Generating…";
+  parsedOut.textContent = "—";
+
+  try {
+    const raw = await generate(goal);
+    rawOut.style.color = "var(--text)";
+    rawOut.textContent = raw;
+
+    const action = tryParseAction(raw);
+    if (action) {
+      parsedOut.innerHTML = `<span style="color:var(--ok)">✓ Valid JSON</span> &nbsp; type = <strong style="color:var(--accent)">${action.type}</strong> &nbsp; <span style="color:var(--muted)">${JSON.stringify(action)}</span>`;
+    } else {
+      parsedOut.innerHTML = `<span style="color:var(--err)">✗ No valid JSON found in output</span>`;
+    }
+  } catch (err) {
+    rawOut.style.color = "var(--err)";
+    rawOut.textContent = String(err);
+    parsedOut.textContent = "—";
+  } finally {
+    btnGen.disabled = false;
+  }
+});
+
+// ── self-test ─────────────────────────────────────────────────────────────────
+const SELF_TEST_CASES = [
+  { goal: "Click the submit button",                    expectType: "click"    },
+  { goal: "Type 'hello' into the search box",           expectType: "type"     },
+  { goal: "Navigate to https://google.com",             expectType: "navigate" },
+  { goal: "Extract the page heading text",              expectType: "extract"  },
+  { goal: "The task is complete, nothing left to do",   expectType: "done"     },
+];
+
+btnSelf.addEventListener("click", async () => {
+  btnSelf.disabled = true;
+  selfResults.innerHTML = "";
+
+  let passed = 0;
+
+  for (const tc of SELF_TEST_CASES) {
+    const row = document.createElement("div");
+    row.className = "check-row";
+    row.innerHTML = `<span style="color:var(--muted)">⏳</span> <span style="color:var(--muted)">${tc.goal}</span>`;
+    selfResults.appendChild(row);
+
+    try {
+      const raw = await generate(tc.goal);
+      const action = tryParseAction(raw);
+      const ok = action && action.type === tc.expectType;
+
+      if (ok) {
+        passed++;
+        row.innerHTML = `<span style="color:var(--ok)">✓</span> <span>${tc.goal}</span> <span class="tag tag-ok">${action.type}</span>`;
+      } else {
+        const got = action ? action.type : "no JSON";
+        row.innerHTML = `<span style="color:var(--err)">✗</span> <span>${tc.goal}</span> <span class="tag tag-fail">expected ${tc.expectType}, got ${got}</span>`;
+      }
+    } catch (err) {
+      row.innerHTML = `<span style="color:var(--err)">✗</span> <span>${tc.goal}</span> <span class="tag tag-fail">error: ${String(err).slice(0, 60)}</span>`;
+    }
+  }
+
+  const summary = document.createElement("div");
+  summary.style.cssText = "margin-top:12px;font-weight:700;font-size:14px";
+  const allOk = passed === SELF_TEST_CASES.length;
+  summary.innerHTML = allOk
+    ? `<span style="color:var(--ok)">✓ All ${passed}/${SELF_TEST_CASES.length} passed — model is working correctly.</span>`
+    : `<span style="color:var(--warn)">⚠ ${passed}/${SELF_TEST_CASES.length} passed — model may need retraining or the WASM lib is mismatched.</span>`;
+  selfResults.appendChild(summary);
+
+  btnSelf.disabled = false;
+});
+</script>
+</body>
+</html>
