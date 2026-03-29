@@ -1351,7 +1351,10 @@ window.__browserAgentWebLLM = {
 
       /* ── Suggestions ── */
       suggsEl.querySelectorAll('.cb-chip').forEach(chip => {
-        chip.addEventListener('click', () => handleQuery(chip.dataset.q));
+        chip.addEventListener('click', () => {
+          addUserMsg(chip.dataset.q);
+          handleQuery(chip.dataset.q);
+        });
       });
 
       /* ── Send ── */
@@ -1388,77 +1391,76 @@ window.__browserAgentWebLLM = {
         sendBtn.disabled = true;
         inputEl.disabled = true;
 
-        /* 1. Instant greeting reply — never hits the model */
-        if (GREETINGS.test(q.trim())) {
-          addBotMsg(GREETING_REPLIES[greetIdx % GREETING_REPLIES.length]);
-          greetIdx++;
+        try {
+          /* 1. Instant greeting reply — never hits the model */
+          if (GREETINGS.test(q.trim())) {
+            addBotMsg(GREETING_REPLIES[greetIdx % GREETING_REPLIES.length]);
+            greetIdx++;
+            return;
+          }
+
+          /* 2. AI-first routing — when model is loaded, always route via LLM */
+          if (loadedEngine && window.__browserAgentWebLLM) {
+            setStatus('loading', 'AI thinking');
+            const typingEl = addTyping();
+            try {
+              const result = await withTimeout(window.__browserAgentWebLLM.plan({ goal: q }), getPlannerTimeoutMs());
+              typingEl.remove();
+              if (result._reasoning) addBotThought(result._reasoning);
+              const replyText = result._reply || (result.reason ?? 'Done.');
+              addBotMsg(replyText);
+              if (result._href) {
+                setTimeout(() => window.open(result._href, '_blank', 'noopener'), 400);
+              } else {
+                const targetId = result.selector || null;
+                if (targetId) {
+                  const target = document.querySelector(targetId);
+                  if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
+                }
+              }
+            } catch (err) {
+              typingEl.remove();
+              const kwFallback = NAV.find(n => n.match.test(q));
+              if (kwFallback) {
+                addBotThought('Using the keyword fallback because the model was slow.');
+                addBotMsg(kwFallback.reply);
+                if (kwFallback.href) {
+                  setTimeout(() => window.open(kwFallback.href, '_blank', 'noopener'), 400);
+                } else {
+                  const target = document.querySelector(kwFallback.id);
+                  if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
+                }
+              } else {
+                const isTimeout = err instanceof Error && err.message === 'planner_timeout';
+                addBotMsg(
+                  isTimeout
+                    ? 'The AI model is still thinking and hit the current wait limit. Try a more direct query, switch to <strong>Llama 3.2 1B</strong> for speed, or retry after the first prompt warm-up.'
+                    : 'The AI model failed to answer this request. Try again, or use a direct query like <strong>install</strong>, <strong>architecture</strong>, <strong>embedding</strong>, or <strong>docs</strong>.'
+                );
+              }
+            } finally {
+              setStatus('ready', 'AI ready');
+            }
+          } else {
+            const kwMatch = NAV.find(n => n.match.test(q));
+            if (kwMatch) {
+              addBotMsg(kwMatch.reply);
+              if (kwMatch.href) {
+                setTimeout(() => window.open(kwMatch.href, '_blank', 'noopener'), 400);
+              } else {
+                const target = document.querySelector(kwMatch.id);
+                if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
+              }
+            } else {
+              addBotMsg(FALLBACK_REPLIES[fallbackIdx % FALLBACK_REPLIES.length]);
+              fallbackIdx++;
+            }
+          }
+        } finally {
           sendBtn.disabled = false;
           inputEl.disabled = false;
           inputEl.focus();
-          return;
         }
-
-        /* 2. AI-first routing — when model is loaded, always route via LLM */
-        if (loadedEngine && window.__browserAgentWebLLM) {
-          setStatus('loading', 'AI thinking');
-          const typingEl = addTyping();
-          try {
-            const result = await withTimeout(window.__browserAgentWebLLM.plan({ goal: q }), getPlannerTimeoutMs());
-            typingEl.remove();
-            if (result._reasoning) addBotThought(result._reasoning);
-            const replyText = result._reply || (result.reason ?? 'Done.');
-            addBotMsg(replyText);
-            if (result._href) {
-              setTimeout(() => window.open(result._href, '_blank', 'noopener'), 400);
-            } else {
-              const targetId = result.selector || null;
-              if (targetId) {
-                const target = document.querySelector(targetId);
-                if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
-              }
-            }
-          } catch (err) {
-            typingEl.remove();
-            const kwFallback = NAV.find(n => n.match.test(q));
-            if (kwFallback) {
-              addBotThought('Using the keyword fallback because the model was slow.');
-              addBotMsg(kwFallback.reply);
-              if (kwFallback.href) {
-                setTimeout(() => window.open(kwFallback.href, '_blank', 'noopener'), 400);
-              } else {
-                const target = document.querySelector(kwFallback.id);
-                if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
-              }
-            } else {
-              const isTimeout = err instanceof Error && err.message === 'planner_timeout';
-              addBotMsg(
-                isTimeout
-                  ? 'The AI model is still thinking and hit the current wait limit. Try a more direct query, switch to <strong>Llama 3.2 1B</strong> for speed, or retry after the first prompt warm-up.'
-                  : 'The AI model failed to answer this request. Try again, or use a direct query like <strong>install</strong>, <strong>architecture</strong>, <strong>embedding</strong>, or <strong>docs</strong>.'
-              );
-            }
-          } finally {
-            setStatus('ready', 'AI ready');
-          }
-        } else {
-          const kwMatch = NAV.find(n => n.match.test(q));
-          if (kwMatch) {
-            addBotMsg(kwMatch.reply);
-            if (kwMatch.href) {
-              setTimeout(() => window.open(kwMatch.href, '_blank', 'noopener'), 400);
-            } else {
-              const target = document.querySelector(kwMatch.id);
-              if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
-            }
-          } else {
-            addBotMsg(FALLBACK_REPLIES[fallbackIdx % FALLBACK_REPLIES.length]);
-            fallbackIdx++;
-          }
-        }
-
-        sendBtn.disabled = false;
-        inputEl.disabled = false;
-        inputEl.focus();
       }
 
       /* ── Helpers ── */
