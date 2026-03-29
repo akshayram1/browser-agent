@@ -1349,11 +1349,21 @@ window.__browserAgentWebLLM = {
         }
       });
 
-      /* ── Suggestions ── */
+      /* ── Suggestions — always direct nav, no AI needed ── */
       suggsEl.querySelectorAll('.cb-chip').forEach(chip => {
         chip.addEventListener('click', () => {
-          addUserMsg(chip.dataset.q);
-          handleQuery(chip.dataset.q);
+          const q = chip.dataset.q;
+          addUserMsg(q);
+          const kwMatch = NAV.find(n => n.match.test(q));
+          if (kwMatch) {
+            addBotMsg(kwMatch.reply);
+            if (kwMatch.href) {
+              setTimeout(() => window.open(kwMatch.href, '_blank', 'noopener'), 400);
+            } else {
+              const target = document.querySelector(kwMatch.id);
+              if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
+            }
+          }
         });
       });
 
