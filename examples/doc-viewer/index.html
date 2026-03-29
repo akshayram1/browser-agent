@@ -855,38 +855,45 @@ window.__browserAgentWebLLM = {
             progressText.textContent = text || `${Math.round(progress * 100)}%`;
           }
         });
-        // Wrap bridge to restrict candidates to #doc-sidebar so the model
-        // only sees sidebar nav links and never clicks chat panel elements.
+        // Wrap bridge: deterministic guard for known nav goals + scope candidates to sidebar.
         const rawBridge = createWebLLMBridge(llmEngine);
-        window.__browserAgentWebLLM = {
-          plan(input, modelId) {
-            const sidebarEl = document.getElementById("doc-sidebar");
-            if (sidebarEl && input.snapshot?.candidates?.length) {
-              const scoped = {
-                ...input,
-                snapshot: {
-                  ...input.snapshot,
-                  candidates: input.snapshot.candidates.filter(c => {
-                    try { const el = document.querySelector(c.selector); return el && sidebarEl.contains(el); } catch { return false; }
-                  })
-                }
-              };
-              return rawBridge.plan(scoped, modelId);
+        function scopeInput(input) {
+          const sidebarEl = document.getElementById("doc-sidebar");
+          if (!sidebarEl || !input.snapshot?.candidates?.length) return input;
+          return {
+            ...input,
+            snapshot: {
+              ...input.snapshot,
+              candidates: input.snapshot.candidates.filter(c => {
+                try { const el = document.querySelector(c.selector); return el && sidebarEl.contains(el); } catch { return false; }
+              })
             }
-            return rawBridge.plan(input, modelId);
+          };
+        }
+        function deterministicNav(input) {
+          const match = findSectionFromGoal(input.goal || "");
+          if (!match) return null;
+          const isHiddenTab = match.tab === "advanced" || match.tab === "faq";
+          const moreRevealed = document.getElementById("hidden-nav").classList.contains("revealed");
+          if (isHiddenTab && !moreRevealed) {
+            return { action: { type: "click", selector: "#more-btn" } };
+          }
+          const navId = `nav-${match.id.replace("sec-", "")}`;
+          const navEl = document.getElementById(navId);
+          if (navEl && !navEl.classList.contains("active")) {
+            return { action: { type: "click", selector: `#${navId}` } };
+          }
+          return { action: { type: "done", reason: `Navigated to ${match.keywords[0]}` } };
+        }
+        window.__browserAgentWebLLM = {
+          plan(input, mId) {
+            const nav = deterministicNav(input);
+            if (nav) return Promise.resolve(nav);
+            return rawBridge.plan(scopeInput(input), mId);
           },
-          retryInvalidJson(input, badOutput, modelId) {
-            const sidebarEl = document.getElementById("doc-sidebar");
-            const scoped = sidebarEl && input.snapshot?.candidates?.length ? {
-              ...input,
-              snapshot: {
-                ...input.snapshot,
-                candidates: input.snapshot.candidates.filter(c => {
-                  try { const el = document.querySelector(c.selector); return el && sidebarEl.contains(el); } catch { return false; }
-                })
-              }
-            } : input;
-            return rawBridge.retryInvalidJson?.(scoped, badOutput, modelId) ?? Promise.resolve({ action: { type: "done", reason: "retry unavailable" } });
+          retryInvalidJson(input, badOutput, mId) {
+            return rawBridge.retryInvalidJson?.(scopeInput(input), badOutput, mId)
+              ?? Promise.resolve({ action: { type: "done", reason: "retry unavailable" } });
           }
         };
         progressWrap.classList.remove("visible");
