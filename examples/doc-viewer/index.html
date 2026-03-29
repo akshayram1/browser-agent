@@ -516,12 +516,17 @@ window.__browserAgentWebLLM = {
       <div class="model-loader">
         <div class="model-row">
           <select class="model-select" id="model-select">
-            <option value="Llama-3.2-1B-Instruct-q4f16_1-MLC">Llama 3.2 1B — fast, ~600 MB</option>
-            <option value="Llama-3.2-3B-Instruct-q4f16_1-MLC">Llama 3.2 3B — better, ~1.5 GB</option>
-            <option value="Phi-3.5-mini-instruct-q4f16_1-MLC" selected>Phi-3.5 Mini — quality, ~2 GB</option>
-            <option value="Mistral-7B-Instruct-v0.3-q4f16_1-MLC">Mistral 7B v0.3 — balanced, ~4.1 GB</option>
-            <option value="Qwen2.5-7B-Instruct-q4f16_1-MLC">Qwen2.5 7B — strongest, ~4.3 GB</option>
-            <option value="Llama-3.1-8B-Instruct-q4f16_1-MLC">Llama 3.1 8B — strong, ~4.8 GB</option>
+            <optgroup label="── Recommended ──">
+              <option value="omnibrowser-planner-1p5b-q4f16_1" selected>OmniBrowser Planner (fine-tuned) — best accuracy, ~800 MB</option>
+            </optgroup>
+            <optgroup label="── General ──">
+              <option value="Llama-3.2-1B-Instruct-q4f16_1-MLC">Llama 3.2 1B — fast, ~600 MB</option>
+              <option value="Llama-3.2-3B-Instruct-q4f16_1-MLC">Llama 3.2 3B — better, ~1.5 GB</option>
+              <option value="Phi-3.5-mini-instruct-q4f16_1-MLC">Phi-3.5 Mini — quality, ~2 GB</option>
+              <option value="Mistral-7B-Instruct-v0.3-q4f16_1-MLC">Mistral 7B v0.3 — balanced, ~4.1 GB</option>
+              <option value="Qwen2.5-7B-Instruct-q4f16_1-MLC">Qwen2.5 7B — strongest, ~4.3 GB</option>
+              <option value="Llama-3.1-8B-Instruct-q4f16_1-MLC">Llama 3.1 8B — strong, ~4.8 GB</option>
+            </optgroup>
           </select>
           <button class="load-btn" id="load-btn">Load AI</button>
         </div>
@@ -676,6 +681,13 @@ window.__browserAgentWebLLM = {
     const loadBtn       = document.getElementById("load-btn");
     const modelSelect   = document.getElementById("model-select");
 
+    // Fine-tuned planner model config
+    const PLANNER_MODEL = {
+      id:   "omnibrowser-planner-1p5b-q4f16_1",
+      repo: "https://huggingface.co/Akshayram1/omnibrowser-planner-1p5b-q4f16_1-MLC",
+      wasm: "Qwen2-1.5B-Instruct-q4f16_1-ctx4k_cs1k-webgpu.wasm"
+    };
+
     let llmEngine = null, currentAgent = null;
     const DOC_VIEWER_WEBLLM_SYSTEM_PROMPT = [
       "You are a docs navigation assistant for this page.",
@@ -827,13 +839,56 @@ window.__browserAgentWebLLM = {
       sdot.className = "sdot loading"; aiPill.className = "ai-pill loading";
       modelStatusText.textContent = "Loading…"; progressWrap.classList.add("visible");
       try {
+        const engineOptions = modelId === PLANNER_MODEL.id ? {
+          appConfig: {
+            model_list: [
+              ...webllm.prebuiltAppConfig.model_list,
+              { model: PLANNER_MODEL.repo, model_id: PLANNER_MODEL.id, model_lib: webllm.modelLibURLPrefix + webllm.modelVersion + "/" + PLANNER_MODEL.wasm }
+            ]
+          }
+        } : {};
+
         llmEngine = await webllm.CreateMLCEngine(modelId, {
+          ...engineOptions,
           initProgressCallback({ progress, text }) {
             progressFill.style.width = `${Math.round(progress * 100)}%`;
             progressText.textContent = text || `${Math.round(progress * 100)}%`;
           }
         });
-        window.__browserAgentWebLLM = createWebLLMBridge(llmEngine);
+        // Wrap bridge to restrict candidates to #doc-sidebar so the model
+        // only sees sidebar nav links and never clicks chat panel elements.
+        const rawBridge = createWebLLMBridge(llmEngine);
+        window.__browserAgentWebLLM = {
+          plan(input, modelId) {
+            const sidebarEl = document.getElementById("doc-sidebar");
+            if (sidebarEl && input.snapshot?.candidates?.length) {
+              const scoped = {
+                ...input,
+                snapshot: {
+                  ...input.snapshot,
+                  candidates: input.snapshot.candidates.filter(c => {
+                    try { const el = document.querySelector(c.selector); return el && sidebarEl.contains(el); } catch { return false; }
+                  })
+                }
+              };
+              return rawBridge.plan(scoped, modelId);
+            }
+            return rawBridge.plan(input, modelId);
+          },
+          retryInvalidJson(input, badOutput, modelId) {
+            const sidebarEl = document.getElementById("doc-sidebar");
+            const scoped = sidebarEl && input.snapshot?.candidates?.length ? {
+              ...input,
+              snapshot: {
+                ...input.snapshot,
+                candidates: input.snapshot.candidates.filter(c => {
+                  try { const el = document.querySelector(c.selector); return el && sidebarEl.contains(el); } catch { return false; }
+                })
+              }
+            } : input;
+            return rawBridge.retryInvalidJson?.(scoped, badOutput, modelId) ?? Promise.resolve({ action: { type: "done", reason: "retry unavailable" } });
+          }
+        };
         progressWrap.classList.remove("visible");
         sdot.className = "sdot ready"; aiPill.className = "ai-pill ready";
         modelStatusText.textContent = modelSelect.options[modelSelect.selectedIndex].text.split("—")[0].trim();
@@ -904,8 +959,7 @@ window.__browserAgentWebLLM = {
           mode: document.getElementById("mode-select").value,
           planner: { kind: "webllm", modelId: modelSelect.value, systemPrompt: DOC_VIEWER_WEBLLM_SYSTEM_PROMPT },
           maxSteps: 6,
-          stepDelayMs: 600,
-          scopeSelector: "#doc-sidebar"
+          stepDelayMs: 600
         },
         {
           onStep(result) {

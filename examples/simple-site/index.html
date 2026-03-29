@@ -167,12 +167,17 @@
           <label>WebLLM Model</label>
           <div class="model-row">
             <select id="model">
-              <option value="Llama-3.2-1B-Instruct-q4f16_1-MLC">Llama 3.2 1B — fast, ~600 MB</option>
-              <option value="Llama-3.2-3B-Instruct-q4f16_1-MLC">Llama 3.2 3B — better, ~1.5 GB</option>
-              <option value="Phi-3.5-mini-instruct-q4f16_1-MLC" selected>Phi-3.5 Mini — quality, ~2 GB</option>
-              <option value="Mistral-7B-Instruct-v0.3-q4f16_1-MLC">Mistral 7B v0.3 — balanced, ~4.1 GB</option>
-              <option value="Qwen2.5-7B-Instruct-q4f16_1-MLC">Qwen2.5 7B — strongest, ~4.3 GB</option>
-              <option value="Llama-3.1-8B-Instruct-q4f16_1-MLC">Llama 3.1 8B — strong, ~4.8 GB</option>
+              <optgroup label="── Recommended ──">
+                <option value="omnibrowser-planner-1p5b-q4f16_1" selected>OmniBrowser Planner (fine-tuned) — best accuracy, ~800 MB</option>
+              </optgroup>
+              <optgroup label="── General ──">
+                <option value="Llama-3.2-1B-Instruct-q4f16_1-MLC">Llama 3.2 1B — fast, ~600 MB</option>
+                <option value="Llama-3.2-3B-Instruct-q4f16_1-MLC">Llama 3.2 3B — better, ~1.5 GB</option>
+                <option value="Phi-3.5-mini-instruct-q4f16_1-MLC">Phi-3.5 Mini — quality, ~2 GB</option>
+                <option value="Mistral-7B-Instruct-v0.3-q4f16_1-MLC">Mistral 7B v0.3 — balanced, ~4.1 GB</option>
+                <option value="Qwen2.5-7B-Instruct-q4f16_1-MLC">Qwen2.5 7B — strongest, ~4.3 GB</option>
+                <option value="Llama-3.1-8B-Instruct-q4f16_1-MLC">Llama 3.1 8B — strong, ~4.8 GB</option>
+              </optgroup>
             </select>
             <button class="load-btn" id="load-model">Load AI</button>
           </div>

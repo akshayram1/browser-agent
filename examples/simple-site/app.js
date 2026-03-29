@@ -44,9 +44,24 @@ async function loadModel() {
   progressWrapEl.classList.add("visible");
   setStatus("loading WebLLM model");
 
+  const PLANNER_MODEL = {
+    id:   "omnibrowser-planner-1p5b-q4f16_1",
+    repo: "https://huggingface.co/Akshayram1/omnibrowser-planner-1p5b-q4f16_1-MLC",
+    wasm: "Qwen2-1.5B-Instruct-q4f16_1-ctx4k_cs1k-webgpu.wasm"
+  };
+
   try {
     const webllm = await import("https://esm.run/@mlc-ai/web-llm");
+    const engineOptions = modelId === PLANNER_MODEL.id ? {
+      appConfig: {
+        model_list: [
+          ...webllm.prebuiltAppConfig.model_list,
+          { model: PLANNER_MODEL.repo, model_id: PLANNER_MODEL.id, model_lib: webllm.modelLibURLPrefix + webllm.modelVersion + "/" + PLANNER_MODEL.wasm }
+        ]
+      }
+    } : {};
     loadedEngine = await webllm.CreateMLCEngine(modelId, {
+      ...engineOptions,
       initProgressCallback({ progress, text }) {
         progressFillEl.style.width = `${Math.round(progress * 100)}%`;
         progressTextEl.textContent = text || `${Math.round(progress * 100)}%`;

@@ -211,6 +211,61 @@
 
   <div class="grid">
 
+    <!-- Model Test -->
+    <div class="card green">
+      <div class="card-preview">🔬</div>
+      <div class="card-body">
+        <div class="card-title">Planner Model Test</div>
+        <div class="card-desc">Tests the fine-tuned <strong>omnibrowser-planner-1p5b-q4f16_1-MLC</strong> model directly. Loads via WebLLM, runs a 5-prompt self-test, and validates that each output is a correct <code>AgentAction</code> JSON.</div>
+        <div class="tags">
+          <span class="tag green">Fine-tuned</span>
+          <span class="tag blue">WebLLM</span>
+          <span class="tag">q4f16_1</span>
+          <span class="tag amber">Model test</span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <a class="open-btn" href="./model-test/">Open Model Test →</a>
+      </div>
+    </div>
+
+    <!-- Custom Model -->
+    <div class="card blue">
+      <div class="card-preview">🧠</div>
+      <div class="card-body">
+        <div class="card-title">Custom Model Demo</div>
+        <div class="card-desc">Load your own Hugging Face quantized model via WebLLM <code>appConfig</code>, wire it into <code>createWebLLMBridge</code>, and run the agent on a local DOM task.</div>
+        <div class="tags">
+          <span class="tag blue">WebLLM</span>
+          <span class="tag">BYOM</span>
+          <span class="tag">HuggingFace</span>
+          <span class="tag">MLC q4f16_1</span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <a class="open-btn" href="./custom-model/">Open Custom Model Demo →</a>
+      </div>
+    </div>
+
+    <!-- Doc Viewer -->
+    <div class="card amber">
+      <div class="card-preview">📚</div>
+      <div class="card-body">
+        <div class="card-title">Doc Viewer Demo</div>
+        <div class="card-desc">A documentation viewer with hidden tabs and a side chat panel. Ask about any section by name and the agent navigates to it — switching tabs and scrolling automatically.</div>
+        <div class="tags">
+          <span class="tag blue">WebLLM</span>
+          <span class="tag green">Heuristic</span>
+          <span class="tag">Navigation</span>
+          <span class="tag">Hidden tabs</span>
+          <span class="tag amber">New</span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <a class="open-btn" href="./doc-viewer/">Open Doc Viewer Demo →</a>
+      </div>
+    </div>
+
     <!-- Chatbot -->
     <div class="card blue">
       <div class="card-preview">🤖</div>
@@ -245,61 +300,6 @@
       </div>
       <div class="card-footer">
         <a class="open-btn" href="./simple-site/">Open Simple Site Demo →</a>
-      </div>
-    </div>
-
-    <!-- Doc Viewer -->
-    <div class="card amber">
-      <div class="card-preview">📚</div>
-      <div class="card-body">
-        <div class="card-title">Doc Viewer Demo</div>
-        <div class="card-desc">A documentation viewer with hidden tabs and a side chat panel. Ask about any section by name and the agent navigates to it — switching tabs and scrolling automatically.</div>
-        <div class="tags">
-          <span class="tag blue">WebLLM</span>
-          <span class="tag green">Heuristic</span>
-          <span class="tag">Navigation</span>
-          <span class="tag">Hidden tabs</span>
-          <span class="tag amber">New</span>
-        </div>
-      </div>
-      <div class="card-footer">
-        <a class="open-btn" href="./doc-viewer/">Open Doc Viewer Demo →</a>
-      </div>
-    </div>
-
-    <!-- Custom Model -->
-    <div class="card blue">
-      <div class="card-preview">🧠</div>
-      <div class="card-body">
-        <div class="card-title">Custom Model Demo</div>
-        <div class="card-desc">Load your own Hugging Face quantized model via WebLLM <code>appConfig</code>, wire it into <code>createWebLLMBridge</code>, and run the agent on a local DOM task.</div>
-        <div class="tags">
-          <span class="tag blue">WebLLM</span>
-          <span class="tag">BYOM</span>
-          <span class="tag">HuggingFace</span>
-          <span class="tag">MLC q4f16_1</span>
-        </div>
-      </div>
-      <div class="card-footer">
-        <a class="open-btn" href="./custom-model/">Open Custom Model Demo →</a>
-      </div>
-    </div>
-
-    <!-- Model Test -->
-    <div class="card green">
-      <div class="card-preview">🔬</div>
-      <div class="card-body">
-        <div class="card-title">Planner Model Test</div>
-        <div class="card-desc">Tests the fine-tuned <strong>omnibrowser-planner-1p5b-q4f16_1-MLC</strong> model directly. Loads via WebLLM, runs a 5-prompt self-test, and validates that each output is a correct <code>AgentAction</code> JSON.</div>
-        <div class="tags">
-          <span class="tag green">Fine-tuned</span>
-          <span class="tag blue">WebLLM</span>
-          <span class="tag">q4f16_1</span>
-          <span class="tag amber">Model test</span>
-        </div>
-      </div>
-      <div class="card-footer">
-        <a class="open-btn" href="./model-test/">Open Model Test →</a>
       </div>
     </div>
 

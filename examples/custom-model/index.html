@@ -240,7 +240,10 @@
           <div id="demo-results" class="result">No query entered yet.</div>
         </div>
 
-        <h2 style="margin-top:18px">Agent log</h2>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:18px;margin-bottom:6px">
+          <h2 style="margin:0">Agent log</h2>
+          <button id="clear-log" style="font-size:11px;padding:3px 10px;border-radius:7px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;">Clear</button>
+        </div>
         <pre id="log"></pre>
       </div>
     </div>
@@ -269,6 +272,18 @@ const searchBtn   = document.getElementById("demo-search-btn");
 const openBtn     = document.getElementById("demo-open-first");
 const resultsEl   = document.getElementById("demo-results");
 
+// ── Persist model inputs across reloads ──
+["repo", "model-id", "wasm"].forEach(id => {
+  const el = document.getElementById(id);
+  const saved = localStorage.getItem(`omnibrowser-cm-${id}`);
+  if (saved) el.value = saved;
+  el.addEventListener("change", () => localStorage.setItem(`omnibrowser-cm-${id}`, el.value.trim()));
+});
+
+// ── Restore log from previous session ──
+const savedLog = localStorage.getItem("omnibrowser-cm-log");
+if (savedLog) logEl.textContent = savedLog;
+
 const contacts = [
   { name: "Jane Doe",    company: "Acme Labs",    email: "jane@acme.test" },
   { name: "John Smith",  company: "Northwind",    email: "john@northwind.test" },
@@ -282,6 +297,7 @@ let activeAgent = null;
 function log(message) {
   const ts = new Date().toLocaleTimeString();
   logEl.textContent = `[${ts}] ${message}\n${logEl.textContent}`;
+  try { localStorage.setItem("omnibrowser-cm-log", logEl.textContent.slice(0, 8000)); } catch {}
 }
 
 function repoURL()      { return repoInput.value.trim().replace(/\/+$/, ""); }
@@ -390,6 +406,11 @@ stopBtn.addEventListener("click", () => {
   if (!activeAgent) return;
   activeAgent.stop();
   log("Agent stopped.");
+});
+
+document.getElementById("clear-log").addEventListener("click", () => {
+  logEl.textContent = "";
+  try { localStorage.removeItem("omnibrowser-cm-log"); } catch {}
 });
 
 log("Custom model demo ready.");
