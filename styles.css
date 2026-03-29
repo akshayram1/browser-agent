@@ -86,6 +86,8 @@ body::before {
 }
 
 .brand {
+  display: inline-flex;
+  align-items: center;
   font-family: var(--mono);
   font-weight: 700;
   font-size: 13px;
@@ -93,6 +95,12 @@ body::before {
   color: var(--accent);
   letter-spacing: 0.05em;
   white-space: nowrap;
+}
+
+.brand-logo {
+  display: block;
+  width: auto;
+  height: 28px;
 }
 
 .nav {
@@ -526,7 +534,13 @@ table td code { color: var(--accent); background: none; border: none; padding: 0
 .card-lib { border-color: rgba(0,229,160,0.2); }
 .card-lib:hover { border-color: rgba(0,229,160,0.4); }
 
-.card-icon { font-size: 28px; margin-bottom: 14px; display: block; }
+.card-icon {
+  width: 44px;
+  height: 44px;
+  margin-bottom: 14px;
+  display: block;
+  object-fit: contain;
+}
 .card-title { font-family: var(--sans); font-size: 18px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
 .card-sub { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-bottom: 14px; }
 .card-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
@@ -713,7 +727,13 @@ table td code { color: var(--accent); background: none; border: none; padding: 0
   border-radius: 14px; padding: 22px; text-align: center; transition: transform 0.3s;
 }
 .outcome-card:hover { transform: translateY(-3px); }
-.outcome-icon { font-size: 32px; margin-bottom: 12px; display: block; }
+.outcome-icon {
+  width: 36px;
+  height: 36px;
+  margin: 0 auto 12px;
+  display: block;
+  object-fit: contain;
+}
 .outcome-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
 .outcome-desc { font-size: 11px; color: var(--muted); line-height: 1.6; }
 .oc-safe   { border-color: rgba(0,229,160,0.2); }
@@ -838,6 +858,7 @@ table td code { color: var(--accent); background: none; border: none; padding: 0
   .flow-steps { grid-template-columns: 1fr 1fr; gap: 24px; }
   .flow-steps::before { display: none; }
   .planner-panel { grid-column: span 1; }
+  .brand-logo { height: 24px; }
   .surface { padding: 20px 16px; }
   h2 { font-size: 22px; }
   .nav a { font-size: 10px; padding: 5px 7px; }

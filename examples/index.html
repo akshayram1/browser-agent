@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OmniBrowser Agent — Live Examples</title>
+  <link rel="icon" type="image/png" sizes="16x16" href="../icons/logo_16.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="../icons/logo_32.png" />
+  <link rel="apple-touch-icon" href="../icons/logo_128.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Quantico:wght@400;700&display=swap" rel="stylesheet">
   <style>
@@ -70,9 +73,11 @@
       display: flex; align-items: center; justify-content: space-between;
     }
     .brand {
+      display: inline-flex; align-items: center;
       font-family: var(--mono); font-weight: 700; font-size: 13px;
       color: var(--accent); text-decoration: none; letter-spacing: 0.05em;
     }
+    .brand img { height: 26px; width: auto; display: block; }
     .back {
       font-family: var(--mono); font-size: 11px; color: var(--muted);
       text-decoration: none; padding: 6px 14px; border-radius: 8px;
@@ -141,9 +146,14 @@
     .card-preview {
       height: 150px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 52px;
       border-bottom: 1px solid var(--border);
       position: relative; overflow: hidden;
+    }
+    .card-preview img {
+      width: min(118px, 72%);
+      height: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 12px 30px rgba(0,0,0,0.28));
     }
     .card.blue  .card-preview { background: linear-gradient(135deg, rgba(124,109,255,0.12), rgba(124,109,255,0.05)); }
     .card.green .card-preview { background: linear-gradient(135deg, rgba(0,229,160,0.1),   rgba(0,229,160,0.04)); }
@@ -198,7 +208,9 @@
 
   <header>
     <div class="header-row">
-      <a class="brand" href="../">omnibrowser-agent</a>
+      <a class="brand" href="../" aria-label="OmniBrowser Agent docs">
+        <img src="../icons/logo_horizontal.png" alt="OmniBrowser Agent" />
+      </a>
       <a class="back" href="../">← Back to Docs</a>
     </div>
   </header>
@@ -213,7 +225,7 @@
 
     <!-- Model Test -->
     <div class="card green">
-      <div class="card-preview">🔬</div>
+      <div class="card-preview"><img src="../icons/logo_128.png" alt="Planner Model Test" /></div>
       <div class="card-body">
         <div class="card-title">Planner Model Test</div>
         <div class="card-desc">Tests the fine-tuned <strong>omnibrowser-planner-1p5b-q4f16_1-MLC</strong> model directly. Loads via WebLLM, runs a 5-prompt self-test, and validates that each output is a correct <code>AgentAction</code> JSON.</div>
@@ -231,7 +243,7 @@
 
     <!-- Custom Model -->
     <div class="card blue">
-      <div class="card-preview">🧠</div>
+      <div class="card-preview"><img src="../icons/logo_128.png" alt="Custom Model Demo" /></div>
       <div class="card-body">
         <div class="card-title">Custom Model Demo</div>
         <div class="card-desc">Load your own Hugging Face quantized model via WebLLM <code>appConfig</code>, wire it into <code>createWebLLMBridge</code>, and run the agent on a local DOM task.</div>
@@ -249,7 +261,7 @@
 
     <!-- Doc Viewer -->
     <div class="card amber">
-      <div class="card-preview">📚</div>
+      <div class="card-preview"><img src="../icons/logo_128.png" alt="Doc Viewer Demo" /></div>
       <div class="card-body">
         <div class="card-title">Doc Viewer Demo</div>
         <div class="card-desc">A documentation viewer with hidden tabs and a side chat panel. Ask about any section by name and the agent navigates to it — switching tabs and scrolling automatically.</div>
@@ -268,7 +280,7 @@
 
     <!-- Chatbot -->
     <div class="card blue">
-      <div class="card-preview">🤖</div>
+      <div class="card-preview"><img src="../icons/logo_128.png" alt="Chatbot Demo" /></div>
       <div class="card-body">
         <div class="card-title">Chatbot Demo</div>
         <div class="card-desc">A chat-style interface where you type a goal and watch the agent plan and execute actions on a live CRM and task manager. Supports WebLLM AI planning and heuristic fallback.</div>

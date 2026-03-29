@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OmniBrowser Agent — Doc Viewer Demo</title>
+  <link rel="icon" type="image/png" sizes="16x16" href="../../icons/logo_16.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="../../icons/logo_32.png" />
+  <link rel="apple-touch-icon" href="../../icons/logo_128.png" />
   <style>
     :root {
       font-family: Inter, system-ui, -apple-system, sans-serif;
@@ -35,8 +38,8 @@
       display: flex; align-items: center; justify-content: space-between;
       padding: 0 24px; position: sticky; top: 0; z-index: 100;
     }
-    .brand { font-family: var(--mono); font-weight: 700; font-size: 13px; color: var(--acc); text-decoration: none; letter-spacing: 0.05em; }
-    .brand-icon { display: none; }
+    .brand { display: inline-flex; align-items: center; font-family: var(--mono); font-weight: 700; font-size: 13px; color: var(--acc); text-decoration: none; letter-spacing: 0.05em; }
+    .brand-icon { height: 26px; width: auto; display: block; }
 
     /* ── Layout: sidebar + doc + chat ── */
     .layout { display: grid; grid-template-columns: 220px 1fr 380px; height: calc(100vh - 54px); }
@@ -131,7 +134,8 @@
     .chat-header { padding: 16px 18px 12px; border-bottom: 1px solid var(--db); flex-shrink: 0; }
     .chat-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
     .chat-title { font-size: 14px; font-weight: 700; color: var(--dt); display: flex; align-items: center; gap: 8px; }
-    .chat-title-icon { width: 26px; height: 26px; background: rgba(0,229,160,0.12); border: 1px solid rgba(0,229,160,0.22); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; }
+    .chat-title-icon { width: 26px; height: 26px; background: rgba(0,229,160,0.12); border: 1px solid rgba(0,229,160,0.22); border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .chat-title-icon img { width: 18px; height: 18px; object-fit: contain; }
     .chat-sub { font-size: 11.5px; color: var(--dm); line-height: 1.45; }
 
     .ai-pill { display: flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 600; font-family: var(--mono); padding: 2px 9px 2px 7px; border-radius: 999px; border: 1px solid var(--db); color: var(--dm); background: transparent; transition: all .2s; letter-spacing: 0.03em; }
@@ -173,7 +177,8 @@
     .message { display: flex; gap: 8px; align-items: flex-end; animation: msgIn .18s ease; }
     @keyframes msgIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
     .message.user { flex-direction: row-reverse; }
-    .avatar { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+    .avatar { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; overflow: hidden; }
+    .avatar img { width: 16px; height: 16px; object-fit: contain; }
     .message.user   .avatar { display: none; }
     .message.agent  .avatar { background: rgba(0,229,160,0.1); border: 1px solid rgba(0,229,160,0.2); color: var(--acc); }
     .message.system .avatar { display: none; }
@@ -189,7 +194,7 @@
 
     /* Typing */
     .typing { display: flex; gap: 8px; align-items: flex-end; animation: msgIn .18s ease; }
-    .typing .avatar { width: 26px; height: 26px; border-radius: 50%; background: rgba(0,229,160,0.1); border: 1px solid rgba(0,229,160,0.2); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--acc); flex-shrink: 0; }
+    .typing .avatar { width: 26px; height: 26px; border-radius: 50%; background: rgba(0,229,160,0.1); border: 1px solid rgba(0,229,160,0.2); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--acc); flex-shrink: 0; overflow: hidden; }
     .typing-dots { background: var(--dp2); border: 1px solid var(--db); border-radius: 4px 14px 14px 14px; padding: 10px 13px; display: flex; gap: 4px; align-items: center; }
     .tdot { width: 5px; height: 5px; border-radius: 50%; background: var(--dm); animation: tdot 1.2s ease-in-out infinite; }
     .tdot:nth-child(2) { animation-delay: .15s; }
@@ -231,7 +236,7 @@
 </head>
 <body>
   <header>
-    <a class="brand" href="../../">omnibrowser-agent</a>
+    <a class="brand" href="../../" aria-label="OmniBrowser Agent home"><img class="brand-icon" src="../../icons/logo_horizontal.png" alt="OmniBrowser Agent" /></a>
     <a class="back" style="font-family:'Space Mono',monospace;font-size:11px;color:rgba(255,255,255,0.45);text-decoration:none;padding:5px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);transition:all .15s;letter-spacing:0.03em;" href="../">← Examples</a>
   </header>
 
@@ -507,7 +512,7 @@ window.__browserAgentWebLLM = {
     <div class="chat-panel">
       <div class="chat-header">
         <div class="chat-header-row">
-          <div class="chat-title"><div class="chat-title-icon">🤖</div>Doc Assistant</div>
+          <div class="chat-title"><div class="chat-title-icon"><img src="../../icons/logo_64.png" alt="Doc Assistant" /></div>Doc Assistant</div>
           <div class="ai-pill" id="ai-pill"><div class="sdot" id="sdot"></div><span id="model-status-text">No model</span></div>
         </div>
         <div class="chat-sub">Ask about any section — the agent navigates the docs for you.</div>
@@ -716,7 +721,7 @@ window.__browserAgentWebLLM = {
       if (typingEl) return;
       typingEl = document.createElement("div");
       typingEl.className = "typing";
-      typingEl.innerHTML = `<div class="avatar">🤖</div><div class="typing-dots"><div class="tdot"></div><div class="tdot"></div><div class="tdot"></div></div>`;
+      typingEl.innerHTML = `<div class="avatar"><img src="../../icons/logo_32.png" alt="" /></div><div class="typing-dots"><div class="tdot"></div><div class="tdot"></div><div class="tdot"></div></div>`;
       messagesEl.appendChild(typingEl);
       messagesEl.scrollTop = messagesEl.scrollHeight;
     }
@@ -729,7 +734,7 @@ window.__browserAgentWebLLM = {
       div.className = `message ${type} ${variant}`.trim();
       if (type === "user") div.innerHTML = `<div class="bubble">${text}</div>`;
       else if (type === "system") div.innerHTML = `<div class="bubble">${text}</div>`;
-      else div.innerHTML = `<div class="avatar">🤖</div><div class="bubble">${text}</div>`;
+      else div.innerHTML = `<div class="avatar"><img src="../../icons/logo_32.png" alt="" /></div><div class="bubble">${text}</div>`;
       messagesEl.appendChild(div);
       messagesEl.scrollTop = messagesEl.scrollHeight;
     }

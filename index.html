@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>OmniBrowser Agent — Local-first Browser AI</title>
     <meta name="description" content="OmniBrowser Agent — local-first browser AI operator. No API keys. No cloud. Runs entirely in the browser via WebLLM + WebGPU." />
+    <link rel="icon" type="image/png" sizes="16x16" href="./icons/logo_16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="./icons/logo_32.png" />
+    <link rel="apple-touch-icon" href="./icons/logo_128.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Quantico:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./styles.css" />
@@ -17,7 +20,9 @@
 
     <header class="header">
       <div class="wrap header-row">
-        <a class="brand" href="#home">omnibrowser-agent</a>
+        <a class="brand" href="#home" aria-label="OmniBrowser Agent home">
+          <img class="brand-logo" src="./icons/logo_horizontal.png" alt="OmniBrowser Agent" />
+        </a>
         <nav class="nav">
           <a href="#home">Home</a>
           <a href="#whats-new">What's New</a>
@@ -280,7 +285,7 @@ controller.abort(); // cancel from outside</code></pre>
           <div class="section-label fade-up delay-1">01 — delivery</div>
           <div class="delivery-grid fade-up delay-1">
             <div class="card card-ext">
-              <span class="card-icon">🧩</span>
+              <img class="card-icon" src="./icons/logo_64.png" alt="OmniBrowser Agent extension logo" />
               <div class="card-title">Chrome Extension</div>
               <div class="card-sub">popup + background worker</div>
               <div class="card-desc">Load the <code>dist/</code> folder as an unpacked extension. Enter a goal in the popup, pick a mode, and hit Start. The background service worker drives the tick loop across tabs.</div>
@@ -288,7 +293,7 @@ controller.abort(); // cancel from outside</code></pre>
               <span class="tag tag-purple">background worker</span>
             </div>
             <div class="card card-lib">
-              <span class="card-icon">📦</span>
+              <img class="card-icon" src="./icons/logo_64.png" alt="OmniBrowser Agent library logo" />
               <div class="card-title">npm Library</div>
               <div class="card-sub">createBrowserAgent()</div>
               <div class="card-desc">Embed the agent directly into any web app. Import, configure, and wire up event callbacks. The same core engine powers both — zero duplication.</div>
@@ -422,19 +427,19 @@ controller.abort(); // cancel from outside</code></pre>
           <div class="section-label fade-up delay-5">05 — action outcomes</div>
           <div class="outcomes-grid fade-up delay-5">
             <div class="outcome-card oc-safe">
-              <span class="outcome-icon">✅</span>
+              <img class="outcome-icon" src="./icons/logo_32.png" alt="Executed status icon" />
               <div class="outcome-title" style="color:var(--accent)">Executed</div>
               <div class="outcome-desc">Action is safe. Runs immediately. Result message appended to session history. Next tick begins.</div>
               <span class="tag tag-green">status: "executed"</span>
             </div>
             <div class="outcome-card oc-review">
-              <span class="outcome-icon">⏸</span>
+              <img class="outcome-icon" src="./icons/logo_32.png" alt="Needs approval status icon" />
               <div class="outcome-title" style="color:var(--amber)">Needs approval</div>
               <div class="outcome-desc">Risk level is "review" in human-approved mode. Agent pauses, fires onApprovalRequired. Resume with agent.resume().</div>
               <span class="tag tag-amber">status: "needs_approval"</span>
             </div>
             <div class="outcome-card oc-block">
-              <span class="outcome-icon">🚫</span>
+              <img class="outcome-icon" src="./icons/logo_32.png" alt="Blocked status icon" />
               <div class="outcome-title" style="color:var(--accent3)">Blocked</div>
               <div class="outcome-desc">Dangerous protocol or malformed URL. Action is rejected entirely. Session stops without executing anything.</div>
               <span class="tag tag-red">status: "blocked"</span>
@@ -878,6 +883,11 @@ window.__browserAgentWebLLM = {
       }
       #chatbot-toggle:hover { transform: scale(1.1); box-shadow: 0 6px 30px rgba(0,229,160,0.45); }
       #chatbot-toggle.open  { background: var(--surface2); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+      #chatbot-toggle img {
+        width: 20px;
+        height: 20px;
+        object-fit: contain;
+      }
 
       #chatbot-panel {
         position: fixed; bottom: 92px; right: 28px; z-index: 9000;
@@ -901,6 +911,11 @@ window.__browserAgentWebLLM = {
         width: 30px; height: 30px; border-radius: 9px;
         background: rgba(0,229,160,0.12); border: 1px solid rgba(0,229,160,0.2);
         display: flex; align-items: center; justify-content: center; font-size: 14px;
+      }
+      .cb-icon img {
+        width: 20px;
+        height: 20px;
+        object-fit: contain;
       }
       .cb-title { font-family: var(--sans); font-size: 13px; font-weight: 600; color: var(--text); }
       .cb-subtitle { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.04em; }
@@ -1032,12 +1047,14 @@ window.__browserAgentWebLLM = {
       .cb-send:disabled { opacity: .4; cursor: not-allowed; transform: none; }
     </style>
 
-    <button id="chatbot-toggle" title="Ask about the docs" aria-label="Open docs assistant">💬</button>
+    <button id="chatbot-toggle" title="Ask about the docs" aria-label="Open docs assistant">
+      <img src="./icons/logo_32.png" alt="" />
+    </button>
 
     <div id="chatbot-panel" role="dialog" aria-label="Docs navigation assistant">
 
       <div class="cb-header">
-        <div class="cb-icon">🤖</div>
+        <div class="cb-icon"><img src="./icons/logo_64.png" alt="Docs Assistant" /></div>
         <div>
           <div class="cb-title">Docs Assistant</div>
           <div class="cb-subtitle">powered by omnibrowser-agent</div>
