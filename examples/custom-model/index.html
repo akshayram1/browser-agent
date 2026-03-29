@@ -364,22 +364,46 @@ loadModelBtn.addEventListener("click", async () => {
     const rawBridge = createWebLLMBridge(engine);
     window.__browserAgentWebLLM = {
       async plan(input, mId) {
+        const resultsEl = document.getElementById("demo-results");
+        const resultsText = resultsEl?.textContent?.trim() ?? "";
+
+        // If profile already opened → done
+        if (resultsText.startsWith("Opened profile:")) {
+          return { action: { type: "done", reason: "Profile opened successfully" } };
+        }
+
         const result = await rawBridge.plan(input, mId);
         const action = result.action;
-        // Guard: if model tries to click search btn but input is empty, type first
+
+        // Guard: block navigate to prevent page reload
+        if (action?.type === "navigate") {
+          return { action: { type: "done", reason: "Task complete" } };
+        }
+
         if (action?.type === "click" && action.selector === "#demo-search-btn") {
           const searchEl = document.getElementById("demo-search");
-          if (!searchEl?.value?.trim()) {
+          const hasValue = searchEl?.value?.trim();
+
+          // Step 1 guard: input empty → type the name first
+          if (!hasValue) {
             const name = (input.goal || "").match(/(?:for|find|search)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/)?.[1]?.trim();
             if (name) {
               return { action: { type: "type", selector: "#demo-search", text: name, clearFirst: true } };
             }
           }
+
+          // Step 3 guard: results already show a contact → click Open First Result
+          const hasResult = hasValue && !resultsText.startsWith("No") && resultsText.length > 0;
+          if (hasResult) {
+            return { action: { type: "click", selector: "#demo-open-first" } };
+          }
         }
-        // Guard: block navigate to prevent page reload
-        if (action?.type === "navigate") {
-          return { action: { type: "done", reason: "Task complete" } };
+
+        // Step 3 guard: model skips to done without opening → force open if result exists
+        if (action?.type === "done" && !resultsText.startsWith("Opened") && !resultsText.startsWith("No") && resultsText.length > 0) {
+          return { action: { type: "click", selector: "#demo-open-first" } };
         }
+
         return result;
       },
       async retryInvalidJson(input, badOutput, mId) {
