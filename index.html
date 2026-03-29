@@ -896,6 +896,12 @@ window.__browserAgentWebLLM = {
         width: 145px;
         height: 98px;
         object-fit: contain;
+        transform-origin: center;
+        animation: chatbot-logo-spin 18s linear infinite;
+      }
+      @keyframes chatbot-logo-spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
       }
 
       #chatbot-panel {
