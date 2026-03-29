@@ -380,15 +380,14 @@ runBtn.addEventListener("click", async () => {
   if (!window.__browserAgentWebLLM) { log("Load a custom model first."); return; }
   if (activeAgent?.isRunning) activeAgent.stop();
 
+  const contactName = goal.match(/(?:for|find|search)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/)?.[1] ?? "the contact";
   const CUSTOM_MODEL_SYSTEM_PROMPT = [
-    "You are controlling a contact search demo UI.",
-    "To search for a contact follow this exact sequence — no more, no less:",
-    "1. type action on #demo-search with the contact name.",
-    "2. click action on #demo-search-btn to run the search.",
-    "3. click action on #demo-open-first to open the result.",
-    "4. Immediately return {\"type\":\"done\",\"reason\":\"Profile opened\"} — the task is complete.",
-    "NEVER click #demo-search-btn before typing. NEVER repeat steps after step 4.",
-    "Only use selectors exactly as listed in the candidates."
+    "You are controlling a contact search UI. Execute ONLY these 4 actions in order, then stop.",
+    `Step 1 — output exactly: {"type":"type","selector":"#demo-search","text":"${contactName}","clearFirst":true}`,
+    `Step 2 — output exactly: {"type":"click","selector":"#demo-search-btn"}`,
+    `Step 3 — output exactly: {"type":"click","selector":"#demo-open-first"}`,
+    `Step 4 — output exactly: {"type":"done","reason":"Profile opened"}`,
+    "NEVER use navigate. NEVER skip step 1. NEVER repeat any step."
   ].join(" ");
 
   activeAgent = createBrowserAgent(
