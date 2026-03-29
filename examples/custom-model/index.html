@@ -380,8 +380,18 @@ runBtn.addEventListener("click", async () => {
   if (!window.__browserAgentWebLLM) { log("Load a custom model first."); return; }
   if (activeAgent?.isRunning) activeAgent.stop();
 
+  const CUSTOM_MODEL_SYSTEM_PROMPT = [
+    "You are controlling a contact search demo UI.",
+    "To search for a contact you MUST follow this exact sequence:",
+    "1. type action on selector #demo-search with the contact name.",
+    "2. click action on selector #demo-search-btn to run the search.",
+    "3. click action on selector #demo-open-first to open the result.",
+    "NEVER click #demo-search-btn before typing into #demo-search.",
+    "Only use selectors exactly as listed in the candidates."
+  ].join(" ");
+
   activeAgent = createBrowserAgent(
-    { goal, mode: modeSelect.value, planner: { kind: "webllm", modelId: currentModelId() } },
+    { goal, mode: modeSelect.value, planner: { kind: "webllm", modelId: currentModelId(), systemPrompt: CUSTOM_MODEL_SYSTEM_PROMPT } },
     {
       onStart:           ()  => log(`Agent started (${modeSelect.value})`),
       onStep:            (r) => { if (r.reflection?.nextGoal) log(`thinking: ${r.reflection.nextGoal}`); log(`step: ${r.message}`); },
