@@ -100,7 +100,8 @@ body::before {
 .brand-logo {
   display: block;
   width: auto;
-  height: 28px;
+  height: 54px;
+  object-fit: contain;
 }
 
 .nav {
@@ -136,6 +137,43 @@ main {
 
 /* ── HERO ── */
 .hero { padding: 90px 0 60px; }
+
+.hero-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 520px);
+  align-items: center;
+  gap: 48px;
+}
+
+.hero-copy { min-width: 0; }
+
+.hero-logo-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-logo-shell {
+  width: min(100%, 640px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.hero-logo-image {
+  width: 100%;
+  max-width: 520px;
+  height: auto;
+  object-fit: contain;
+  filter:
+    drop-shadow(0 28px 50px rgba(0,0,0,0.4))
+    drop-shadow(0 0 80px rgba(0,229,160,0.14));
+}
 
 .badge-pill {
   display: inline-flex;
@@ -854,11 +892,14 @@ table td code { color: var(--accent); background: none; border: none; padding: 0
 
 /* ── RESPONSIVE ── */
 @media (max-width: 700px) {
+  .hero-layout { grid-template-columns: 1fr; gap: 28px; }
+  .hero-logo-shell { max-width: 420px; margin: 0 auto; }
+  .hero-logo-image { max-width: 360px; }
   .delivery-grid, .core-grid, .shared-grid, .outcomes-grid { grid-template-columns: 1fr; }
   .flow-steps { grid-template-columns: 1fr 1fr; gap: 24px; }
   .flow-steps::before { display: none; }
   .planner-panel { grid-column: span 1; }
-  .brand-logo { height: 24px; }
+  .brand-logo { width: auto; height: 4px; }
   .surface { padding: 20px 16px; }
   h2 { font-size: 22px; }
   .nav a { font-size: 10px; padding: 5px 7px; }

@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OmniBrowser Planner Model Test</title>
-  <link rel="icon" type="image/png" sizes="16x16" href="../../icons/logo_16.png" />
-  <link rel="icon" type="image/png" sizes="32x32" href="../../icons/logo_32.png" />
-  <link rel="apple-touch-icon" href="../../icons/logo_128.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="../../icons/logo_horizontal.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="../../icons/logo_horizontal.png" />
+  <link rel="apple-touch-icon" href="../../icons/logo_horizontal.png" />
   <style>
     :root {
       --bg: #0b1018;
@@ -39,7 +39,8 @@
       border: 1px solid var(--line); background: rgba(19,26,36,0.8);
       border-radius: 14px; padding: 14px 16px;
     }
-    .brand { font-family: var(--mono); color: var(--ok); font-size: 13px; text-decoration: none; font-weight: 700; }
+    .brand { display: inline-flex; align-items: center; font-family: var(--mono); color: var(--ok); font-size: 13px; text-decoration: none; font-weight: 700; }
+    .brand img { height: 40px; width: auto; display: block; }
     .back { text-decoration: none; color: var(--muted); font-size: 13px; border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; }
     .card { border: 1px solid var(--line); background: rgba(19,26,36,0.88); border-radius: 14px; padding: 20px; }
     h1 { font-size: 22px; margin-bottom: 6px; }
@@ -98,7 +99,7 @@
 
   <!-- header -->
   <div class="header">
-    <a href="../../" class="brand">omnibrowser-agent</a>
+    <a href="../../" class="brand" aria-label="OmniBrowser Agent home"><img src="../../icons/logo_horizontal.png" alt="OmniBrowser Agent" /></a>
     <a class="back" href="../">← examples</a>
   </div>
 

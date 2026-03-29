@@ -4,9 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OmniBrowser Agent — Doc Viewer Demo</title>
-  <link rel="icon" type="image/png" sizes="16x16" href="../../icons/logo_16.png" />
-  <link rel="icon" type="image/png" sizes="32x32" href="../../icons/logo_32.png" />
-  <link rel="apple-touch-icon" href="../../icons/logo_128.png" />
+  <link rel="icon" type="image/png" href="../../icons/logo_horizontal.png" />
+  <link rel="apple-touch-icon" href="../../icons/logo_horizontal.png" />
   <style>
     :root {
       font-family: Inter, system-ui, -apple-system, sans-serif;
@@ -39,7 +38,7 @@
       padding: 0 24px; position: sticky; top: 0; z-index: 100;
     }
     .brand { display: inline-flex; align-items: center; font-family: var(--mono); font-weight: 700; font-size: 13px; color: var(--acc); text-decoration: none; letter-spacing: 0.05em; }
-    .brand-icon { height: 26px; width: auto; display: block; }
+    .brand-icon { height: 40px; width: auto; display: block; }
 
     /* ── Layout: sidebar + doc + chat ── */
     .layout { display: grid; grid-template-columns: 220px 1fr 380px; height: calc(100vh - 54px); }
@@ -512,7 +511,7 @@ window.__browserAgentWebLLM = {
     <div class="chat-panel">
       <div class="chat-header">
         <div class="chat-header-row">
-          <div class="chat-title"><div class="chat-title-icon"><img src="../../icons/logo_64.png" alt="Doc Assistant" /></div>Doc Assistant</div>
+          <div class="chat-title"><div class="chat-title-icon"><img src="../../icons/logo_horizontal.png" alt="Doc Assistant" /></div>Doc Assistant</div>
           <div class="ai-pill" id="ai-pill"><div class="sdot" id="sdot"></div><span id="model-status-text">No model</span></div>
         </div>
         <div class="chat-sub">Ask about any section — the agent navigates the docs for you.</div>
@@ -721,7 +720,7 @@ window.__browserAgentWebLLM = {
       if (typingEl) return;
       typingEl = document.createElement("div");
       typingEl.className = "typing";
-      typingEl.innerHTML = `<div class="avatar"><img src="../../icons/logo_32.png" alt="" /></div><div class="typing-dots"><div class="tdot"></div><div class="tdot"></div><div class="tdot"></div></div>`;
+      typingEl.innerHTML = `<div class="avatar"><img src="../../icons/logo_horizontal.png" alt="" /></div><div class="typing-dots"><div class="tdot"></div><div class="tdot"></div><div class="tdot"></div></div>`;
       messagesEl.appendChild(typingEl);
       messagesEl.scrollTop = messagesEl.scrollHeight;
     }
@@ -734,7 +733,7 @@ window.__browserAgentWebLLM = {
       div.className = `message ${type} ${variant}`.trim();
       if (type === "user") div.innerHTML = `<div class="bubble">${text}</div>`;
       else if (type === "system") div.innerHTML = `<div class="bubble">${text}</div>`;
-      else div.innerHTML = `<div class="avatar"><img src="../../icons/logo_32.png" alt="" /></div><div class="bubble">${text}</div>`;
+      else div.innerHTML = `<div class="avatar"><img src="../../icons/logo_horizontal.png" alt="" /></div><div class="bubble">${text}</div>`;
       messagesEl.appendChild(div);
       messagesEl.scrollTop = messagesEl.scrollHeight;
     }

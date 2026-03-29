@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Custom WebLLM Model Demo</title>
-  <link rel="icon" type="image/png" sizes="16x16" href="../../icons/logo_16.png" />
-  <link rel="icon" type="image/png" sizes="32x32" href="../../icons/logo_32.png" />
-  <link rel="apple-touch-icon" href="../../icons/logo_128.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="../../icons/logo_horizontal.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="../../icons/logo_horizontal.png" />
+  <link rel="apple-touch-icon" href="../../icons/logo_horizontal.png" />
   <style>
     :root {
       --bg: #0b1018;
@@ -49,6 +49,8 @@
       padding: 14px 16px;
     }
     .brand {
+      display: inline-flex;
+      align-items: center;
       font-family: var(--mono);
       color: var(--ok);
       font-size: 13px;
@@ -56,6 +58,7 @@
       font-weight: 700;
       letter-spacing: 0.04em;
     }
+    .brand img { height: 40px; width: auto; display: block; }
     .back {
       text-decoration: none;
       color: var(--muted);
@@ -177,7 +180,7 @@
 <body>
   <div class="wrap">
     <div class="header">
-      <a href="../../" class="brand">omnibrowser-agent</a>
+      <a href="../../" class="brand" aria-label="OmniBrowser Agent home"><img src="../../icons/logo_horizontal.png" alt="OmniBrowser Agent" /></a>
       <a class="back" href="../">Back to examples</a>
     </div>
 

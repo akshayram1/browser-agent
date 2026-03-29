@@ -5,9 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>OmniBrowser Agent — Local-first Browser AI</title>
     <meta name="description" content="OmniBrowser Agent — local-first browser AI operator. No API keys. No cloud. Runs entirely in the browser via WebLLM + WebGPU." />
-    <link rel="icon" type="image/png" sizes="16x16" href="./icons/logo_16.png" />
-    <link rel="icon" type="image/png" sizes="32x32" href="./icons/logo_32.png" />
-    <link rel="apple-touch-icon" href="./icons/logo_128.png" />
+    <link rel="icon" type="image/png" href="./icons/logo.png" />
+    <link rel="apple-touch-icon" href="./icons/logo.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Quantico:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./styles.css" />
@@ -40,30 +39,39 @@
       <!-- ── HOME ── -->
       <section id="home" class="section hero">
         <div class="wrap">
-          <div class="badge-pill fade-up">omnibrowser-agent v0.2.35</div>
-          <h1 class="fade-up delay-1">Local-first browser AI automation library</h1>
-          <p class="fade-up delay-2">
-            OmniBrowser Agent plans and executes DOM actions entirely in the browser — no API keys, no cloud costs, no data leaving your machine.
-            Wire in a WebLLM model and it reasons, remembers, and acts on any webpage.
-          </p>
-          <div class="chips fade-up delay-2">
-            <span>Privacy-first</span>
-            <span>WebLLM + WebGPU</span>
-            <span>Reflection loop</span>
-            <span>Human-approved mode</span>
-            <span>Custom system prompt</span>
-            <span>Embeddable API</span>
-          </div>
-          <div class="actions fade-up delay-3">
-            <a class="btn primary" href="./examples/">🚀 Live Demo</a>
-            <a class="btn" href="https://www.npmjs.com/package/@akshayram1/omnibrowser-agent" target="_blank" rel="noreferrer">NPM Package</a>
-            <a class="btn" href="https://github.com/akshayram1/omnibrowser-agent" target="_blank" rel="noreferrer">GitHub</a>
-          </div>
-          <div class="stats fade-up delay-3" aria-label="project stats">
-            <div class="stat"><strong>2</strong><span>Agent Modes</span></div>
-            <div class="stat"><strong>2</strong><span>Planner Modes</span></div>
-            <div class="stat"><strong>8</strong><span>Action Types</span></div>
-            <div class="stat"><strong>MIT</strong><span>License</span></div>
+          <div class="hero-layout">
+            <div class="hero-copy">
+              <div class="badge-pill fade-up">omnibrowser-agent v0.2.35</div>
+              <h1 class="fade-up delay-1">Local-first browser AI automation library</h1>
+              <p class="fade-up delay-2">
+                OmniBrowser Agent plans and executes DOM actions entirely in the browser — no API keys, no cloud costs, no data leaving your machine.
+                Wire in a WebLLM model and it reasons, remembers, and acts on any webpage.
+              </p>
+              <div class="chips fade-up delay-2">
+                <span>Privacy-first</span>
+                <span>WebLLM + WebGPU</span>
+                <span>Reflection loop</span>
+                <span>Human-approved mode</span>
+                <span>Custom system prompt</span>
+                <span>Embeddable API</span>
+              </div>
+              <div class="actions fade-up delay-3">
+                <a class="btn primary" href="./examples/">🚀 Live Demo</a>
+                <a class="btn" href="https://www.npmjs.com/package/@akshayram1/omnibrowser-agent" target="_blank" rel="noreferrer">NPM Package</a>
+                <a class="btn" href="https://github.com/akshayram1/omnibrowser-agent" target="_blank" rel="noreferrer">GitHub</a>
+              </div>
+              <div class="stats fade-up delay-3" aria-label="project stats">
+                <div class="stat"><strong>2</strong><span>Agent Modes</span></div>
+                <div class="stat"><strong>2</strong><span>Planner Modes</span></div>
+                <div class="stat"><strong>8</strong><span>Action Types</span></div>
+                <div class="stat"><strong>MIT</strong><span>License</span></div>
+              </div>
+            </div>
+            <div class="hero-logo-wrap fade-up delay-2">
+              <div class="hero-logo-shell">
+                <img class="hero-logo-image" src="./icons/logo.png" alt="OmniBrowser Agent logo" />
+              </div>
+            </div>
           </div>
           <div class="home-grid fade-up delay-4">
             <article class="card">
@@ -285,7 +293,7 @@ controller.abort(); // cancel from outside</code></pre>
           <div class="section-label fade-up delay-1">01 — delivery</div>
           <div class="delivery-grid fade-up delay-1">
             <div class="card card-ext">
-              <img class="card-icon" src="./icons/logo_64.png" alt="OmniBrowser Agent extension logo" />
+              <img class="card-icon" src="./icons/logo.png" alt="OmniBrowser Agent extension logo" />
               <div class="card-title">Chrome Extension</div>
               <div class="card-sub">popup + background worker</div>
               <div class="card-desc">Load the <code>dist/</code> folder as an unpacked extension. Enter a goal in the popup, pick a mode, and hit Start. The background service worker drives the tick loop across tabs.</div>
@@ -293,7 +301,7 @@ controller.abort(); // cancel from outside</code></pre>
               <span class="tag tag-purple">background worker</span>
             </div>
             <div class="card card-lib">
-              <img class="card-icon" src="./icons/logo_64.png" alt="OmniBrowser Agent library logo" />
+              <img class="card-icon" src="./icons/logo.png" alt="OmniBrowser Agent library logo" />
               <div class="card-title">npm Library</div>
               <div class="card-sub">createBrowserAgent()</div>
               <div class="card-desc">Embed the agent directly into any web app. Import, configure, and wire up event callbacks. The same core engine powers both — zero duplication.</div>
@@ -427,19 +435,19 @@ controller.abort(); // cancel from outside</code></pre>
           <div class="section-label fade-up delay-5">05 — action outcomes</div>
           <div class="outcomes-grid fade-up delay-5">
             <div class="outcome-card oc-safe">
-              <img class="outcome-icon" src="./icons/logo_32.png" alt="Executed status icon" />
+              <img class="outcome-icon" src="./icons/logo.png" alt="Executed status icon" />
               <div class="outcome-title" style="color:var(--accent)">Executed</div>
               <div class="outcome-desc">Action is safe. Runs immediately. Result message appended to session history. Next tick begins.</div>
               <span class="tag tag-green">status: "executed"</span>
             </div>
             <div class="outcome-card oc-review">
-              <img class="outcome-icon" src="./icons/logo_32.png" alt="Needs approval status icon" />
+              <img class="outcome-icon" src="./icons/logo.png" alt="Needs approval status icon" />
               <div class="outcome-title" style="color:var(--amber)">Needs approval</div>
               <div class="outcome-desc">Risk level is "review" in human-approved mode. Agent pauses, fires onApprovalRequired. Resume with agent.resume().</div>
               <span class="tag tag-amber">status: "needs_approval"</span>
             </div>
             <div class="outcome-card oc-block">
-              <img class="outcome-icon" src="./icons/logo_32.png" alt="Blocked status icon" />
+              <img class="outcome-icon" src="./icons/logo.png" alt="Blocked status icon" />
               <div class="outcome-title" style="color:var(--accent3)">Blocked</div>
               <div class="outcome-desc">Dangerous protocol or malformed URL. Action is rejected entirely. Session stops without executing anything.</div>
               <span class="tag tag-red">status: "blocked"</span>
@@ -875,17 +883,18 @@ window.__browserAgentWebLLM = {
     <style>
       #chatbot-toggle {
         position: fixed; bottom: 28px; right: 28px; z-index: 9000;
-        width: 52px; height: 52px; border-radius: 50%;
-        background: var(--accent); border: none; cursor: pointer;
+        width: 145px; height: 98px; border-radius: 0;
+        background: transparent; border: none; cursor: pointer;
         display: flex; align-items: center; justify-content: center;
-        box-shadow: 0 4px 24px rgba(0,229,160,0.35);
-        transition: transform .2s, box-shadow .2s; font-size: 22px;
+        box-shadow: none;
+        transition: transform .2s, opacity .2s; font-size: 22px;
+        padding: 0;
       }
-      #chatbot-toggle:hover { transform: scale(1.1); box-shadow: 0 6px 30px rgba(0,229,160,0.45); }
-      #chatbot-toggle.open  { background: var(--surface2); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+      #chatbot-toggle:hover { transform: scale(1.04); opacity: .92; }
+      #chatbot-toggle.open  { background: transparent; box-shadow: none; }
       #chatbot-toggle img {
-        width: 20px;
-        height: 20px;
+        width: 145px;
+        height: 98px;
         object-fit: contain;
       }
 
@@ -1048,13 +1057,13 @@ window.__browserAgentWebLLM = {
     </style>
 
     <button id="chatbot-toggle" title="Ask about the docs" aria-label="Open docs assistant">
-      <img src="./icons/logo_32.png" alt="" />
+      <img src="./icons/logo.png" alt="" />
     </button>
 
     <div id="chatbot-panel" role="dialog" aria-label="Docs navigation assistant">
 
       <div class="cb-header">
-        <div class="cb-icon"><img src="./icons/logo_64.png" alt="Docs Assistant" /></div>
+        <div class="cb-icon"><img src="./icons/logo.png" alt="Docs Assistant" /></div>
         <div>
           <div class="cb-title">Docs Assistant</div>
           <div class="cb-subtitle">powered by omnibrowser-agent</div>
@@ -1357,7 +1366,6 @@ window.__browserAgentWebLLM = {
         isOpen = !isOpen;
         panel.classList.toggle('visible', isOpen);
         toggleBtn.classList.toggle('open', isOpen);
-        toggleBtn.textContent = isOpen ? '✕' : '💬';
         if (isOpen) {
           if (messagesEl.children.length === 0) {
             addBotMsg('Hi! I\'m your <strong>docs assistant</strong>. Load an AI model above for smarter answers, or ask me about any section right now.');

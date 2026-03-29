@@ -4,9 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>OmniBrowser Agent Library Demo</title>
-  <link rel="icon" type="image/png" sizes="16x16" href="../../icons/logo_16.png" />
-  <link rel="icon" type="image/png" sizes="32x32" href="../../icons/logo_32.png" />
-  <link rel="apple-touch-icon" href="../../icons/logo_128.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="../../icons/logo_horizontal.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="../../icons/logo_horizontal.png" />
+  <link rel="apple-touch-icon" href="../../icons/logo_horizontal.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
@@ -29,7 +29,8 @@
         display: flex; align-items: center; justify-content: space-between;
         padding: 0 28px; position: sticky; top: 0; z-index: 100;
       }
-      .brand { font-family: var(--mono); font-weight: 700; font-size: 13px; color: var(--acc); text-decoration: none; letter-spacing: 0.05em; }
+      .brand { display: inline-flex; align-items: center; font-family: var(--mono); font-weight: 700; font-size: 13px; color: var(--acc); text-decoration: none; letter-spacing: 0.05em; }
+      .brand img { height: 40px; width: auto; display: block; }
       a.back { font-family: var(--mono); font-size: 11px; color: rgba(255,255,255,0.45); text-decoration: none; padding: 5px 14px; border-radius: 8px; border: 1px solid var(--db); transition: all .15s; letter-spacing: 0.03em; }
       a.back:hover { color: #fff; border-color: rgba(255,255,255,0.22); }
 
@@ -142,7 +143,7 @@
   </head>
   <body>
     <header>
-      <a class="brand" href="../../">omnibrowser-agent</a>
+      <a class="brand" href="../../" aria-label="OmniBrowser Agent home"><img src="../../icons/logo_horizontal.png" alt="OmniBrowser Agent" /></a>
       <a class="back" href="../">← Examples</a>
     </header>
     <div class="container">
