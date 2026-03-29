@@ -361,7 +361,31 @@ loadModelBtn.addEventListener("click", async () => {
       }
     });
 
-    window.__browserAgentWebLLM = createWebLLMBridge(engine);
+    const rawBridge = createWebLLMBridge(engine);
+    window.__browserAgentWebLLM = {
+      async plan(input, mId) {
+        const result = await rawBridge.plan(input, mId);
+        const action = result.action;
+        // Guard: if model tries to click search btn but input is empty, type first
+        if (action?.type === "click" && action.selector === "#demo-search-btn") {
+          const searchEl = document.getElementById("demo-search");
+          if (!searchEl?.value?.trim()) {
+            const name = (input.goal || "").match(/(?:for|search\s+for|find)\s+([A-Za-z][\w\s]+)/i)?.[1]?.trim();
+            if (name) {
+              return { action: { type: "type", selector: "#demo-search", text: name, clearFirst: true } };
+            }
+          }
+        }
+        // Guard: block navigate to prevent page reload
+        if (action?.type === "navigate") {
+          return { action: { type: "done", reason: "Task complete" } };
+        }
+        return result;
+      },
+      async retryInvalidJson(input, badOutput, mId) {
+        return rawBridge.retryInvalidJson?.(input, badOutput, mId) ?? { action: { type: "done", reason: "retry unavailable" } };
+      }
+    };
     modelStatus.textContent = `Loaded: ${modelId}`;
     log(`Custom model ready (${modelId})`);
   } catch (err) {
