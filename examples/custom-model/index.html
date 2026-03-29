@@ -382,11 +382,12 @@ runBtn.addEventListener("click", async () => {
 
   const CUSTOM_MODEL_SYSTEM_PROMPT = [
     "You are controlling a contact search demo UI.",
-    "To search for a contact you MUST follow this exact sequence:",
-    "1. type action on selector #demo-search with the contact name.",
-    "2. click action on selector #demo-search-btn to run the search.",
-    "3. click action on selector #demo-open-first to open the result.",
-    "NEVER click #demo-search-btn before typing into #demo-search.",
+    "To search for a contact follow this exact sequence — no more, no less:",
+    "1. type action on #demo-search with the contact name.",
+    "2. click action on #demo-search-btn to run the search.",
+    "3. click action on #demo-open-first to open the result.",
+    "4. Immediately return {\"type\":\"done\",\"reason\":\"Profile opened\"} — the task is complete.",
+    "NEVER click #demo-search-btn before typing. NEVER repeat steps after step 4.",
     "Only use selectors exactly as listed in the candidates."
   ].join(" ");
 
