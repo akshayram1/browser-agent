@@ -9,6 +9,30 @@ Local-first browser AI operator. Plans and executes DOM actions entirely in the 
 
 ---
 
+## Demos
+
+### Chatbot Demo
+A chat-style interface — type a goal and watch the agent plan and execute actions on a live CRM and task manager.
+
+![Chatbot Demo](assest/demo1.gif)
+
+### Planner Model Test
+Tests the fine-tuned omnibrowser-planner model. Loads via WebLLM, runs a 5-prompt self-test, and validates each output.
+
+![Planner Model Test](assest/demo2.gif)
+
+### Custom Model Demo
+Load your own Hugging Face quantized model, wire it into `createWebLLMBridge`, and run the agent on a local DOM task.
+
+![Custom Model Demo](assest/demo3.gif)
+
+### Doc Viewer Demo
+A documentation viewer with hidden tabs and a side chat panel. Ask about any section and the agent navigates to it.
+
+![Doc Viewer Demo](assest/demo4.gif)
+
+---
+
 ## Architecture
 
 ```mermaid

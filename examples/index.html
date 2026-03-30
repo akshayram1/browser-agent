@@ -190,6 +190,40 @@
     .card.green .open-btn:hover { background: rgba(0,229,160,0.2);   box-shadow: 0 0 20px rgba(0,229,160,0.2); }
     .card.amber .open-btn:hover { background: rgba(245,158,11,0.18);  box-shadow: 0 0 20px rgba(245,158,11,0.18); }
 
+    .card-footer-row { display: flex; gap: 10px; }
+    .card-footer-row .open-btn { flex: 1; }
+    .video-btn {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      width: auto; padding: 11px 18px; border-radius: 12px;
+      font-family: var(--mono); font-size: 12px; font-weight: 700;
+      text-decoration: none; transition: all .2s; cursor: pointer;
+      letter-spacing: 0.04em; border: 1px solid var(--border-b);
+      background: var(--surface2); color: var(--muted);
+    }
+    .video-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.25); box-shadow: 0 0 16px rgba(255,255,255,0.06); }
+    .video-btn svg { width: 14px; height: 14px; fill: currentColor; }
+
+    /* Video modal */
+    .video-modal {
+      display: none; position: fixed; inset: 0; z-index: 999;
+      background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+      align-items: center; justify-content: center;
+    }
+    .video-modal.open { display: flex; }
+    .video-modal video {
+      max-width: 90vw; max-height: 85vh; border-radius: 14px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+    }
+    .video-close {
+      position: fixed; top: 20px; right: 24px;
+      width: 40px; height: 40px; border-radius: 50%;
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+      color: #fff; font-size: 20px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .15s; z-index: 1000;
+    }
+    .video-close:hover { background: rgba(255,255,255,0.2); }
+
     /* ── Footer ── */
     footer {
       position: relative; z-index: 1;
@@ -218,7 +252,7 @@
   <div class="hero">
     <p class="eyebrow">Live Examples</p>
     <h1>See the agent in action</h1>
-    <p class="hero-sub">Four interactive demos — each showing a different way to embed OmniBrowser Agent into a real UI.</p>
+    <p class="hero-sub">Interactive demos — each showing a different way to embed OmniBrowser Agent into a real UI.</p>
   </div>
 
   <div class="grid">
@@ -237,7 +271,10 @@
         </div>
       </div>
       <div class="card-footer">
-        <a class="open-btn" href="./model-test/">Open Model Test →</a>
+        <div class="card-footer-row">
+          <a class="open-btn" href="./model-test/">Open Model Test →</a>
+          <button class="video-btn" data-video="../assest/demo2.mp4"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>Video</button>
+        </div>
       </div>
     </div>
 
@@ -255,7 +292,10 @@
         </div>
       </div>
       <div class="card-footer">
-        <a class="open-btn" href="./custom-model/">Open Custom Model Demo →</a>
+        <div class="card-footer-row">
+          <a class="open-btn" href="./custom-model/">Open Custom Model Demo →</a>
+          <button class="video-btn" data-video="../assest/demo3.mp4"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>Video</button>
+        </div>
       </div>
     </div>
 
@@ -274,7 +314,10 @@
         </div>
       </div>
       <div class="card-footer">
-        <a class="open-btn" href="./doc-viewer/">Open Doc Viewer Demo →</a>
+        <div class="card-footer-row">
+          <a class="open-btn" href="./doc-viewer/">Open Doc Viewer Demo →</a>
+          <button class="video-btn" data-video="../assest/demo4.mp4"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>Video</button>
+        </div>
       </div>
     </div>
 
@@ -293,7 +336,10 @@
         </div>
       </div>
       <div class="card-footer">
-        <a class="open-btn" href="./chatbot/">Open Chatbot Demo →</a>
+        <div class="card-footer-row">
+          <a class="open-btn" href="./chatbot/">Open Chatbot Demo →</a>
+          <button class="video-btn" data-video="../assest/demo1.mp4"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>Video</button>
+        </div>
       </div>
     </div>
 
@@ -303,5 +349,34 @@
   <footer>
     <p>Built with <a href="https://www.npmjs.com/package/@akshayram1/omnibrowser-agent" target="_blank" rel="noreferrer">@akshayram1/omnibrowser-agent</a> · <a href="https://github.com/akshayram1/omnibrowser-agent" target="_blank" rel="noreferrer">GitHub</a></p>
   </footer>
+
+  <!-- Video Modal -->
+  <div class="video-modal" id="video-modal">
+    <button class="video-close" id="video-close">&times;</button>
+    <video id="video-player" controls autoplay></video>
+  </div>
+
+  <script>
+    const modal = document.getElementById('video-modal');
+    const player = document.getElementById('video-player');
+    document.querySelectorAll('.video-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        player.src = btn.dataset.video;
+        modal.classList.add('open');
+      });
+    });
+    document.getElementById('video-close').addEventListener('click', () => {
+      modal.classList.remove('open');
+      player.pause();
+      player.src = '';
+    });
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.classList.remove('open');
+        player.pause();
+        player.src = '';
+      }
+    });
+  </script>
 </body>
 </html>
