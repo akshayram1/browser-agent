@@ -426,7 +426,7 @@
         div.className = "task-item" + (t.done ? " done" : "");
         div.id = `task-${t.id}`;
         div.innerHTML = `
-          <button class="task-check" id="check-task-${t.id}" aria-label="${t.done ? "Uncheck" : "Complete"}: ${t.text}">${t.done ? "✓" : ""}</button>
+          <button class="task-check" id="check-task-${t.id}" aria-label="${t.done ? "Uncheck" : "Complete"}: ${t.text}" aria-pressed="${t.done}">${t.done ? "✓" : ""}</button>
           <span class="task-text">${t.text}</span>
           <button class="task-del" id="delete-task-${t.id}" title="Delete">×</button>`;
         list.appendChild(div);
