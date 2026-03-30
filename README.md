@@ -180,12 +180,43 @@ See [docs/EMBEDDING.md](docs/EMBEDDING.md) for the full WebLLM bridge wiring gui
 
 ### Recommended WebLLM models
 
+- **`omnibrowser-planner-1p5b-q4f16_1`** — fine-tuned for OmniBrowser, ~800 MB ([HuggingFace](https://huggingface.co/Akshayram1/omnibrowser-planner-1p5b-q4f16_1-MLC))
 - `Llama-3.2-1B-Instruct-q4f16_1-MLC` — fast, ~600 MB
 - `Llama-3.2-3B-Instruct-q4f16_1-MLC` — better quality, ~1.5 GB
 - `Phi-3.5-mini-instruct-q4f16_1-MLC` — strong quality, ~2 GB
 - `Mistral-7B-Instruct-v0.3-q4f16_1-MLC` — balanced quality, ~4.1 GB
 - `Qwen2.5-7B-Instruct-q4f16_1-MLC` — strongest quality, ~4.3 GB
 - `Llama-3.1-8B-Instruct-q4f16_1-MLC` — strong reasoning, ~4.8 GB
+
+### OmniBrowser Planner — Fine-tuned LLM
+
+We fine-tuned **Qwen2.5-1.5B-Instruct** specifically for DOM action planning. The model is quantized to q4f16_1 and runs entirely in-browser via WebLLM + WebGPU.
+
+- **Model:** [Akshayram1/omnibrowser-planner-1p5b-q4f16_1-MLC](https://huggingface.co/Akshayram1/omnibrowser-planner-1p5b-q4f16_1-MLC)
+- **Base:** Qwen2.5-1.5B-Instruct
+- **Training:** QLoRA fine-tune on OmniBrowser planner dataset
+- **Quantization:** q4f16_1 via MLC-LLM
+- **Size:** ~800 MB download
+
+```ts
+import * as webllm from "@mlc-ai/web-llm";
+import { createWebLLMBridge } from "@akshayram1/omnibrowser-agent";
+
+const appConfig = {
+  model_list: [
+    ...webllm.prebuiltAppConfig.model_list,
+    {
+      model: "https://huggingface.co/Akshayram1/omnibrowser-planner-1p5b-q4f16_1-MLC",
+      model_id: "omnibrowser-planner-1p5b-q4f16_1",
+      model_lib: webllm.modelLibURLPrefix + webllm.modelVersion +
+        "/Qwen2-1.5B-Instruct-q4f16_1-ctx4k_cs1k-webgpu.wasm",
+    },
+  ],
+};
+
+const engine = await webllm.CreateMLCEngine("omnibrowser-planner-1p5b-q4f16_1", { appConfig });
+window.__browserAgentWebLLM = createWebLLMBridge(engine);
+```
 
 Model availability can vary by WebLLM release/build; if one fails to load, use a smaller fallback like `Llama-3.2-1B-Instruct-q4f16_1-MLC`.
 

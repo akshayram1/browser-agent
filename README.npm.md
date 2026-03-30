@@ -115,6 +115,7 @@ const agent = createBrowserAgent({
 
 | Model ID | Size | Notes |
 |----------|------|-------|
+| **`omnibrowser-planner-1p5b-q4f16_1`** | **~800 MB** | **fine-tuned for OmniBrowser** ([HuggingFace](https://huggingface.co/Akshayram1/omnibrowser-planner-1p5b-q4f16_1-MLC)) |
 | `Llama-3.2-1B-Instruct-q4f16_1-MLC` | ~600 MB | fastest |
 | `Llama-3.2-3B-Instruct-q4f16_1-MLC` | ~1.5 GB | fast |
 | `Phi-3.5-mini-instruct-q4f16_1-MLC` | ~2 GB | quality |
