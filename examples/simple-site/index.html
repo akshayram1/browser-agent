@@ -1,360 +1,191 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Simple Site — OmniBrowser Agent Demo</title>
-    <link rel="icon" type="image/png" href="../../icons/logo_horizontal.png" />
-    <link rel="apple-touch-icon" href="../../icons/logo_horizontal.png" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-      :root {
-        --bg: #06080c; --dp: #0c1017; --dp2: #141a24; --dp3: #1a2232;
-        --db: rgba(255,255,255,0.07); --db2: rgba(255,255,255,0.13);
-        --dt: #e6e9f0; --dm: #6b7a8d; --dl: #3d4a5c;
-        --acc: #00e5a0; --acc-bg: rgba(0,229,160,0.08); --acc-border: rgba(0,229,160,0.22);
-        --purple: #7c6dff; --purple-bg: rgba(124,109,255,0.08); --purple-border: rgba(124,109,255,0.22);
-        --amber: #f59e0b; --red: #ef4444;
-        --mono: 'Space Mono', monospace;
-        --sans: 'Inter', system-ui, -apple-system, sans-serif;
-        --radius: 10px; --radius-lg: 14px;
-      }
-      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-      body { min-height: 100vh; background: var(--bg); color: var(--dt); font-family: var(--sans); font-size: 13.5px; line-height: 1.5; }
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simple Site — OmniBrowser Agent</title>
+  <link rel="icon" type="image/png" href="../../icons/logo_horizontal.png" />
+  <style>
+    :root { --bg:#0a0d12; --card:#0f1319; --b:rgba(255,255,255,.08); --t:#e4e7ed; --m:#6b7280; --g:#00e5a0; --mono:'Menlo','Consolas',monospace; }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--t);font-family:system-ui,-apple-system,sans-serif;font-size:14px;min-height:100vh}
 
-      /* ── Header ── */
-      header {
-        height: 54px; background: rgba(6,8,12,0.92);
-        backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-        border-bottom: 1px solid var(--db);
-        display: flex; align-items: center; justify-content: space-between;
-        padding: 0 24px; position: sticky; top: 0; z-index: 100;
-      }
-      .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-      .brand img { height: 36px; }
-      .brand-tag { font-family: var(--mono); font-size: 10px; color: var(--dm); background: var(--dp2); border: 1px solid var(--db); padding: 2px 8px; border-radius: 6px; letter-spacing: .04em; }
-      .nav-links { display: flex; align-items: center; gap: 8px; }
-      .nav-link { font-size: 12px; color: var(--dm); text-decoration: none; padding: 5px 12px; border-radius: 7px; border: 1px solid transparent; transition: all .15s; font-weight: 500; }
-      .nav-link:hover { color: var(--dt); border-color: var(--db); }
+    /* header */
+    header{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--b)}
+    header img{height:34px}
+    header a{color:var(--m);font-size:12px;text-decoration:none}
+    header a:hover{color:var(--t)}
 
-      /* ── Layout ── */
-      .layout { display: grid; grid-template-columns: 1fr 380px; min-height: calc(100vh - 54px); }
-      .main { padding: 24px; overflow-y: auto; }
-      .sidebar { background: var(--dp); border-left: 1px solid var(--db); display: flex; flex-direction: column; overflow: hidden; }
+    /* page */
+    .page{max-width:720px;margin:0 auto;padding:28px 20px 120px}
+    h1{font-size:20px;font-weight:700;margin-bottom:4px}
+    .sub{color:var(--m);font-size:13px;margin-bottom:24px}
 
-      /* ── Cards ── */
-      .card { background: var(--dp); border: 1px solid var(--db); border-radius: var(--radius-lg); padding: 20px; }
-      .card + .card { margin-top: 16px; }
-      .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
-      .card-icon { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
-      .card-icon.green { background: var(--acc-bg); border: 1px solid var(--acc-border); }
-      .card-icon.purple { background: var(--purple-bg); border: 1px solid var(--purple-border); }
-      .card-title { font-size: 15px; font-weight: 700; }
-      .card-desc { font-size: 12px; color: var(--dm); }
+    /* card */
+    .card{background:var(--card);border:1px solid var(--b);border-radius:12px;padding:18px;margin-bottom:16px}
+    .card h2{font-size:15px;font-weight:700;margin-bottom:12px}
 
-      /* ── Form elements ── */
-      .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-      .form-grid .full { grid-column: 1 / -1; }
-      .field label { display: block; font-size: 11.5px; font-weight: 600; color: var(--dm); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .04em; }
-      .field input, .field textarea, .field select {
-        width: 100%; padding: 9px 12px; border-radius: 8px;
-        border: 1px solid var(--db); background: var(--dp2);
-        color: var(--dt); font-size: 13px; font-family: inherit; outline: none;
-        transition: border-color .15s;
-      }
-      .field input:focus, .field textarea:focus { border-color: rgba(0,229,160,0.4); }
-      .field textarea { resize: vertical; min-height: 60px; }
+    /* form */
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .grid .full{grid-column:1/-1}
+    label{display:block;font-size:11px;font-weight:600;color:var(--m);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em}
+    input,textarea,select{width:100%;padding:8px 10px;border:1px solid var(--b);border-radius:8px;background:rgba(255,255,255,.03);color:var(--t);font-size:13px;font-family:inherit;outline:none}
+    input:focus,textarea:focus{border-color:rgba(0,229,160,.4)}
+    textarea{resize:vertical;min-height:50px}
+    select option{background:#0f1319}
 
-      /* ── Buttons ── */
-      .btn {
-        display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-        padding: 9px 18px; border-radius: 8px; border: none;
-        font-size: 13px; font-weight: 600; cursor: pointer;
-        font-family: inherit; transition: all .15s; white-space: nowrap;
-      }
-      .btn:disabled { opacity: .4; cursor: not-allowed; }
-      .btn.primary { background: var(--acc); color: #000; }
-      .btn.primary:hover:not(:disabled) { opacity: .88; }
-      .btn.secondary { background: var(--dp2); color: var(--dm); border: 1px solid var(--db); }
-      .btn.secondary:hover:not(:disabled) { color: var(--dt); border-color: var(--db2); }
-      .btn.sm { padding: 6px 14px; font-size: 12px; }
+    /* buttons */
+    .btn{display:inline-flex;align-items:center;gap:5px;padding:8px 16px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .15s}
+    .btn:disabled{opacity:.35;cursor:not-allowed}
+    .btn-primary{background:var(--g);color:#000}
+    .btn-ghost{background:rgba(255,255,255,.05);color:var(--m);border:1px solid var(--b)}
+    .btn-ghost:hover:not(:disabled){color:var(--t);border-color:rgba(255,255,255,.15)}
 
-      /* ── Search ── */
-      .search-row { display: flex; gap: 8px; }
-      .search-row input { flex: 1; }
+    /* search */
+    .search-row{display:flex;gap:8px}
+    .search-row input{flex:1}
 
-      /* ── Table ── */
-      .table-wrap { overflow-x: auto; margin-top: 4px; }
-      table { width: 100%; border-collapse: collapse; }
-      th { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--dm); padding: 10px 10px; border-bottom: 1px solid var(--db2); text-align: left; }
-      td { padding: 12px 10px; border-bottom: 1px solid var(--db); font-size: 13px; }
-      tr:last-child td { border-bottom: none; }
-      .contact-name { font-weight: 600; color: var(--dt); }
-      .contact-email { color: var(--dm); }
-      .badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; background: var(--purple-bg); color: var(--purple); border: 1px solid var(--purple-border); }
-      .table-btn { padding: 5px 12px; font-size: 11.5px; border-radius: 6px; border: 1px solid var(--db); background: var(--dp2); color: var(--dm); cursor: pointer; font-weight: 500; transition: all .15s; }
-      .table-btn:hover { color: var(--acc); border-color: var(--acc-border); background: var(--acc-bg); }
-      .table-btn.danger:hover { color: var(--red); border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.06); }
-      .empty-state { text-align: center; padding: 28px; color: var(--dm); font-size: 13px; }
+    /* table */
+    table{width:100%;border-collapse:collapse}
+    th{font-size:11px;font-weight:600;text-transform:uppercase;color:var(--m);padding:8px;text-align:left;border-bottom:1px solid var(--b)}
+    td{padding:10px 8px;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px}
+    .tbl-btn{padding:4px 10px;font-size:11px;border-radius:6px;border:1px solid var(--b);background:transparent;color:var(--m);cursor:pointer}
+    .tbl-btn:hover{color:var(--g);border-color:rgba(0,229,160,.3)}
 
-      /* ── Profile card ── */
-      .profile-card {
-        display: none; margin-top: 16px; padding: 18px; border-radius: var(--radius);
-        background: var(--acc-bg); border: 1px solid var(--acc-border);
-      }
-      .profile-card.visible { display: block; }
-      .profile-card h3 { font-size: 16px; color: var(--acc); margin-bottom: 8px; }
-      .profile-card .meta { font-size: 13px; color: var(--dm); margin: 3px 0; }
+    /* profile */
+    .profile{display:none;margin-top:12px;padding:14px;border-radius:8px;background:rgba(0,229,160,.05);border:1px solid rgba(0,229,160,.15)}
+    .profile.open{display:block}
+    .profile h3{color:var(--g);font-size:15px;margin-bottom:4px}
+    .profile p{color:var(--m);font-size:13px}
 
-      /* ── Submit result ── */
-      .submit-result {
-        display: none; margin-top: 12px; padding: 10px 14px; border-radius: 8px;
-        font-size: 13px; font-weight: 600; align-items: center; gap: 8px;
-      }
-      .submit-result.success { display: flex; background: rgba(34,197,94,0.08); color: #22c55e; border: 1px solid rgba(34,197,94,0.2); }
-      .submit-result.error { display: flex; background: rgba(239,68,68,0.08); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); }
+    /* result msg */
+    .msg{display:none;margin-top:10px;padding:8px 12px;border-radius:8px;font-size:13px;font-weight:600}
+    .msg.ok{display:block;background:rgba(34,197,94,.07);color:#22c55e;border:1px solid rgba(34,197,94,.2)}
+    .msg.err{display:block;background:rgba(239,68,68,.07);color:#ef4444;border:1px solid rgba(239,68,68,.2)}
 
-      /* ── Sidebar ── */
-      .sidebar-section { padding: 16px; border-bottom: 1px solid var(--db); }
-      .sidebar-section:last-child { border-bottom: none; flex: 1; display: flex; flex-direction: column; }
-      .sidebar-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--dm); margin-bottom: 10px; font-family: var(--mono); }
+    /* ── Agent Bar (sticky bottom) ── */
+    .agent-bar{position:fixed;bottom:0;left:0;right:0;background:rgba(15,19,25,.96);backdrop-filter:blur(12px);border-top:1px solid var(--b);padding:10px 20px;z-index:100}
+    .agent-inner{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+    .agent-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .agent-input{flex:1;min-width:200px;padding:8px 10px;border:1px solid var(--b);border-radius:8px;background:rgba(255,255,255,.03);color:var(--t);font-size:13px;outline:none}
+    .agent-input:focus{border-color:rgba(0,229,160,.4)}
+    .run-btn{padding:8px 18px;background:var(--g);color:#000;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}
+    .run-btn:disabled{opacity:.35;cursor:not-allowed}
+    .chip-row{display:flex;gap:5px;flex-wrap:wrap}
+    .chip{padding:3px 10px;border:1px solid var(--b);border-radius:99px;font-size:11px;color:var(--m);cursor:pointer;background:transparent;font-family:inherit}
+    .chip:hover{color:var(--g);border-color:rgba(0,229,160,.3)}
+    .agent-meta{display:flex;gap:10px;align-items:center;font-size:11px;color:var(--m);font-family:var(--mono)}
+    .agent-meta select{width:auto;font-size:11px;padding:4px 6px;font-family:var(--mono)}
+    .sdot{width:6px;height:6px;border-radius:50%;background:var(--m);flex-shrink:0}
+    .sdot.on{background:var(--g)}
+    .sdot.loading{background:#f59e0b;animation:p 1s infinite}
+    @keyframes p{0%,100%{opacity:1}50%{opacity:.3}}
+    .agent-log{font-family:var(--mono);font-size:10.5px;color:var(--m);max-height:60px;overflow-y:auto;line-height:1.5}
+    .agent-log span{display:block}
 
-      /* ── Chips ── */
-      .chip-row { display: flex; flex-wrap: wrap; gap: 5px; }
-      .chip {
-        background: var(--dp2); border: 1px solid var(--db); border-radius: 999px;
-        padding: 4px 11px; font-size: 11.5px; color: var(--dm);
-        cursor: pointer; white-space: nowrap; font-family: inherit; transition: all .15s;
-      }
-      .chip:hover { color: var(--acc); border-color: var(--acc-border); background: var(--acc-bg); }
+    /* approval */
+    .approval{display:none;padding:8px 12px;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:8px;font-size:12px;color:#f59e0b}
+    .approval.on{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .approval button{padding:5px 12px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer}
+    .ap-yes{background:rgba(34,197,94,.15);color:#22c55e}
+    .ap-no{background:rgba(239,68,68,.1);color:#ef4444}
 
-      /* ── Goal input ── */
-      .goal-row { display: flex; gap: 8px; }
-      .goal-input {
-        flex: 1; padding: 9px 12px; border-radius: 8px;
-        border: 1px solid var(--db); background: var(--dp2);
-        color: var(--dt); font-size: 13px; font-family: inherit; outline: none;
-        transition: border-color .15s;
-      }
-      .goal-input:focus { border-color: rgba(0,229,160,0.4); }
-      .run-btn {
-        padding: 9px 18px; background: var(--acc); color: #000; border: none;
-        border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer;
-        font-family: inherit; transition: all .15s; white-space: nowrap;
-      }
-      .run-btn:hover:not(:disabled) { opacity: .88; }
-      .run-btn:disabled { opacity: .4; cursor: not-allowed; }
+    /* flash */
+    .agent-act{outline:2px solid var(--g)!important;outline-offset:2px;transition:outline-color .3s}
 
-      /* ── Model loader ── */
-      .model-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
-      .model-select { width: 100%; font-size: 11.5px; font-family: var(--mono); border: 1px solid var(--db); border-radius: 8px; padding: 6px 8px; color: var(--dt); background: var(--dp2); cursor: pointer; outline: none; }
-      .model-select option { background: var(--dp); }
-      .load-btn { padding: 6px 14px; background: var(--acc); color: #000; border: none; border-radius: 8px; font-size: 11.5px; font-weight: 700; cursor: pointer; font-family: var(--mono); white-space: nowrap; }
-      .load-btn:disabled { opacity: .4; cursor: not-allowed; }
-      .progress-wrap { margin-top: 6px; display: none; }
-      .progress-wrap.visible { display: block; }
-      .progress-track { height: 3px; background: var(--db); border-radius: 999px; overflow: hidden; }
-      .progress-fill { height: 100%; background: linear-gradient(90deg, var(--acc), #00ffc2); border-radius: 999px; width: 0%; transition: width .4s ease; }
-      .progress-text { font-size: 10px; color: var(--dm); font-family: var(--mono); margin-top: 4px; }
-      .webgpu-warn { margin-top: 6px; padding: 6px 9px; background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.2); border-radius: 7px; font-size: 11px; color: var(--amber); display: none; }
-      .webgpu-warn.visible { display: block; }
-      .model-status { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--dm); font-family: var(--mono); margin-top: 8px; }
-      .sdot { width: 6px; height: 6px; border-radius: 50%; background: var(--dl); flex-shrink: 0; }
-      .sdot.ready { background: var(--acc); }
-      .sdot.loading { background: var(--amber); animation: pulse 1s ease-in-out infinite; }
-      @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+    @media(max-width:600px){.grid{grid-template-columns:1fr}.agent-row{flex-direction:column}.agent-input{width:100%}}
+  </style>
+</head>
+<body>
 
-      /* ── Mode + controls ── */
-      .controls-row { display: flex; gap: 8px; align-items: center; }
-      .mode-select { font-size: 11px; font-family: var(--mono); border: 1px solid var(--db); border-radius: 7px; padding: 5px 8px; color: var(--dt); background: var(--dp2); cursor: pointer; outline: none; flex: 1; }
-      .mode-select option { background: var(--dp); }
+<header>
+  <a href="../../"><img src="../../icons/logo_horizontal.png" alt="OmniBrowser Agent" /></a>
+  <div style="display:flex;gap:12px">
+    <a href="../chatbot">Chatbot Demo</a>
+    <a href="../../">Docs</a>
+  </div>
+</header>
 
-      /* ── Log ── */
-      .log-area {
-        flex: 1; background: var(--dp2); border: 1px solid var(--db); border-radius: 8px;
-        padding: 10px; font-family: var(--mono); font-size: 11px; color: var(--dm);
-        overflow-y: auto; min-height: 120px; max-height: 300px; line-height: 1.6;
-      }
-      .log-entry { padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
-      .log-entry:last-child { border-bottom: none; }
-      .log-time { color: var(--dl); }
-      .log-ok { color: var(--acc); }
-      .log-err { color: var(--red); }
-      .log-info { color: var(--amber); }
+<div class="page" id="page-root">
 
-      /* ── Agent flash ── */
-      .agent-act { outline: 2px solid var(--acc) !important; outline-offset: 2px; transition: outline-color .3s; }
+  <h1>Simple Demo Site</h1>
+  <p class="sub">A basic page the OmniBrowser Agent can interact with. Use the bar below to give it goals.</p>
 
-      /* ── Approval banner ── */
-      .approval-banner {
-        display: none; padding: 12px; margin: 0 16px 8px;
-        background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.25);
-        border-radius: 10px; font-size: 12px; color: var(--amber);
-      }
-      .approval-banner.visible { display: block; }
-      .approval-actions { display: flex; gap: 8px; margin-top: 8px; }
-      .approve-btn { flex: 1; padding: 7px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; border: none; background: rgba(34,197,94,0.15); color: #22c55e; }
-      .approve-btn:hover { background: rgba(34,197,94,0.25); }
-      .reject-btn { flex: 1; padding: 7px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; border: none; background: rgba(239,68,68,0.1); color: #ef4444; }
-      .reject-btn:hover { background: rgba(239,68,68,0.2); }
-
-      /* ── Responsive ── */
-      @media (max-width: 860px) {
-        .layout { grid-template-columns: 1fr; }
-        .sidebar { border-left: none; border-top: 1px solid var(--db); max-height: 50vh; }
-        .form-grid { grid-template-columns: 1fr; }
-      }
-    </style>
-  </head>
-  <body>
-    <header>
-      <a class="brand" href="../../"><img src="../../icons/logo_horizontal.png" alt="OmniBrowser Agent" /><span class="brand-tag">SIMPLE SITE</span></a>
-      <div class="nav-links">
-        <a class="nav-link" href="../chatbot">Chatbot Demo</a>
-        <a class="nav-link" href="../doc-viewer">Doc Viewer</a>
-        <a class="nav-link" href="../../">Docs</a>
-      </div>
-    </header>
-
-    <div class="layout">
-      <!-- ════ Main CRM Area ════ -->
-      <div class="main" id="crm-root">
-
-        <!-- Search -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-icon green">&#128269;</div>
-            <div><div class="card-title">Search Contacts</div><div class="card-desc">Find contacts by name, email, or company</div></div>
-          </div>
-          <div class="search-row">
-            <input type="text" id="search-input" placeholder="Search contacts..." />
-            <button class="btn primary sm" id="search-btn">Search</button>
-          </div>
-          <div id="search-status" style="margin-top:8px;font-size:12px;color:var(--dm);display:none"></div>
-        </div>
-
-        <!-- Contacts Table -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-icon purple">&#128101;</div>
-            <div><div class="card-title">Contacts</div><div class="card-desc" id="contact-count">3 contacts</div></div>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Name</th><th>Email</th><th>Company</th><th>Actions</th></tr></thead>
-              <tbody id="contacts-tbody"></tbody>
-            </table>
-          </div>
-
-          <!-- Profile card -->
-          <div class="profile-card" id="profile-card">
-            <h3 id="profile-name"></h3>
-            <p class="meta" id="profile-email"></p>
-            <p class="meta" id="profile-company"></p>
-          </div>
-        </div>
-
-        <!-- Add Contact Form -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-icon green">&#10133;</div>
-            <div><div class="card-title">Add Contact</div><div class="card-desc">Fill in the details and submit</div></div>
-          </div>
-          <div class="form-grid">
-            <div class="field"><label for="name">Full Name</label><input type="text" id="name" placeholder="e.g. Alex Morgan" /></div>
-            <div class="field"><label for="email">Email</label><input type="email" id="email" placeholder="alex@example.com" /></div>
-            <div class="field"><label for="phone">Phone</label><input type="tel" id="phone" placeholder="+1 555 000 0000" /></div>
-            <div class="field"><label for="company">Company</label><input type="text" id="company" placeholder="Acme Inc." /></div>
-            <div class="field full"><label for="notes">Notes</label><textarea id="notes" placeholder="Any additional notes..."></textarea></div>
-          </div>
-          <button class="btn primary" id="submit-contact" style="margin-top:14px;width:100%">Submit Contact</button>
-          <div class="submit-result" id="submit-result"></div>
-        </div>
-      </div>
-
-      <!-- ════ Agent Sidebar ════ -->
-      <div class="sidebar" data-agent-exclude>
-
-        <!-- Quick Goals -->
-        <div class="sidebar-section">
-          <div class="sidebar-title">Try these goals</div>
-          <div class="chip-row">
-            <button class="chip" data-goal="Search for Jane Doe">Search Jane</button>
-            <button class="chip" data-goal="Fill the name field with Jane Doe">Fill name</button>
-            <button class="chip" data-goal="Fill the email with jane@example.com">Fill email</button>
-            <button class="chip" data-goal="Fill the phone with 555-0192">Fill phone</button>
-            <button class="chip" data-goal="Click the Submit Contact button">Submit form</button>
-            <button class="chip" data-goal="Open Jane Doe profile">Open profile</button>
-          </div>
-        </div>
-
-        <!-- Goal Input -->
-        <div class="sidebar-section">
-          <div class="sidebar-title">Agent Goal</div>
-          <div class="goal-row">
-            <input type="text" class="goal-input" id="goal-input" placeholder="Describe what the agent should do..." />
-            <button class="run-btn" id="run-btn">Run</button>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
-            <select class="mode-select" id="mode-select">
-              <option value="human-approved">Human-approved</option>
-              <option value="autonomous">Autonomous</option>
-            </select>
-            <span id="agent-status" style="font-size:11px;color:var(--dm);font-family:var(--mono);white-space:nowrap">idle</span>
-          </div>
-        </div>
-
-        <!-- Approval Banner -->
-        <div class="approval-banner" id="approval-banner">
-          <strong>Approval required</strong>
-          <div id="approval-detail" style="font-size:11px;margin-top:4px;font-family:var(--mono);word-break:break-all"></div>
-          <div class="approval-actions">
-            <button class="approve-btn" id="approve-btn">Approve</button>
-            <button class="reject-btn" id="reject-btn">Reject</button>
-          </div>
-        </div>
-
-        <!-- Model Loader -->
-        <div class="sidebar-section">
-          <div class="sidebar-title">WebLLM Model</div>
-          <div class="model-row">
-            <select class="model-select" id="model-select">
-              <optgroup label="Recommended">
-                <option value="omnibrowser-planner-1p5b-q4f16_1">OmniBrowser Planner — ~800 MB</option>
-              </optgroup>
-              <optgroup label="General (Small)">
-                <option value="Llama-3.2-1B-Instruct-q4f16_1-MLC">Llama 3.2 1B — ~600 MB</option>
-                <option value="Llama-3.2-3B-Instruct-q4f16_1-MLC">Llama 3.2 3B — ~1.5 GB</option>
-                <option value="Phi-3.5-mini-instruct-q4f16_1-MLC">Phi-3.5 Mini — ~2 GB</option>
-              </optgroup>
-              <optgroup label="General (Medium)">
-                <option value="Mistral-7B-Instruct-v0.3-q4f16_1-MLC" selected>Mistral 7B v0.3 — ~4.1 GB</option>
-                <option value="Qwen2.5-7B-Instruct-q4f16_1-MLC">Qwen2.5 7B — ~4.3 GB</option>
-                <option value="Llama-3.1-8B-Instruct-q4f16_1-MLC">Llama 3.1 8B — ~4.8 GB</option>
-              </optgroup>
-            </select>
-            <button class="load-btn" id="load-btn">Load AI</button>
-          </div>
-          <div class="progress-wrap" id="progress-wrap">
-            <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
-            <div class="progress-text" id="progress-text">Initialising...</div>
-          </div>
-          <div class="webgpu-warn" id="webgpu-warn">WebGPU unavailable — agent will use heuristic planner.</div>
-          <div class="model-status">
-            <div class="sdot" id="sdot"></div>
-            <span id="model-status-text">No model loaded</span>
-          </div>
-        </div>
-
-        <!-- Event Log -->
-        <div class="sidebar-section">
-          <div class="sidebar-title">Event Log</div>
-          <div class="log-area" id="log-area"></div>
-        </div>
-      </div>
+  <!-- Search -->
+  <div class="card">
+    <h2>Search Contacts</h2>
+    <div class="search-row">
+      <input type="text" id="search-input" placeholder="Search by name or company..." />
+      <button class="btn btn-primary" id="search-btn">Search</button>
     </div>
+    <div id="search-status" style="margin-top:6px;font-size:12px;color:var(--m);display:none"></div>
+  </div>
 
-    <script type="module" src="./app.js"></script>
-  </body>
+  <!-- Contacts -->
+  <div class="card">
+    <h2>Contacts <span id="count" style="font-weight:400;color:var(--m);font-size:13px"></span></h2>
+    <table><thead><tr><th>Name</th><th>Email</th><th>Company</th><th></th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="profile" id="profile">
+      <h3 id="p-name"></h3>
+      <p id="p-email"></p>
+      <p id="p-company"></p>
+    </div>
+  </div>
+
+  <!-- Add Contact -->
+  <div class="card">
+    <h2>Add Contact</h2>
+    <div class="grid">
+      <div><label for="name">Name</label><input type="text" id="name" placeholder="e.g. Alex Morgan" /></div>
+      <div><label for="email">Email</label><input type="email" id="email" placeholder="alex@example.com" /></div>
+      <div><label for="phone">Phone</label><input type="tel" id="phone" placeholder="+1 555 000 0000" /></div>
+      <div><label for="company">Company</label><input type="text" id="company" placeholder="Acme Inc." /></div>
+      <div class="full"><label for="notes">Notes</label><textarea id="notes" placeholder="Any notes..."></textarea></div>
+    </div>
+    <button class="btn btn-primary" id="submit-btn" style="margin-top:12px;width:100%">Submit Contact</button>
+    <div class="msg" id="msg"></div>
+  </div>
+
+</div>
+
+<!-- ── Agent Bar ── -->
+<div class="agent-bar" data-agent-exclude>
+  <div class="agent-inner">
+    <div class="chip-row">
+      <button class="chip" data-goal="Search for Jane Doe">Search Jane</button>
+      <button class="chip" data-goal="Fill the name field with Jane Doe">Fill name</button>
+      <button class="chip" data-goal="Fill the email with jane@example.com">Fill email</button>
+      <button class="chip" data-goal="Click the Submit Contact button">Submit</button>
+      <button class="chip" data-goal="Open Jane Doe profile">Open profile</button>
+    </div>
+    <div class="agent-row">
+      <input type="text" class="agent-input" id="goal" placeholder="Give the agent a goal..." />
+      <button class="run-btn" id="run-btn">Run</button>
+    </div>
+    <div class="approval" id="approval">
+      <span id="approval-text">Approval needed</span>
+      <button class="ap-yes" id="ap-yes">Approve</button>
+      <button class="ap-no" id="ap-no">Reject</button>
+    </div>
+    <div class="agent-meta">
+      <select id="mode"><option value="human-approved">Human-approved</option><option value="autonomous">Autonomous</option></select>
+      <select id="model">
+        <option value="Mistral-7B-Instruct-v0.3-q4f16_1-MLC" selected>Mistral 7B</option>
+        <option value="omnibrowser-planner-1p5b-q4f16_1">OmniBrowser 1.5B</option>
+        <option value="Llama-3.2-3B-Instruct-q4f16_1-MLC">Llama 3.2 3B</option>
+        <option value="Phi-3.5-mini-instruct-q4f16_1-MLC">Phi-3.5 Mini</option>
+        <option value="Qwen2.5-7B-Instruct-q4f16_1-MLC">Qwen2.5 7B</option>
+      </select>
+      <button class="btn btn-ghost" id="load-btn" style="padding:4px 12px;font-size:11px">Load AI</button>
+      <div class="sdot" id="sdot"></div>
+      <span id="status">heuristic</span>
+    </div>
+    <div class="agent-log" id="log"></div>
+  </div>
+</div>
+
+<script type="module" src="./app.js"></script>
+</body>
 </html>
