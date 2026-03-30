@@ -325,11 +325,13 @@ function collectSnapshot() {
   const nodes = [...inView, ...offScreen].slice(0, MAX_CANDIDATES);
   const candidates = nodes.map((node) => {
     const placeholder = node.placeholder?.trim() || node.getAttribute("placeholder")?.trim();
+    const controlValue = node instanceof HTMLInputElement || node instanceof HTMLTextAreaElement || node instanceof HTMLSelectElement ? String(node.value ?? "").trim().slice(0, 120) : void 0;
     const associatedLabel = getAssociatedLabel(node);
     return {
       selector: cssPath(node),
       role: node.getAttribute("role") ?? node.tagName.toLowerCase(),
       text: (node.innerText || node.getAttribute("name") || "").trim().slice(0, 120),
+      value: controlValue,
       placeholder: placeholder || void 0,
       label: associatedLabel || void 0,
       active: isActiveElement(node) || void 0
@@ -528,6 +530,7 @@ var DEFAULT_SYSTEM_PROMPT = [
   '- {"type":"done","reason":"<reason>"}',
   "",
   "IMPORTANT: You MUST use selectors exactly as listed in the candidates. NEVER invent or guess selectors.",
+  "For form controls, candidate `value` is the current filled value. `placeholder` is only hint text and does NOT mean the field is filled.",
   "If you cannot find a matching candidate for a target element, use the closest match from the candidates list.",
   "When previous step failed, recover by trying a different candidate selector or fallback strategy.",
   "NEVER use navigate for in-page tab switches or buttons \u2014 use click with the button's selector instead.",
@@ -546,6 +549,9 @@ function formatCandidate(candidate, index) {
   ];
   if (candidate.label) {
     parts.push(`label: ${JSON.stringify(candidate.label)}`);
+  }
+  if (candidate.value !== void 0) {
+    parts.push(`value: ${JSON.stringify(candidate.value)}`);
   }
   if (candidate.placeholder) {
     parts.push(`placeholder: ${JSON.stringify(candidate.placeholder)}`);

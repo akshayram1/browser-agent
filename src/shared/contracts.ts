@@ -16,6 +16,8 @@ export interface CandidateElement {
   selector: string;
   role: string;
   text: string;
+  /** Current control value for inputs/textarea/select (if any). */
+  value?: string;
   placeholder?: string;
   /** Associated <label> text resolved via for/id, aria-labelledby, aria-label, or wrapping <label> */
   label?: string;

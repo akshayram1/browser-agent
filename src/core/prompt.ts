@@ -22,6 +22,7 @@ const DEFAULT_SYSTEM_PROMPT = [
   '- {"type":"done","reason":"<reason>"}',
   "",
   "IMPORTANT: You MUST use selectors exactly as listed in the candidates. NEVER invent or guess selectors.",
+  "For form controls, candidate `value` is the current filled value. `placeholder` is only hint text and does NOT mean the field is filled.",
   "If you cannot find a matching candidate for a target element, use the closest match from the candidates list.",
   "When previous step failed, recover by trying a different candidate selector or fallback strategy.",
   "NEVER use navigate for in-page tab switches or buttons — use click with the button's selector instead.",
@@ -42,6 +43,9 @@ function formatCandidate(candidate: CandidateElement, index: number): string {
 
   if (candidate.label) {
     parts.push(`label: ${JSON.stringify(candidate.label)}`);
+  }
+  if (candidate.value !== undefined) {
+    parts.push(`value: ${JSON.stringify(candidate.value)}`);
   }
   if (candidate.placeholder) {
     parts.push(`placeholder: ${JSON.stringify(candidate.placeholder)}`);

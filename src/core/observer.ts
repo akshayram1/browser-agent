@@ -137,11 +137,16 @@ export function collectSnapshot(): PageSnapshot {
   const candidates: CandidateElement[] = nodes.map((node) => {
     const placeholder =
       (node as HTMLInputElement).placeholder?.trim() || node.getAttribute("placeholder")?.trim();
+    const controlValue =
+      node instanceof HTMLInputElement || node instanceof HTMLTextAreaElement || node instanceof HTMLSelectElement
+        ? String(node.value ?? "").trim().slice(0, 120)
+        : undefined;
     const associatedLabel = getAssociatedLabel(node);
     return {
       selector: cssPath(node),
       role: node.getAttribute("role") ?? node.tagName.toLowerCase(),
       text: (node.innerText || node.getAttribute("name") || "").trim().slice(0, 120),
+      value: controlValue,
       placeholder: placeholder || undefined,
       label: associatedLabel || undefined,
       active: isActiveElement(node) || undefined,
