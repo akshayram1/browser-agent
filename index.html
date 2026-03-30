@@ -24,6 +24,7 @@
         </a>
         <nav class="nav">
           <a href="#home">Home</a>
+          <a href="#our-llm">Our LLM</a>
           <a href="#whats-new">What's New</a>
           <a href="https://omnibrowser-agent.vercel.app/examples/doc-viewer" target="_blank" rel="noreferrer">Docs</a>
           <a href="#architecture">Architecture</a>
@@ -112,6 +113,82 @@
           <h2 class="fade-up delay-1" style="margin-bottom:24px">See OmniBrowser Agent in Action</h2>
           <div class="fade-up delay-2" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:14px;border:1px solid rgba(255,255,255,0.07);max-width:800px;margin:0 auto">
             <iframe src="https://www.youtube.com/embed/eoxPp4eWKJM" title="OmniBrowser Agent Demo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%"></iframe>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── OUR LLM ── -->
+      <section id="our-llm" class="section">
+        <div class="wrap">
+          <div class="section-label fade-up">our llm</div>
+          <div class="surface fade-up delay-1">
+            <h2>OmniBrowser Planner LLM</h2>
+            <p>We fine-tuned a <strong>purpose-built planner model</strong> that runs entirely in your browser via WebLLM + WebGPU. No API keys, no cloud — the model weights download once and execute locally on your GPU.</p>
+
+            <div class="docs-grid" style="margin-top:20px">
+              <article class="doc-card">
+                <h4>Base Model</h4>
+                <p>Qwen2.5-1.5B-Instruct — a compact, high-quality instruction-following LLM from Alibaba.</p>
+              </article>
+              <article class="doc-card">
+                <h4>Fine-tuning</h4>
+                <p>QLoRA fine-tuned on our custom OmniBrowser planner dataset — DOM snapshots paired with correct AgentAction JSON outputs.</p>
+              </article>
+              <article class="doc-card">
+                <h4>Quantization</h4>
+                <p>q4f16_1 via MLC-LLM — 4-bit weights, 16-bit activations. Optimized for WebGPU inference in the browser.</p>
+              </article>
+              <article class="doc-card">
+                <h4>Size</h4>
+                <p>~800 MB download. Runs on any device with WebGPU support (Chrome 113+, Edge, Safari 18+).</p>
+              </article>
+            </div>
+
+            <h3 style="margin-top:28px">What the model does</h3>
+            <p>Given a user goal, page URL, visible DOM candidates, and action history — the model outputs a structured JSON response with evaluation, working memory, next goal, and the exact DOM action to execute:</p>
+            <pre><code>{
+  "evaluation": "Clicked the CRM tab — now on the contacts page.",
+  "memory": "CRM tab active. Name field is #name, currently empty.",
+  "nextGoal": "Type Jane Doe into the name field",
+  "action": { "type": "type", "selector": "#name", "text": "Jane Doe", "clearFirst": true }
+}</code></pre>
+
+            <h3 style="margin-top:28px">Training pipeline</h3>
+            <p>The full training pipeline is open-source and reproducible:</p>
+            <ol style="margin:12px 0 12px 20px;color:var(--muted);line-height:1.8">
+              <li>Generate a planner dataset from real DOM snapshots using <code>notebook/scripts/generate_dataset.mjs</code></li>
+              <li>Validate selector + action correctness with <code>notebook/scripts/validate_dataset.mjs</code></li>
+              <li>QLoRA fine-tune in Google Colab — <a href="https://github.com/akshayram1/omnibrowser-agent/tree/main/notebook" style="color:var(--accent)">see notebook/</a></li>
+              <li>Merge adapters and quantize with <code>mlc_llm convert_weight --quantization q4f16_1</code></li>
+              <li>Upload to Hugging Face and load in WebLLM via custom <code>appConfig</code></li>
+            </ol>
+
+            <h3 style="margin-top:28px">Load in your app</h3>
+            <pre><code>import * as webllm from "@mlc-ai/web-llm";
+import { createWebLLMBridge } from "@akshayram1/omnibrowser-agent";
+
+const appConfig = {
+  model_list: [
+    ...webllm.prebuiltAppConfig.model_list,
+    {
+      model: "https://huggingface.co/Akshayram1/omnibrowser-planner-1p5b-q4f16_1-MLC",
+      model_id: "omnibrowser-planner-1p5b-q4f16_1",
+      model_lib: webllm.modelLibURLPrefix + webllm.modelVersion
+        + "/Qwen2-1.5B-Instruct-q4f16_1-ctx4k_cs1k-webgpu.wasm",
+    },
+  ],
+};
+
+const engine = await webllm.CreateMLCEngine(
+  "omnibrowser-planner-1p5b-q4f16_1", { appConfig }
+);
+window.__browserAgentWebLLM = createWebLLMBridge(engine);</code></pre>
+
+            <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap">
+              <a class="btn primary" href="https://huggingface.co/Akshayram1/omnibrowser-planner-1p5b-q4f16_1-MLC" target="_blank" rel="noreferrer" style="display:inline-flex;width:auto">🤗 View on Hugging Face</a>
+              <a class="btn" href="https://github.com/akshayram1/omnibrowser-agent/tree/main/notebook" target="_blank" rel="noreferrer" style="display:inline-flex;width:auto">Training Notebook</a>
+              <a class="btn" href="./examples/model-test/" style="display:inline-flex;width:auto">Model Test Demo</a>
+            </div>
           </div>
         </div>
       </section>
