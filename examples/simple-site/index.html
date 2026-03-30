@@ -3,276 +3,355 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OmniBrowser Agent Library Demo</title>
-  <link rel="icon" type="image/png" sizes="16x16" href="../../icons/logo_horizontal.png" />
-  <link rel="icon" type="image/png" sizes="32x32" href="../../icons/logo_horizontal.png" />
-  <link rel="apple-touch-icon" href="../../icons/logo_horizontal.png" />
+    <title>Simple Site — OmniBrowser Agent Demo</title>
+    <link rel="icon" type="image/png" href="../../icons/logo_horizontal.png" />
+    <link rel="apple-touch-icon" href="../../icons/logo_horizontal.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
       :root {
-        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-        --bg:   #080a0f; --dp:  #0d1117; --dp2: #161b24;
-        --db:   rgba(255,255,255,0.08); --db2: rgba(255,255,255,0.14);
-        --dt:   #e8eaf0; --dm:  #6b7280;
-        --acc:  #00e5a0; --acc2: #7c6dff; --amber: #f59e0b;
+        --bg: #06080c; --dp: #0c1017; --dp2: #141a24; --dp3: #1a2232;
+        --db: rgba(255,255,255,0.07); --db2: rgba(255,255,255,0.13);
+        --dt: #e6e9f0; --dm: #6b7a8d; --dl: #3d4a5c;
+        --acc: #00e5a0; --acc-bg: rgba(0,229,160,0.08); --acc-border: rgba(0,229,160,0.22);
+        --purple: #7c6dff; --purple-bg: rgba(124,109,255,0.08); --purple-border: rgba(124,109,255,0.22);
+        --amber: #f59e0b; --red: #ef4444;
         --mono: 'Space Mono', monospace;
+        --sans: 'Inter', system-ui, -apple-system, sans-serif;
+        --radius: 10px; --radius-lg: 14px;
       }
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-      body { min-height: 100vh; background: var(--bg); color: var(--dt); }
+      body { min-height: 100vh; background: var(--bg); color: var(--dt); font-family: var(--sans); font-size: 13.5px; line-height: 1.5; }
 
       /* ── Header ── */
       header {
-        height: 56px; background: rgba(8,10,15,0.95);
-        backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+        height: 54px; background: rgba(6,8,12,0.92);
+        backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
         border-bottom: 1px solid var(--db);
         display: flex; align-items: center; justify-content: space-between;
-        padding: 0 28px; position: sticky; top: 0; z-index: 100;
+        padding: 0 24px; position: sticky; top: 0; z-index: 100;
       }
-      .brand { display: inline-flex; align-items: center; font-family: var(--mono); font-weight: 700; font-size: 13px; color: var(--acc); text-decoration: none; letter-spacing: 0.05em; }
-      .brand img { height: 40px; width: auto; display: block; }
-      a.back { font-family: var(--mono); font-size: 11px; color: rgba(255,255,255,0.45); text-decoration: none; padding: 5px 14px; border-radius: 8px; border: 1px solid var(--db); transition: all .15s; letter-spacing: 0.03em; }
-      a.back:hover { color: #fff; border-color: rgba(255,255,255,0.22); }
+      .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+      .brand img { height: 36px; }
+      .brand-tag { font-family: var(--mono); font-size: 10px; color: var(--dm); background: var(--dp2); border: 1px solid var(--db); padding: 2px 8px; border-radius: 6px; letter-spacing: .04em; }
+      .nav-links { display: flex; align-items: center; gap: 8px; }
+      .nav-link { font-size: 12px; color: var(--dm); text-decoration: none; padding: 5px 12px; border-radius: 7px; border: 1px solid transparent; transition: all .15s; font-weight: 500; }
+      .nav-link:hover { color: var(--dt); border-color: var(--db); }
 
-      .container { max-width: 980px; margin: 28px auto; padding: 0 20px; }
+      /* ── Layout ── */
+      .layout { display: grid; grid-template-columns: 1fr 380px; min-height: calc(100vh - 54px); }
+      .main { padding: 24px; overflow-y: auto; }
+      .sidebar { background: var(--dp); border-left: 1px solid var(--db); display: flex; flex-direction: column; overflow: hidden; }
 
-      .panel {
-        background: var(--dp); border: 1px solid var(--db);
-        border-radius: 14px; padding: 20px; margin-bottom: 16px;
-      }
-      h1 { font-size: 22px; font-weight: 700; color: var(--dt); margin-bottom: 8px; }
-      h2 { font-size: 16px; font-weight: 700; color: var(--dt); margin-bottom: 14px; }
-      .muted { font-size: 13px; color: var(--dm); }
+      /* ── Cards ── */
+      .card { background: var(--dp); border: 1px solid var(--db); border-radius: var(--radius-lg); padding: 20px; }
+      .card + .card { margin-top: 16px; }
+      .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+      .card-icon { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+      .card-icon.green { background: var(--acc-bg); border: 1px solid var(--acc-border); }
+      .card-icon.purple { background: var(--purple-bg); border: 1px solid var(--purple-border); }
+      .card-title { font-size: 15px; font-weight: 700; }
+      .card-desc { font-size: 12px; color: var(--dm); }
 
-      .controls { display: grid; gap: 12px; }
-      .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-      label { font-size: 12px; color: var(--dm); display: block; margin-bottom: 4px; }
-
-      input, select, textarea {
-        width: 100%; padding: 9px 12px; border-radius: 9px;
+      /* ── Form elements ── */
+      .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      .form-grid .full { grid-column: 1 / -1; }
+      .field label { display: block; font-size: 11.5px; font-weight: 600; color: var(--dm); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .04em; }
+      .field input, .field textarea, .field select {
+        width: 100%; padding: 9px 12px; border-radius: 8px;
         border: 1px solid var(--db); background: var(--dp2);
         color: var(--dt); font-size: 13px; font-family: inherit; outline: none;
         transition: border-color .15s;
       }
-      input:focus, select:focus, textarea:focus { border-color: rgba(0,229,160,0.4); }
-      select option { background: #0d1117; }
-      textarea { resize: vertical; min-height: 70px; }
+      .field input:focus, .field textarea:focus { border-color: rgba(0,229,160,0.4); }
+      .field textarea { resize: vertical; min-height: 60px; }
 
-      button {
-        width: 100%; padding: 10px; border-radius: 9px; border: none;
-        font-size: 13px; font-family: inherit; cursor: pointer;
-        background: rgba(0,229,160,0.15); color: var(--acc);
-        border: 1px solid rgba(0,229,160,0.28); font-weight: 600;
-        transition: all .15s;
+      /* ── Buttons ── */
+      .btn {
+        display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+        padding: 9px 18px; border-radius: 8px; border: none;
+        font-size: 13px; font-weight: 600; cursor: pointer;
+        font-family: inherit; transition: all .15s; white-space: nowrap;
       }
-      button:hover:not(:disabled) { background: rgba(0,229,160,0.24); }
-      button.secondary { background: var(--dp2); color: var(--dm); border-color: var(--db); }
-      button.secondary:hover:not(:disabled) { color: var(--dt); border-color: var(--db2); }
+      .btn:disabled { opacity: .4; cursor: not-allowed; }
+      .btn.primary { background: var(--acc); color: #000; }
+      .btn.primary:hover:not(:disabled) { opacity: .88; }
+      .btn.secondary { background: var(--dp2); color: var(--dm); border: 1px solid var(--db); }
+      .btn.secondary:hover:not(:disabled) { color: var(--dt); border-color: var(--db2); }
+      .btn.sm { padding: 6px 14px; font-size: 12px; }
 
-      .actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+      /* ── Search ── */
+      .search-row { display: flex; gap: 8px; }
+      .search-row input { flex: 1; }
 
-      pre {
-        background: var(--dp2); color: #a8b4d0; padding: 14px; border-radius: 10px;
-        min-height: 140px; overflow: auto; font-size: 12px; border: 1px solid var(--db);
-      }
-
+      /* ── Table ── */
+      .table-wrap { overflow-x: auto; margin-top: 4px; }
       table { width: 100%; border-collapse: collapse; }
-      th, td { border-bottom: 1px solid var(--db); padding: 10px 8px; text-align: left; font-size: 13px; }
-      th { color: var(--dm); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
-      td { color: var(--dt); }
+      th { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--dm); padding: 10px 10px; border-bottom: 1px solid var(--db2); text-align: left; }
+      td { padding: 12px 10px; border-bottom: 1px solid var(--db); font-size: 13px; }
       tr:last-child td { border-bottom: none; }
+      .contact-name { font-weight: 600; color: var(--dt); }
+      .contact-email { color: var(--dm); }
+      .badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; background: var(--purple-bg); color: var(--purple); border: 1px solid var(--purple-border); }
+      .table-btn { padding: 5px 12px; font-size: 11.5px; border-radius: 6px; border: 1px solid var(--db); background: var(--dp2); color: var(--dm); cursor: pointer; font-weight: 500; transition: all .15s; }
+      .table-btn:hover { color: var(--acc); border-color: var(--acc-border); background: var(--acc-bg); }
+      .table-btn.danger:hover { color: var(--red); border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.06); }
+      .empty-state { text-align: center; padding: 28px; color: var(--dm); font-size: 13px; }
 
-      .status { font-size: 13px; color: var(--dm); font-family: var(--mono); }
+      /* ── Profile card ── */
+      .profile-card {
+        display: none; margin-top: 16px; padding: 18px; border-radius: var(--radius);
+        background: var(--acc-bg); border: 1px solid var(--acc-border);
+      }
+      .profile-card.visible { display: block; }
+      .profile-card h3 { font-size: 16px; color: var(--acc); margin-bottom: 8px; }
+      .profile-card .meta { font-size: 13px; color: var(--dm); margin: 3px 0; }
 
-      .examples-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--dm); margin-bottom: 8px; font-family: var(--mono); }
-      .examples-row { display: flex; flex-wrap: wrap; gap: 6px; }
+      /* ── Submit result ── */
+      .submit-result {
+        display: none; margin-top: 12px; padding: 10px 14px; border-radius: 8px;
+        font-size: 13px; font-weight: 600; align-items: center; gap: 8px;
+      }
+      .submit-result.success { display: flex; background: rgba(34,197,94,0.08); color: #22c55e; border: 1px solid rgba(34,197,94,0.2); }
+      .submit-result.error { display: flex; background: rgba(239,68,68,0.08); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); }
+
+      /* ── Sidebar ── */
+      .sidebar-section { padding: 16px; border-bottom: 1px solid var(--db); }
+      .sidebar-section:last-child { border-bottom: none; flex: 1; display: flex; flex-direction: column; }
+      .sidebar-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--dm); margin-bottom: 10px; font-family: var(--mono); }
+
+      /* ── Chips ── */
+      .chip-row { display: flex; flex-wrap: wrap; gap: 5px; }
       .chip {
         background: var(--dp2); border: 1px solid var(--db); border-radius: 999px;
-        padding: 5px 13px; font-size: 12px; color: var(--dm);
+        padding: 4px 11px; font-size: 11.5px; color: var(--dm);
         cursor: pointer; white-space: nowrap; font-family: inherit; transition: all .15s;
       }
-      .chip:hover { color: var(--acc); border-color: rgba(0,229,160,0.3); background: rgba(0,229,160,0.06); }
+      .chip:hover { color: var(--acc); border-color: var(--acc-border); background: var(--acc-bg); }
 
-      .model-loader { display: grid; gap: 8px; }
-      .model-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
-      .model-row select { font-size: 12px; padding: 8px 10px; }
-      .load-btn {
-        width: auto; padding: 8px 18px;
-        background: var(--acc); color: #000; border: none;
-        font-size: 12px; font-weight: 700; white-space: nowrap; border-radius: 8px;
-        font-family: var(--mono);
+      /* ── Goal input ── */
+      .goal-row { display: flex; gap: 8px; }
+      .goal-input {
+        flex: 1; padding: 9px 12px; border-radius: 8px;
+        border: 1px solid var(--db); background: var(--dp2);
+        color: var(--dt); font-size: 13px; font-family: inherit; outline: none;
+        transition: border-color .15s;
       }
+      .goal-input:focus { border-color: rgba(0,229,160,0.4); }
+      .run-btn {
+        padding: 9px 18px; background: var(--acc); color: #000; border: none;
+        border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer;
+        font-family: inherit; transition: all .15s; white-space: nowrap;
+      }
+      .run-btn:hover:not(:disabled) { opacity: .88; }
+      .run-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+      /* ── Model loader ── */
+      .model-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+      .model-select { width: 100%; font-size: 11.5px; font-family: var(--mono); border: 1px solid var(--db); border-radius: 8px; padding: 6px 8px; color: var(--dt); background: var(--dp2); cursor: pointer; outline: none; }
+      .model-select option { background: var(--dp); }
+      .load-btn { padding: 6px 14px; background: var(--acc); color: #000; border: none; border-radius: 8px; font-size: 11.5px; font-weight: 700; cursor: pointer; font-family: var(--mono); white-space: nowrap; }
       .load-btn:disabled { opacity: .4; cursor: not-allowed; }
-      .progress-wrap { display: none; }
-      .progress-wrap.visible { display: grid; gap: 4px; }
+      .progress-wrap { margin-top: 6px; display: none; }
+      .progress-wrap.visible { display: block; }
       .progress-track { height: 3px; background: var(--db); border-radius: 999px; overflow: hidden; }
       .progress-fill { height: 100%; background: linear-gradient(90deg, var(--acc), #00ffc2); border-radius: 999px; width: 0%; transition: width .4s ease; }
-      .progress-text { font-size: 11px; color: var(--dm); font-family: var(--mono); }
-      .webgpu-warn { padding: 7px 10px; background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.22); border-radius: 8px; font-size: 12px; color: var(--amber); display: none; }
+      .progress-text { font-size: 10px; color: var(--dm); font-family: var(--mono); margin-top: 4px; }
+      .webgpu-warn { margin-top: 6px; padding: 6px 9px; background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.2); border-radius: 7px; font-size: 11px; color: var(--amber); display: none; }
       .webgpu-warn.visible { display: block; }
-      .model-status { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--dm); font-family: var(--mono); }
-      .sdot { width: 7px; height: 7px; border-radius: 50%; background: var(--db2); flex-shrink: 0; }
-      .sdot.ready   { background: var(--acc); }
+      .model-status { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--dm); font-family: var(--mono); margin-top: 8px; }
+      .sdot { width: 6px; height: 6px; border-radius: 50%; background: var(--dl); flex-shrink: 0; }
+      .sdot.ready { background: var(--acc); }
       .sdot.loading { background: var(--amber); animation: pulse 1s ease-in-out infinite; }
       @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
 
-      .profile-result {
-        display: none; margin-top: 14px;
-        border: 1px solid rgba(0,229,160,0.2); border-radius: 10px;
-        padding: 14px; background: rgba(0,229,160,0.05);
-      }
-      .profile-result.visible { display: block; }
-      .profile-result h3 { margin: 0 0 8px; font-size: 15px; color: var(--acc); }
-      .profile-meta { margin: 4px 0; font-size: 13px; color: var(--dm); }
+      /* ── Mode + controls ── */
+      .controls-row { display: flex; gap: 8px; align-items: center; }
+      .mode-select { font-size: 11px; font-family: var(--mono); border: 1px solid var(--db); border-radius: 7px; padding: 5px 8px; color: var(--dt); background: var(--dp2); cursor: pointer; outline: none; flex: 1; }
+      .mode-select option { background: var(--dp); }
 
-      /* table buttons */
-      #crm-root button {
-        width: auto; padding: 5px 14px; font-size: 12px;
-        background: rgba(124,109,255,0.12); color: #a89fff;
-        border: 1px solid rgba(124,109,255,0.3);
+      /* ── Log ── */
+      .log-area {
+        flex: 1; background: var(--dp2); border: 1px solid var(--db); border-radius: 8px;
+        padding: 10px; font-family: var(--mono); font-size: 11px; color: var(--dm);
+        overflow-y: auto; min-height: 120px; max-height: 300px; line-height: 1.6;
       }
-      #crm-root button:hover { background: rgba(124,109,255,0.22); }
+      .log-entry { padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+      .log-entry:last-child { border-bottom: none; }
+      .log-time { color: var(--dl); }
+      .log-ok { color: var(--acc); }
+      .log-err { color: var(--red); }
+      .log-info { color: var(--amber); }
 
-      @media (max-width: 640px) {
-        .container { padding: 0 12px; margin: 16px auto; }
-        .row { grid-template-columns: 1fr; }
-        .actions { grid-template-columns: 1fr; }
+      /* ── Agent flash ── */
+      .agent-act { outline: 2px solid var(--acc) !important; outline-offset: 2px; transition: outline-color .3s; }
+
+      /* ── Approval banner ── */
+      .approval-banner {
+        display: none; padding: 12px; margin: 0 16px 8px;
+        background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.25);
+        border-radius: 10px; font-size: 12px; color: var(--amber);
+      }
+      .approval-banner.visible { display: block; }
+      .approval-actions { display: flex; gap: 8px; margin-top: 8px; }
+      .approve-btn { flex: 1; padding: 7px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; border: none; background: rgba(34,197,94,0.15); color: #22c55e; }
+      .approve-btn:hover { background: rgba(34,197,94,0.25); }
+      .reject-btn { flex: 1; padding: 7px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; border: none; background: rgba(239,68,68,0.1); color: #ef4444; }
+      .reject-btn:hover { background: rgba(239,68,68,0.2); }
+
+      /* ── Responsive ── */
+      @media (max-width: 860px) {
+        .layout { grid-template-columns: 1fr; }
+        .sidebar { border-left: none; border-top: 1px solid var(--db); max-height: 50vh; }
+        .form-grid { grid-template-columns: 1fr; }
       }
     </style>
   </head>
   <body>
     <header>
-      <a class="brand" href="../../" aria-label="OmniBrowser Agent home"><img src="../../icons/logo_horizontal.png" alt="OmniBrowser Agent" /></a>
-      <a class="back" href="../">← Examples</a>
-    </header>
-    <div class="container">
-      <div class="panel">
-        <h1>OmniBrowser Agent Embedded Demo</h1>
-        <p class="muted">Simple CRM-style page using the omnibrowser-agent library directly in app UI.</p>
+      <a class="brand" href="../../"><img src="../../icons/logo_horizontal.png" alt="OmniBrowser Agent" /><span class="brand-tag">SIMPLE SITE</span></a>
+      <div class="nav-links">
+        <a class="nav-link" href="../chatbot">Chatbot Demo</a>
+        <a class="nav-link" href="../doc-viewer">Doc Viewer</a>
+        <a class="nav-link" href="../../">Docs</a>
       </div>
+    </header>
 
-      <div class="panel controls">
-        <div class="examples-label">Try these goals</div>
-        <div class="examples-row">
-          <button class="chip" data-goal="search Jane Doe and open profile">🔍 Search contact</button>
-          <button class="chip" data-goal="Fill the name field with Jane Doe">✏️ Fill name</button>
-          <button class="chip" data-goal="Fill the email with jane@example.com">📧 Fill email</button>
-          <button class="chip" data-goal="Fill the phone with 555-0192">📞 Fill phone</button>
-          <button class="chip" data-goal="Fill the company with Acme Corp">🏢 Fill company</button>
-          <button class="chip" data-goal="put notes as employee">📝 Fill notes</button>
-          <button class="chip" data-goal="Click the Submit Contact button">🚀 Submit form</button>
+    <div class="layout">
+      <!-- ════ Main CRM Area ════ -->
+      <div class="main" id="crm-root">
+
+        <!-- Search -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon green">&#128269;</div>
+            <div><div class="card-title">Search Contacts</div><div class="card-desc">Find contacts by name, email, or company</div></div>
+          </div>
+          <div class="search-row">
+            <input type="text" id="search-input" placeholder="Search contacts..." />
+            <button class="btn primary sm" id="search-btn">Search</button>
+          </div>
+          <div id="search-status" style="margin-top:8px;font-size:12px;color:var(--dm);display:none"></div>
         </div>
 
-        <label for="goal">Goal</label>
-        <textarea id="goal">search Jane Doe and open profile</textarea>
+        <!-- Contacts Table -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon purple">&#128101;</div>
+            <div><div class="card-title">Contacts</div><div class="card-desc" id="contact-count">3 contacts</div></div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Name</th><th>Email</th><th>Company</th><th>Actions</th></tr></thead>
+              <tbody id="contacts-tbody"></tbody>
+            </table>
+          </div>
 
-        <div class="model-loader">
-          <label>WebLLM Model</label>
+          <!-- Profile card -->
+          <div class="profile-card" id="profile-card">
+            <h3 id="profile-name"></h3>
+            <p class="meta" id="profile-email"></p>
+            <p class="meta" id="profile-company"></p>
+          </div>
+        </div>
+
+        <!-- Add Contact Form -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon green">&#10133;</div>
+            <div><div class="card-title">Add Contact</div><div class="card-desc">Fill in the details and submit</div></div>
+          </div>
+          <div class="form-grid">
+            <div class="field"><label for="name">Full Name</label><input type="text" id="name" placeholder="e.g. Alex Morgan" /></div>
+            <div class="field"><label for="email">Email</label><input type="email" id="email" placeholder="alex@example.com" /></div>
+            <div class="field"><label for="phone">Phone</label><input type="tel" id="phone" placeholder="+1 555 000 0000" /></div>
+            <div class="field"><label for="company">Company</label><input type="text" id="company" placeholder="Acme Inc." /></div>
+            <div class="field full"><label for="notes">Notes</label><textarea id="notes" placeholder="Any additional notes..."></textarea></div>
+          </div>
+          <button class="btn primary" id="submit-contact" style="margin-top:14px;width:100%">Submit Contact</button>
+          <div class="submit-result" id="submit-result"></div>
+        </div>
+      </div>
+
+      <!-- ════ Agent Sidebar ════ -->
+      <div class="sidebar" data-agent-exclude>
+
+        <!-- Quick Goals -->
+        <div class="sidebar-section">
+          <div class="sidebar-title">Try these goals</div>
+          <div class="chip-row">
+            <button class="chip" data-goal="Search for Jane Doe">Search Jane</button>
+            <button class="chip" data-goal="Fill the name field with Jane Doe">Fill name</button>
+            <button class="chip" data-goal="Fill the email with jane@example.com">Fill email</button>
+            <button class="chip" data-goal="Fill the phone with 555-0192">Fill phone</button>
+            <button class="chip" data-goal="Click the Submit Contact button">Submit form</button>
+            <button class="chip" data-goal="Open Jane Doe profile">Open profile</button>
+          </div>
+        </div>
+
+        <!-- Goal Input -->
+        <div class="sidebar-section">
+          <div class="sidebar-title">Agent Goal</div>
+          <div class="goal-row">
+            <input type="text" class="goal-input" id="goal-input" placeholder="Describe what the agent should do..." />
+            <button class="run-btn" id="run-btn">Run</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+            <select class="mode-select" id="mode-select">
+              <option value="human-approved">Human-approved</option>
+              <option value="autonomous">Autonomous</option>
+            </select>
+            <span id="agent-status" style="font-size:11px;color:var(--dm);font-family:var(--mono);white-space:nowrap">idle</span>
+          </div>
+        </div>
+
+        <!-- Approval Banner -->
+        <div class="approval-banner" id="approval-banner">
+          <strong>Approval required</strong>
+          <div id="approval-detail" style="font-size:11px;margin-top:4px;font-family:var(--mono);word-break:break-all"></div>
+          <div class="approval-actions">
+            <button class="approve-btn" id="approve-btn">Approve</button>
+            <button class="reject-btn" id="reject-btn">Reject</button>
+          </div>
+        </div>
+
+        <!-- Model Loader -->
+        <div class="sidebar-section">
+          <div class="sidebar-title">WebLLM Model</div>
           <div class="model-row">
-            <select id="model">
-              <optgroup label="── Recommended ──">
-                <option value="omnibrowser-planner-1p5b-q4f16_1" selected>OmniBrowser Planner (fine-tuned) — best accuracy, ~800 MB</option>
+            <select class="model-select" id="model-select">
+              <optgroup label="Recommended">
+                <option value="omnibrowser-planner-1p5b-q4f16_1">OmniBrowser Planner — ~800 MB</option>
               </optgroup>
-              <optgroup label="── General ──">
-                <option value="Llama-3.2-1B-Instruct-q4f16_1-MLC">Llama 3.2 1B — fast, ~600 MB</option>
-                <option value="Llama-3.2-3B-Instruct-q4f16_1-MLC">Llama 3.2 3B — better, ~1.5 GB</option>
-                <option value="Phi-3.5-mini-instruct-q4f16_1-MLC">Phi-3.5 Mini — quality, ~2 GB</option>
-                <option value="Mistral-7B-Instruct-v0.3-q4f16_1-MLC">Mistral 7B v0.3 — balanced, ~4.1 GB</option>
-                <option value="Qwen2.5-7B-Instruct-q4f16_1-MLC">Qwen2.5 7B — strongest, ~4.3 GB</option>
-                <option value="Llama-3.1-8B-Instruct-q4f16_1-MLC">Llama 3.1 8B — strong, ~4.8 GB</option>
+              <optgroup label="General (Small)">
+                <option value="Llama-3.2-1B-Instruct-q4f16_1-MLC">Llama 3.2 1B — ~600 MB</option>
+                <option value="Llama-3.2-3B-Instruct-q4f16_1-MLC">Llama 3.2 3B — ~1.5 GB</option>
+                <option value="Phi-3.5-mini-instruct-q4f16_1-MLC">Phi-3.5 Mini — ~2 GB</option>
+              </optgroup>
+              <optgroup label="General (Medium)">
+                <option value="Mistral-7B-Instruct-v0.3-q4f16_1-MLC" selected>Mistral 7B v0.3 — ~4.1 GB</option>
+                <option value="Qwen2.5-7B-Instruct-q4f16_1-MLC">Qwen2.5 7B — ~4.3 GB</option>
+                <option value="Llama-3.1-8B-Instruct-q4f16_1-MLC">Llama 3.1 8B — ~4.8 GB</option>
               </optgroup>
             </select>
-            <button class="load-btn" id="load-model">Load AI</button>
+            <button class="load-btn" id="load-btn">Load AI</button>
           </div>
           <div class="progress-wrap" id="progress-wrap">
             <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
-            <div class="progress-text" id="progress-text">Initialising…</div>
+            <div class="progress-text" id="progress-text">Initialising...</div>
           </div>
-          <div class="webgpu-warn" id="webgpu-warn">⚠️ WebGPU unavailable — try Chrome 113+. Agent will use heuristic planner.</div>
+          <div class="webgpu-warn" id="webgpu-warn">WebGPU unavailable — agent will use heuristic planner.</div>
           <div class="model-status">
             <div class="sdot" id="sdot"></div>
-            <span id="model-status-text">No model loaded — click Load AI or start with heuristic planner</span>
+            <span id="model-status-text">No model loaded</span>
           </div>
         </div>
 
-        <div class="row" style="margin-top:4px">
-          <div>
-            <label for="mode">Mode</label>
-            <select id="mode">
-              <option value="human-approved">human-approved</option>
-              <option value="autonomous">autonomous</option>
-            </select>
-          </div>
+        <!-- Event Log -->
+        <div class="sidebar-section">
+          <div class="sidebar-title">Event Log</div>
+          <div class="log-area" id="log-area"></div>
         </div>
-
-        <div class="actions">
-          <button id="start">Start Agent</button>
-          <button id="approve" class="secondary">Approve Pending</button>
-          <button id="stop" class="secondary">Stop</button>
-        </div>
-
-        <div class="status" id="status">Status: idle</div>
-      </div>
-
-      <div class="panel" id="crm-root">
-        <h2>Mock CRM Contacts</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Company</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Jane Doe</td>
-              <td>jane@acme.com</td>
-              <td>Acme Corp</td>
-              <td>
-                <button
-                  class="open-profile"
-                  data-agent-target="profile-jane"
-                  data-name="Jane Doe"
-                  data-email="jane@acme.com"
-                  data-company="Acme Corp"
-                >
-                  Open Profile
-                </button>
-              </td>
-            </tr>
-            <tr>
-              <td>John Smith</td>
-              <td>john@globex.com</td>
-              <td>Globex</td>
-              <td>
-                <button
-                  class="open-profile"
-                  data-agent-target="profile-john"
-                  data-name="John Smith"
-                  data-email="john@globex.com"
-                  data-company="Globex"
-                >
-                  Open Profile
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div id="profile-result" class="profile-result" aria-live="polite">
-          <h3 id="profile-name">No profile opened yet</h3>
-          <p id="profile-email" class="profile-meta"></p>
-          <p id="profile-company" class="profile-meta"></p>
-          <p id="profile-source" class="profile-meta"></p>
-        </div>
-      </div>
-
-      <div class="panel">
-        <h2>Agent Event Log</h2>
-        <pre id="log"></pre>
       </div>
     </div>
 
