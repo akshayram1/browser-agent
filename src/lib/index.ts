@@ -26,6 +26,9 @@ function actionSignature(action: AgentAction): string | null {
   if (action.type === "click" || action.type === "type" || action.type === "focus") {
     return `${action.type}:${action.selector}`;
   }
+  if (action.type === "wait") {
+    return "wait";
+  }
   return null;
 }
 

@@ -609,9 +609,19 @@
     }
 
     // ── Run agent ──
+    function resetDemoForms() {
+      ["name","email","phone","company","notes"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = "";
+      });
+      const sr = document.getElementById("submit-result");
+      if (sr) { sr.style.display = "none"; sr.textContent = ""; }
+    }
+
     async function runAgent(goal) {
       if (CASUAL_RE.test(goal.trim())) { handleCasual(goal); return; }
       if (currentAgent) currentAgent.stop();
+      resetDemoForms();
       hideTyping();
       addMessage(goal, "user");
       setRunning(true);
