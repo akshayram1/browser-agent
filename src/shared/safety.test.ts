@@ -23,6 +23,16 @@ describe("assessRisk", () => {
     it("blocks malformed URLs", () => {
       assert.equal(assessRisk({ type: "navigate", url: "not a url" }), "blocked");
     });
+
+    it("allows fragment-only anchors", () => {
+      assert.equal(assessRisk({ type: "navigate", url: "#tab-crm" }), "safe");
+      assert.equal(assessRisk({ type: "navigate", url: "#section" }), "safe");
+    });
+
+    it("allows relative paths", () => {
+      assert.equal(assessRisk({ type: "navigate", url: "/about" }), "safe");
+      assert.equal(assessRisk({ type: "navigate", url: "./page.html" }), "safe");
+    });
   });
 
   describe("click", () => {

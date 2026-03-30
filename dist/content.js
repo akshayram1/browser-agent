@@ -149,6 +149,9 @@ function candidateText(selector, candidates) {
 function assessRisk(action, candidates) {
   switch (action.type) {
     case "navigate": {
+      if (action.url.startsWith("#") || action.url.startsWith("/") || action.url.startsWith("./") || action.url.startsWith("../")) {
+        return "safe";
+      }
       try {
         const next = new URL(action.url);
         if (!["http:", "https:"].includes(next.protocol)) {
@@ -333,6 +336,14 @@ function isInViewport(el) {
   const rect = el.getBoundingClientRect();
   return rect.bottom > 0 && rect.top < window.innerHeight && rect.right > 0 && rect.left < window.innerWidth;
 }
+function isActiveElement(el) {
+  if (el.classList.contains("active")) return true;
+  if (el.getAttribute("aria-selected") === "true") return true;
+  const ariaCurrent = el.getAttribute("aria-current");
+  if (ariaCurrent && ariaCurrent !== "false") return true;
+  if (el.getAttribute("aria-pressed") === "true") return true;
+  return false;
+}
 function getAssociatedLabel(el) {
   if (el.id) {
     const label = document.querySelector(`label[for="${CSS.escape(el.id)}"]`);
@@ -354,7 +365,7 @@ function getAssociatedLabel(el) {
 function collectSnapshot() {
   const allNodes = Array.from(
     document.querySelectorAll(CANDIDATE_SELECTOR)
-  ).filter(isVisible);
+  ).filter(isVisible).filter((el) => !el.closest("[data-agent-exclude]"));
   const inView = allNodes.filter(isInViewport);
   const offScreen = allNodes.filter((el) => !isInViewport(el));
   const nodes = [...inView, ...offScreen].slice(0, MAX_CANDIDATES);
@@ -366,7 +377,8 @@ function collectSnapshot() {
       role: node.getAttribute("role") ?? node.tagName.toLowerCase(),
       text: (node.innerText || node.getAttribute("name") || "").trim().slice(0, 120),
       placeholder: placeholder || void 0,
-      label: associatedLabel || void 0
+      label: associatedLabel || void 0,
+      active: isActiveElement(node) || void 0
     };
   });
   const textPreview = document.body.innerText.replace(/\s+/g, " ").trim().slice(0, 1500);

@@ -87,6 +87,15 @@ function isInViewport(el: HTMLElement): boolean {
   );
 }
 
+function isActiveElement(el: HTMLElement): boolean {
+  if (el.classList.contains("active")) return true;
+  if (el.getAttribute("aria-selected") === "true") return true;
+  const ariaCurrent = el.getAttribute("aria-current");
+  if (ariaCurrent && ariaCurrent !== "false") return true;
+  if (el.getAttribute("aria-pressed") === "true") return true;
+  return false;
+}
+
 /** Resolve the visible label text via for/id, aria-labelledby, aria-label, or wrapping <label>. */
 function getAssociatedLabel(el: HTMLElement): string {
   if (el.id) {
@@ -118,7 +127,7 @@ function getAssociatedLabel(el: HTMLElement): string {
 export function collectSnapshot(): PageSnapshot {
   const allNodes = Array.from(
     document.querySelectorAll<HTMLElement>(CANDIDATE_SELECTOR)
-  ).filter(isVisible);
+  ).filter(isVisible).filter((el) => !el.closest("[data-agent-exclude]"));
 
   // In-viewport elements first so the model sees the most relevant candidates first
   const inView = allNodes.filter(isInViewport);
@@ -135,6 +144,7 @@ export function collectSnapshot(): PageSnapshot {
       text: (node.innerText || node.getAttribute("name") || "").trim().slice(0, 120),
       placeholder: placeholder || undefined,
       label: associatedLabel || undefined,
+      active: isActiveElement(node) || undefined,
     };
   });
 

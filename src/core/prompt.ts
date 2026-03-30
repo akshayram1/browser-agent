@@ -23,7 +23,14 @@ const DEFAULT_SYSTEM_PROMPT = [
   "",
   "IMPORTANT: You MUST use selectors exactly as listed in the candidates. NEVER invent or guess selectors.",
   "If you cannot find a matching candidate for a target element, use the closest match from the candidates list.",
-  "When previous step failed, recover by trying a different candidate selector or fallback strategy."
+  "When previous step failed, recover by trying a different candidate selector or fallback strategy.",
+  "NEVER use navigate for in-page tab switches or buttons — use click with the button's selector instead.",
+  "",
+  "Loop prevention rules (CRITICAL):",
+  "- If a candidate shows 'state: active', it is already selected/active — do NOT click it again.",
+  "- Check the History before acting. If the same selector was already clicked or typed in a recent step, do NOT repeat it — proceed to the next logical step or return done.",
+  "- If the goal is already achieved (value is set, element clicked, task complete), return done immediately.",
+  "- NEVER click a navigation tab or button more than once per goal unless the page changed to a different section."
 ].join("\n");
 
 function formatCandidate(candidate: CandidateElement, index: number): string {
@@ -38,6 +45,9 @@ function formatCandidate(candidate: CandidateElement, index: number): string {
   }
   if (candidate.placeholder) {
     parts.push(`placeholder: ${JSON.stringify(candidate.placeholder)}`);
+  }
+  if (candidate.active) {
+    parts.push(`state: active`);
   }
 
   return `[${index + 1}] ${parts.join(" | ")}`;

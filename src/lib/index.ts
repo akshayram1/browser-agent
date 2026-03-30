@@ -2,6 +2,7 @@ import { executeAction } from "../core/executor";
 import { collectSnapshot } from "../core/observer";
 import { planNextAction } from "../core/planner";
 import type {
+  AgentAction,
   AgentSession,
   CandidateElement,
   ContentResult,
@@ -17,6 +18,17 @@ const DEFAULT_PLANNER: PlannerConfig = { kind: "heuristic" };
 /** Max consecutive errors before the agent gives up instead of retrying */
 const MAX_CONSECUTIVE_ERRORS = 2;
 
+/** Sliding window of recent action signatures used for loop detection */
+const LOOP_WINDOW = 8;
+const LOOP_THRESHOLD = 3;
+
+function actionSignature(action: AgentAction): string | null {
+  if (action.type === "click" || action.type === "type" || action.type === "focus") {
+    return `${action.type}:${action.selector}`;
+  }
+  return null;
+}
+
 export class BrowserAgent {
   private session: AgentSession;
   private maxSteps: number;
@@ -24,6 +36,7 @@ export class BrowserAgent {
   private events: LibraryAgentEvents;
   private isStopped = false;
   private signal?: AbortSignal;
+  private recentActionSigs: string[] = [];
 
   constructor(config: LibraryAgentConfig, events: LibraryAgentEvents = {}) {
     this.session = {
@@ -56,6 +69,7 @@ export class BrowserAgent {
 
   async start(): Promise<ContentResult> {
     this.isStopped = false;
+    this.recentActionSigs = [];
     this.session.isRunning = true;
     this.events.onStart?.(this.getSession());
     return this.runLoop();
@@ -191,6 +205,25 @@ export class BrowserAgent {
     const reflection = plannerResult.evaluation !== undefined || plannerResult.memory !== undefined || plannerResult.nextGoal !== undefined
       ? { evaluation: plannerResult.evaluation, memory: plannerResult.memory, nextGoal: plannerResult.nextGoal }
       : undefined;
+
+    // Loop detection: if the same selector+action type appears LOOP_THRESHOLD times
+    // in the recent window, the agent is stuck — force done rather than repeat.
+    const sig = actionSignature(action);
+    if (sig) {
+      this.recentActionSigs.push(sig);
+      if (this.recentActionSigs.length > LOOP_WINDOW) {
+        this.recentActionSigs.shift();
+      }
+      const repeatCount = this.recentActionSigs.filter((s) => s === sig).length;
+      if (repeatCount >= LOOP_THRESHOLD) {
+        return {
+          status: "done",
+          action,
+          message: "Loop detected — goal appears to be complete.",
+          reflection
+        };
+      }
+    }
 
     const risk = assessRisk(action, candidates);
     if (risk === "blocked") {

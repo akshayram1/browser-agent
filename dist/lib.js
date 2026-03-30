@@ -290,6 +290,14 @@ function isInViewport(el) {
   const rect = el.getBoundingClientRect();
   return rect.bottom > 0 && rect.top < window.innerHeight && rect.right > 0 && rect.left < window.innerWidth;
 }
+function isActiveElement(el) {
+  if (el.classList.contains("active")) return true;
+  if (el.getAttribute("aria-selected") === "true") return true;
+  const ariaCurrent = el.getAttribute("aria-current");
+  if (ariaCurrent && ariaCurrent !== "false") return true;
+  if (el.getAttribute("aria-pressed") === "true") return true;
+  return false;
+}
 function getAssociatedLabel(el) {
   if (el.id) {
     const label = document.querySelector(`label[for="${CSS.escape(el.id)}"]`);
@@ -311,7 +319,7 @@ function getAssociatedLabel(el) {
 function collectSnapshot() {
   const allNodes = Array.from(
     document.querySelectorAll(CANDIDATE_SELECTOR)
-  ).filter(isVisible);
+  ).filter(isVisible).filter((el) => !el.closest("[data-agent-exclude]"));
   const inView = allNodes.filter(isInViewport);
   const offScreen = allNodes.filter((el) => !isInViewport(el));
   const nodes = [...inView, ...offScreen].slice(0, MAX_CANDIDATES);
@@ -323,7 +331,8 @@ function collectSnapshot() {
       role: node.getAttribute("role") ?? node.tagName.toLowerCase(),
       text: (node.innerText || node.getAttribute("name") || "").trim().slice(0, 120),
       placeholder: placeholder || void 0,
-      label: associatedLabel || void 0
+      label: associatedLabel || void 0,
+      active: isActiveElement(node) || void 0
     };
   });
   const textPreview = document.body.innerText.replace(/\s+/g, " ").trim().slice(0, 1500);
@@ -460,6 +469,9 @@ function candidateText(selector, candidates) {
 function assessRisk(action, candidates) {
   switch (action.type) {
     case "navigate": {
+      if (action.url.startsWith("#") || action.url.startsWith("/") || action.url.startsWith("./") || action.url.startsWith("../")) {
+        return "safe";
+      }
       try {
         const next = new URL(action.url);
         if (!["http:", "https:"].includes(next.protocol)) {
@@ -517,7 +529,14 @@ var DEFAULT_SYSTEM_PROMPT = [
   "",
   "IMPORTANT: You MUST use selectors exactly as listed in the candidates. NEVER invent or guess selectors.",
   "If you cannot find a matching candidate for a target element, use the closest match from the candidates list.",
-  "When previous step failed, recover by trying a different candidate selector or fallback strategy."
+  "When previous step failed, recover by trying a different candidate selector or fallback strategy.",
+  "NEVER use navigate for in-page tab switches or buttons \u2014 use click with the button's selector instead.",
+  "",
+  "Loop prevention rules (CRITICAL):",
+  "- If a candidate shows 'state: active', it is already selected/active \u2014 do NOT click it again.",
+  "- Check the History before acting. If the same selector was already clicked or typed in a recent step, do NOT repeat it \u2014 proceed to the next logical step or return done.",
+  "- If the goal is already achieved (value is set, element clicked, task complete), return done immediately.",
+  "- NEVER click a navigation tab or button more than once per goal unless the page changed to a different section."
 ].join("\n");
 function formatCandidate(candidate, index) {
   const parts = [
@@ -530,6 +549,9 @@ function formatCandidate(candidate, index) {
   }
   if (candidate.placeholder) {
     parts.push(`placeholder: ${JSON.stringify(candidate.placeholder)}`);
+  }
+  if (candidate.active) {
+    parts.push(`state: active`);
   }
   return `[${index + 1}] ${parts.join(" | ")}`;
 }
@@ -663,6 +685,14 @@ function createWebLLMBridge(engine) {
 init_parse_action();
 var DEFAULT_PLANNER = { kind: "heuristic" };
 var MAX_CONSECUTIVE_ERRORS = 2;
+var LOOP_WINDOW = 8;
+var LOOP_THRESHOLD = 3;
+function actionSignature(action) {
+  if (action.type === "click" || action.type === "type" || action.type === "focus") {
+    return `${action.type}:${action.selector}`;
+  }
+  return null;
+}
 var BrowserAgent = class {
   session;
   maxSteps;
@@ -670,6 +700,7 @@ var BrowserAgent = class {
   events;
   isStopped = false;
   signal;
+  recentActionSigs = [];
   constructor(config, events = {}) {
     this.session = {
       id: crypto.randomUUID(),
@@ -696,6 +727,7 @@ var BrowserAgent = class {
   }
   async start() {
     this.isStopped = false;
+    this.recentActionSigs = [];
     this.session.isRunning = true;
     this.events.onStart?.(this.getSession());
     return this.runLoop();
@@ -808,6 +840,22 @@ var BrowserAgent = class {
   async processAction(plannerResult, candidates) {
     const { action } = plannerResult;
     const reflection = plannerResult.evaluation !== void 0 || plannerResult.memory !== void 0 || plannerResult.nextGoal !== void 0 ? { evaluation: plannerResult.evaluation, memory: plannerResult.memory, nextGoal: plannerResult.nextGoal } : void 0;
+    const sig = actionSignature(action);
+    if (sig) {
+      this.recentActionSigs.push(sig);
+      if (this.recentActionSigs.length > LOOP_WINDOW) {
+        this.recentActionSigs.shift();
+      }
+      const repeatCount = this.recentActionSigs.filter((s) => s === sig).length;
+      if (repeatCount >= LOOP_THRESHOLD) {
+        return {
+          status: "done",
+          action,
+          message: "Loop detected \u2014 goal appears to be complete.",
+          reflection
+        };
+      }
+    }
     const risk = assessRisk(action, candidates);
     if (risk === "blocked") {
       return { status: "blocked", action, message: `Blocked action: ${JSON.stringify(action)}`, reflection };

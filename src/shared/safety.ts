@@ -14,12 +14,17 @@ function candidateText(selector: string, candidates?: CandidateElement[]): strin
 export function assessRisk(action: AgentAction, candidates?: CandidateElement[]): RiskLevel {
   switch (action.type) {
     case "navigate": {
+      // Fragment-only (#anchor) and relative paths are safe on-page navigations.
+      if (action.url.startsWith("#") || action.url.startsWith("/") || action.url.startsWith("./") || action.url.startsWith("../")) {
+        return "safe";
+      }
       try {
         const next = new URL(action.url);
         if (!["http:", "https:"].includes(next.protocol)) {
           return "blocked";
         }
       } catch {
+        // Unparseable URL that is not a known relative form — block it.
         return "blocked";
       }
       return "safe";

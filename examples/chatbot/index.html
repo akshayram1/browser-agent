@@ -239,8 +239,8 @@
   </header>
 
   <div class="layout">
-    <!-- ── Chat panel ── -->
-    <div class="chat-panel">
+    <!-- ── Chat panel ── (data-agent-exclude prevents the agent from targeting its own UI) -->
+    <div class="chat-panel" data-agent-exclude>
       <div class="chat-header">
         <div class="chat-header-row">
           <div class="chat-title"><div class="chat-title-icon"><img src="../../icons/logo_horizontal.png" alt="Agent Console" /></div>Agent Console</div>
@@ -504,9 +504,12 @@
     const CHATBOT_WEBLLM_SYSTEM_PROMPT = [
       "You are controlling the chatbot demo app UI.",
       "ONLY use selectors exactly as listed in the candidates. NEVER invent selectors.",
-      "To switch sections: use selector #tab-crm for Contact CRM tab, #tab-tasks for Task Manager tab.",
+      "To switch tabs: use click action with selector #tab-crm for Contact CRM, #tab-tasks for Task Manager. NEVER use navigate to switch tabs.",
       "CRM selectors: #search-input, #search-btn, #name, #email, #phone, #company, #notes, #submit-contact.",
       "Task selectors: #task-input, #add-task-btn, #clear-completed-btn.",
+      "CRITICAL — Loop prevention: If a tab candidate shows 'state: active', it is already the current tab — do NOT click it again.",
+      "CRITICAL — Loop prevention: Check History before every action. If you already clicked or typed into a selector in a recent step, do NOT repeat it — move to the next step or return done.",
+      "If the goal is already achieved (field already has the value, button already clicked), return done immediately.",
       "Use small, reversible actions and return done when the user goal is complete.",
       "If the user asks for casual chat (hi/hello/thanks), return done with a brief reason."
     ].join(" ");
@@ -597,8 +600,17 @@
     }
     loadBtn.addEventListener("click", loadModel);
 
+    // ── Casual-chat pre-filter (no LLM needed) ──
+    const CASUAL_RE = /^(hi+|hey+|hello+|howdy|sup|yo|thanks?|thank you|cheers|bye|goodbye|ok|okay|yes|no|sure|cool|great|nice|awesome|got it|sounds good|perfect)\W*$/i;
+    function handleCasual(goal) {
+      addMessage(goal, "user");
+      addMessage("👋 Hi! Give me a goal to automate on the demo — e.g. \"Fill the name field with Jane Doe\".", "agent", "ok");
+      return true;
+    }
+
     // ── Run agent ──
     async function runAgent(goal) {
+      if (CASUAL_RE.test(goal.trim())) { handleCasual(goal); return; }
       if (currentAgent) currentAgent.stop();
       hideTyping();
       addMessage(goal, "user");

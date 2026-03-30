@@ -19,6 +19,8 @@ export interface CandidateElement {
   placeholder?: string;
   /** Associated <label> text resolved via for/id, aria-labelledby, aria-label, or wrapping <label> */
   label?: string;
+  /** True when the element is currently active/selected (has .active class, aria-selected, aria-current, or aria-pressed) */
+  active?: boolean;
 }
 
 export interface PageSnapshot {
