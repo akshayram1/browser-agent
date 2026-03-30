@@ -10,6 +10,8 @@ type WebLLMBridge = {
 const URL_PATTERN = /(?:go to|navigate to|open)\s+(https?:\/\/\S+)/i;
 const SEARCH_PATTERN = /search(?:\s+for)?\s+(.+)/i;
 const FILL_PATTERN = /(?:fill|type|enter)\s+"?([^"]+)"?\s+(?:in(?:to)?|for|on)\s+(.+)/i;
+/** Matches "fill the name field with Jane Doe" — field first, text after "with" */
+const FILL_WITH_PATTERN = /(?:fill|type|enter)\s+(?:the\s+)?(.+?)\s+(?:field\s+)?with\s+"?([^"]+)"?\s*$/i;
 const CLICK_PATTERN = /click(?:\s+(?:on|the))?\s+(.+)/i;
 
 function findByText(candidates: CandidateElement[], text: string): CandidateElement | undefined {
@@ -45,6 +47,16 @@ function heuristicPlan(input: PlannerInput): AgentAction {
   const fillMatch = goal.match(FILL_PATTERN);
   if (fillMatch) {
     const [, text, fieldHint] = fillMatch;
+    const target = findByText(snapshot.candidates, fieldHint) ?? findInput(snapshot.candidates);
+    if (target) {
+      return { type: "type", selector: target.selector, text, clearFirst: true, label: target.label || target.text || target.placeholder };
+    }
+  }
+
+  // "fill the name field with Jane Doe" — field first, text after "with"
+  const fillWithMatch = goal.match(FILL_WITH_PATTERN);
+  if (fillWithMatch) {
+    const [, fieldHint, text] = fillWithMatch;
     const target = findByText(snapshot.candidates, fieldHint) ?? findInput(snapshot.candidates);
     if (target) {
       return { type: "type", selector: target.selector, text, clearFirst: true, label: target.label || target.text || target.placeholder };
@@ -130,6 +142,16 @@ export async function planNextAction(config: PlannerConfig, input: PlannerInput)
   const firstAttempt = await normalizeBridgeResponse(await bridge.plan(plannerInput, config.modelId));
 
   if (!firstAttempt.parseFailed) {
+    // Fallback: if the model returned a wait or premature done but the heuristic
+    // can produce a concrete action, prefer the heuristic.  This catches cases
+    // where the small WebLLM model stalls instead of acting.
+    const action = firstAttempt.result.action;
+    if (action.type === "wait" || action.type === "done") {
+      const heuristic = heuristicPlan(input);
+      if (heuristic.type !== "done") {
+        return { action: heuristic };
+      }
+    }
     return firstAttempt.result;
   }
 

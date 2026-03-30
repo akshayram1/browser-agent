@@ -396,6 +396,7 @@ function collectSnapshot() {
 var URL_PATTERN = /(?:go to|navigate to|open)\s+(https?:\/\/\S+)/i;
 var SEARCH_PATTERN = /search(?:\s+for)?\s+(.+)/i;
 var FILL_PATTERN = /(?:fill|type|enter)\s+"?([^"]+)"?\s+(?:in(?:to)?|for|on)\s+(.+)/i;
+var FILL_WITH_PATTERN = /(?:fill|type|enter)\s+(?:the\s+)?(.+?)\s+(?:field\s+)?with\s+"?([^"]+)"?\s*$/i;
 var CLICK_PATTERN = /click(?:\s+(?:on|the))?\s+(.+)/i;
 function findByText(candidates, text) {
   const lower = text.toLowerCase();
@@ -422,6 +423,14 @@ function heuristicPlan(input) {
   const fillMatch = goal.match(FILL_PATTERN);
   if (fillMatch) {
     const [, text, fieldHint] = fillMatch;
+    const target = findByText(snapshot.candidates, fieldHint) ?? findInput(snapshot.candidates);
+    if (target) {
+      return { type: "type", selector: target.selector, text, clearFirst: true, label: target.label || target.text || target.placeholder };
+    }
+  }
+  const fillWithMatch = goal.match(FILL_WITH_PATTERN);
+  if (fillWithMatch) {
+    const [, fieldHint, text] = fillWithMatch;
     const target = findByText(snapshot.candidates, fieldHint) ?? findInput(snapshot.candidates);
     if (target) {
       return { type: "type", selector: target.selector, text, clearFirst: true, label: target.label || target.text || target.placeholder };
@@ -487,6 +496,13 @@ async function planNextAction(config, input) {
   const plannerInput = { ...input, systemPrompt: config.systemPrompt };
   const firstAttempt = await normalizeBridgeResponse(await bridge.plan(plannerInput, config.modelId));
   if (!firstAttempt.parseFailed) {
+    const action = firstAttempt.result.action;
+    if (action.type === "wait" || action.type === "done") {
+      const heuristic = heuristicPlan(input);
+      if (heuristic.type !== "done") {
+        return { action: heuristic };
+      }
+    }
     return firstAttempt.result;
   }
   if (bridge.retryInvalidJson && firstAttempt.rawText) {
